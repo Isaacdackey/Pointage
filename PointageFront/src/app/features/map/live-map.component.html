@@ -79,7 +79,7 @@
               <p class="car-sub">{{ selectedVehicle.make }} {{ selectedVehicle.model }}</p>
             </div>
             <button
-              (click)="selectedVehicle = null"
+              (click)="deselectVehicle()"
               class="close-btn"
               aria-label="Fermer la fiche véhicule"
             >
@@ -133,9 +133,16 @@
             <hr class="divider"/>
 
             <div class="sidebar-actions">
-              <button (click)="traceHistoricTrip()" class="btn btn-primary btn-block">
-                <span class="material-symbols-outlined" aria-hidden="true">history_edu</span>
-                <span>Afficher le parcours réel GPS</span>
+              <button
+                (click)="toggleHistoricTrip()"
+                [class.btn-primary]="!isTripTraceActive"
+                [class.btn-outline]="isTripTraceActive"
+                class="btn btn-block"
+              >
+                <span class="material-symbols-outlined" aria-hidden="true">
+                  {{ isTripTraceActive ? 'visibility_off' : 'route' }}
+                </span>
+                <span>{{ isTripTraceActive ? 'Masquer le tracé GPS' : 'Afficher le parcours réel GPS' }}</span>
               </button>
               <button (click)="centerOnVehicle(selectedVehicle)" class="btn btn-outline btn-block">
                 <span class="material-symbols-outlined" aria-hidden="true">my_location</span>

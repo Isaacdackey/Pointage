@@ -1,6 +1,6 @@
 export type VehicleStatus = 'DISPONIBLE' | 'EN_MISSION' | 'INDISPONIBLE' | 'MAINTENANCE';
 export type TrackerStatus = 'ACTIF' | 'MUET' | 'NON_ASSOCIE' | 'MAINTENANCE';
-export type MissionStatus = 'PLANIFIEE' | 'EN_COURS' | 'EN_PAUSE' | 'TERMINEE' | 'EN_ANOMALIE' | 'ANNULEE';
+export type MissionStatus = 'PLANIFIEE' | 'DEMANDE_DEMARRAGE' | 'EN_COURS' | 'EN_PAUSE' | 'ATTENTE_VALIDATION' | 'TERMINEE' | 'EN_ANOMALIE' | 'ANNULEE';
 export type AlertSeverity = 'CRITIQUE' | 'MAJEURE' | 'MINEURE' | 'INFO';
 export type AlertType = 'SORTIE_ZONE' | 'PERTE_SIGNAL' | 'EXCES_VITESSE' | 'RETARD' | 'DEPART_NON_DECLARE' | 'INCIDENT_CHAUFFEUR';
 export type AlertStatus = 'NOUVELLE' | 'PRISE_EN_CHARGE' | 'CLOTUREE' | 'IGNOREE';
@@ -34,7 +34,7 @@ export interface Driver {
 
 export interface Tracker {
   id: string;
-  identifier: string; // IMEI / Serial
+  identifier: string; 
   vendor: string;
   model: string;
   protocol: string;
@@ -50,12 +50,12 @@ export interface GpsPosition {
   trackerId: string;
   latitude: number;
   longitude: number;
-  eventTime: string; // ISO
-  receivedAt: string; // ISO
+  eventTime: string; 
+  receivedAt: string; 
   speedKph: number;
   heading: number;
   ignition: boolean;
-  freshnessSeconds: number; // calculated age
+  freshnessSeconds: number; 
 }
 
 export interface Mission {
@@ -78,6 +78,10 @@ export interface Mission {
   departureDeclared?: boolean;
   arrivalDeclared?: boolean;
   gpsDepartureDetected?: boolean;
+  departureValidatedByAgent?: boolean;
+  arrivalValidatedByAgent?: boolean;
+  departureRequestedAt?: string;
+  arrivalRequestedAt?: string;
 }
 
 export interface Alert {

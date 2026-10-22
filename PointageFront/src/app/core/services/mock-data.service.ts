@@ -1,11 +1,13 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { Vehicle, Driver, Tracker, Mission, Alert, GpsPosition, TripEvent } from '../models/fleet.models';
+import { NotificationService } from './notification.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class MockDataService {
+  private notificationService = inject(NotificationService);
   private vehicles$ = new BehaviorSubject<Vehicle[]>([
     {
       id: 'v1',
@@ -153,26 +155,25 @@ export class MockDataService {
       id: 'm1',
       code: 'MIS-2026-089',
       title: 'Approvisionnement Entrepôt Diamniadio',
-      status: 'EN_COURS',
+      status: 'PLANIFIEE',
       vehicleId: 'v1',
       vehicleReg: 'DK-4920-BA',
       driverId: 'd1',
       driverName: 'Mamadou Diallo',
       originName: 'Port Autonome de Dakar',
       destinationName: 'Plateforme Industrielle Diamniadio',
-      plannedStartTime: new Date(Date.now() - 3600 * 1000).toISOString(),
-      plannedEndTime: new Date(Date.now() + 7200 * 1000).toISOString(),
-      actualStartTime: new Date(Date.now() - 3400 * 1000).toISOString(),
+      plannedStartTime: new Date(Date.now() + 1800 * 1000).toISOString(),
+      plannedEndTime: new Date(Date.now() + 9000 * 1000).toISOString(),
       distanceKm: 42,
-      departureDeclared: true,
-      gpsDepartureDetected: true,
+      departureDeclared: false,
+      gpsDepartureDetected: false,
       notes: 'Colis prioritaires et fragiles. Respecter les limitations de vitesse.'
     },
     {
       id: 'm2',
       code: 'MIS-2026-090',
       title: 'Livraison Clients Centre-Ville Plateau',
-      status: 'EN_COURS',
+      status: 'ATTENTE_VALIDATION',
       vehicleId: 'v2',
       vehicleReg: 'DK-8112-BB',
       driverId: 'd2',
@@ -184,24 +185,27 @@ export class MockDataService {
       actualStartTime: new Date(Date.now() - 5200 * 1000).toISOString(),
       distanceKm: 18,
       departureDeclared: true,
-      gpsDepartureDetected: true
+      arrivalDeclared: true,
+      gpsDepartureDetected: true,
+      arrivalRequestedAt: 'Il y a 10 min'
     },
     {
       id: 'm3',
       code: 'MIS-2026-091',
-      title: 'Transport Matériaux Thiès ➔ Dakar',
-      status: 'PLANIFIEE',
+      title: 'Transport Matériaux Thiès -> Dakar',
+      status: 'DEMANDE_DEMARRAGE',
       vehicleId: 'v3',
       vehicleReg: 'TH-3310-A',
       driverId: 'd3',
       driverName: 'Ousmane Sow',
       originName: 'Carrière de Thiès',
       destinationName: 'Chantier VDN Extension Dakar',
-      plannedStartTime: new Date(Date.now() + 3600 * 1000).toISOString(),
+      plannedStartTime: new Date(Date.now() - 1200 * 1000).toISOString(),
       plannedEndTime: new Date(Date.now() + 18000 * 1000).toISOString(),
       distanceKm: 78,
-      departureDeclared: false,
-      gpsDepartureDetected: false
+      departureDeclared: true,
+      gpsDepartureDetected: true,
+      departureRequestedAt: 'Il y a 3 min'
     },
     {
       id: 'm4',
@@ -299,17 +303,179 @@ export class MockDataService {
     return this.alerts$.asObservable();
   }
 
+  addVehicle(newVehicle: {
+    registrationNumber: string;
+    make: string;
+    model: string;
+    type: string;
+    odometerKm?: number;
+    fuelLevelPercent?: number;
+    assignedDriverId?: string;
+    currentTrackerId?: string;
+  }): Vehicle {
+    const drivers = this.drivers$.getValue();
+    const assignedDriver = drivers.find(d => d.id === newVehicle.assignedDriverId);
+
+    const id = 'v-' + Date.now();
+    const trackerId = newVehicle.currentTrackerId || 'tr-001';
+
+    const vehicle: Vehicle = {
+      id,
+      registrationNumber: (newVehicle.registrationNumber || '').trim().toUpperCase(),
+      make: (newVehicle.make || '').trim(),
+      model: (newVehicle.model || '').trim(),
+      type: newVehicle.type || 'Utilitaire',
+      status: 'DISPONIBLE',
+      currentTrackerId: trackerId,
+      assignedDriverId: newVehicle.assignedDriverId,
+      assignedDriverName: assignedDriver?.fullName,
+      odometerKm: newVehicle.odometerKm || 0,
+      fuelLevelPercent: newVehicle.fuelLevelPercent ?? 100,
+      lastPosition: {
+        vehicleId: id,
+        trackerId: trackerId,
+        latitude: 14.7167 + (Math.random() - 0.5) * 0.05,
+        longitude: -17.4677 + (Math.random() - 0.5) * 0.05,
+        eventTime: new Date().toISOString(),
+        receivedAt: new Date().toISOString(),
+        speedKph: 0,
+        heading: 0,
+        ignition: false,
+        freshnessSeconds: 15
+      }
+    };
+
+    const currentVehicles = this.vehicles$.getValue();
+    this.vehicles$.next([vehicle, ...currentVehicles]);
+
+    this.notificationService.sendPushNotification({
+      title: 'Nouveau Véhicule Enregistré',
+      body: `Le véhicule ${vehicle.registrationNumber} (${vehicle.make} ${vehicle.model}) a été ajouté à la flotte.`
+    });
+
+    return vehicle;
+  }
+
+  addMission(newMission: {
+    title: string;
+    vehicleId: string;
+    driverId: string;
+    originName: string;
+    destinationName: string;
+    distanceKm?: number;
+    plannedStartTime?: string;
+    notes?: string;
+  }): Mission {
+    const vehicles = this.vehicles$.getValue();
+    const drivers = this.drivers$.getValue();
+    const vehicle = vehicles.find(v => v.id === newMission.vehicleId);
+    const driver = drivers.find(d => d.id === newMission.driverId);
+
+    const code = 'MIS-2026-' + Math.floor(100 + Math.random() * 900);
+    const mission: Mission = {
+      id: 'm-' + Date.now(),
+      code: code,
+      title: newMission.title,
+      status: 'PLANIFIEE',
+      vehicleId: newMission.vehicleId,
+      vehicleReg: vehicle?.registrationNumber || 'DK-0000-XX',
+      driverId: newMission.driverId,
+      driverName: driver?.fullName || 'Chauffeur Non Assigné',
+      originName: newMission.originName || 'Dakar Centre',
+      destinationName: newMission.destinationName || 'Diamniadio',
+      distanceKm: newMission.distanceKm || 35,
+      plannedStartTime: newMission.plannedStartTime || new Date().toISOString(),
+      plannedEndTime: new Date(Date.now() + 4 * 3600 * 1000).toISOString(),
+      departureDeclared: false,
+      gpsDepartureDetected: false,
+      notes: newMission.notes
+    };
+
+    const currentMissions = this.missions$.getValue();
+    this.missions$.next([mission, ...currentMissions]);
+
+    this.notificationService.sendPushNotification({
+      title: 'Nouvelle Mission Planifiée',
+      body: `${mission.code} : ${mission.title} assignée à ${mission.driverName} (${mission.vehicleReg}).`
+    });
+
+    return mission;
+  }
+
   getTripEvents(): Observable<TripEvent[]> {
     return this.tripEvents$.asObservable();
   }
 
-  // Simulation pointage chauffeur
+  
+  declareDeparture(missionId: string, comment?: string): Observable<TripEvent> {
+    return this.declareDriverEvent('DEPART', missionId, comment);
+  }
+
+  
+  acceptDeparture(missionId: string): void {
+    const missions = this.missions$.getValue();
+    const mission = missions.find(m => m.id === missionId);
+    if (!mission) return;
+
+    mission.status = 'EN_COURS';
+    mission.departureValidatedByAgent = true;
+    mission.actualStartTime = new Date().toISOString();
+
+
+    const vehicles = this.vehicles$.getValue();
+    const v = vehicles.find(veh => veh.id === mission.vehicleId);
+    if (v) {
+      v.status = 'EN_MISSION';
+      this.vehicles$.next([...vehicles]);
+    }
+
+    this.missions$.next([...missions]);
+
+    this.notificationService.sendPushNotification({
+      title: 'Départ Accepté & Validé',
+      body: `Mission ${mission.code} (${mission.vehicleReg}) officiellement démarrée. Suivi télématique actif.`
+    });
+  }
+
+  
+  declareArrival(missionId: string, comment?: string): Observable<TripEvent> {
+    return this.declareDriverEvent('ARRIVEE', missionId, comment);
+  }
+
+  
+  validateAndCloseMission(missionId: string): void {
+    const missions = this.missions$.getValue();
+    const mission = missions.find(m => m.id === missionId);
+    if (!mission) return;
+
+    mission.status = 'TERMINEE';
+    mission.arrivalValidatedByAgent = true;
+    mission.actualEndTime = new Date().toISOString();
+
+    const vehicles = this.vehicles$.getValue();
+    const v = vehicles.find(veh => veh.id === mission.vehicleId);
+    if (v) {
+      v.status = 'DISPONIBLE';
+      this.vehicles$.next([...vehicles]);
+    }
+
+    this.missions$.next([...missions]);
+
+    this.notificationService.sendPushNotification({
+      title: 'Mission Validée & Clôturée',
+      body: `Mission ${mission.code} certifiée par le régulateur. Véhicule ${mission.vehicleReg} remis à disposition.`
+    });
+  }
+ 
   declareDriverEvent(type: 'DEPART' | 'PAUSE' | 'REPRISE' | 'ARRIVEE' | 'INCIDENT', missionId: string, comment?: string): Observable<TripEvent> {
+    const missions = this.missions$.getValue();
+    const targetMission = missions.find(m => m.id === missionId);
+
     const newEvent: TripEvent = {
       id: 'evt-' + Math.random().toString(36).substr(2, 9),
       missionId: missionId,
-      vehicleId: 'v1',
-      driverId: 'd1',
+      vehicleId: targetMission?.vehicleId || 'v1',
+      driverId: targetMission?.driverId || 'd1',
       type: type,
       declaredTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       receivedTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -322,22 +488,57 @@ export class MockDataService {
     const current = this.tripEvents$.getValue();
     this.tripEvents$.next([newEvent, ...current]);
 
-    // Update mission status in mock
-    const missions = this.missions$.getValue();
-    const targetMission = missions.find(m => m.id === missionId);
     if (targetMission) {
       if (type === 'DEPART') {
-        targetMission.status = 'EN_COURS';
+        targetMission.status = 'DEMANDE_DEMARRAGE';
         targetMission.departureDeclared = true;
+        targetMission.departureRequestedAt = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        this.notificationService.sendPushNotification({
+          title: 'Demande de Départ Chauffeur',
+          body: `${targetMission.driverName} déclare le départ pour la mission ${targetMission.code}. En attente d\'acceptation.`
+        });
       } else if (type === 'ARRIVEE') {
-        targetMission.status = 'TERMINEE';
+        targetMission.status = 'ATTENTE_VALIDATION';
         targetMission.arrivalDeclared = true;
+        targetMission.arrivalRequestedAt = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        this.notificationService.sendPushNotification({
+          title: 'Déclaration d\'Arrivée Chauffeur',
+          body: `${targetMission.driverName} a atteint la destination (${targetMission.destinationName}). En attente de validation clôture.`
+        });
       } else if (type === 'PAUSE') {
         targetMission.status = 'EN_PAUSE';
+        this.notificationService.sendPushNotification({
+          title: 'Pause Véhicule',
+          body: `${targetMission.driverName} (${targetMission.vehicleReg}) s\'est mis en pause temporaire.`
+        });
       } else if (type === 'REPRISE') {
         targetMission.status = 'EN_COURS';
+        this.notificationService.sendPushNotification({
+          title: 'Reprise de Route',
+          body: `${targetMission.driverName} (${targetMission.vehicleReg}) a repris la route.`
+        });
       } else if (type === 'INCIDENT') {
         targetMission.status = 'EN_ANOMALIE';
+        
+        const newAlert: Alert = {
+          id: 'alt-' + Date.now(),
+          type: 'INCIDENT_CHAUFFEUR',
+          severity: 'CRITIQUE',
+          vehicleId: targetMission.vehicleId,
+          vehicleReg: targetMission.vehicleReg,
+          driverName: targetMission.driverName,
+          missionId: targetMission.id,
+          occurredAt: 'À l\'instant',
+          status: 'NOUVELLE',
+          description: comment || 'Incident signalé par le chauffeur sur le terrain'
+        };
+        const currentAlerts = this.alerts$.getValue();
+        this.alerts$.next([newAlert, ...currentAlerts]);
+
+        this.notificationService.sendPushNotification({
+          title: 'Alerte Incident Chauffeur',
+          body: `${targetMission.vehicleReg} : ${comment || 'Incident signalé'}`
+        });
       }
       this.missions$.next([...missions]);
     }
@@ -345,13 +546,19 @@ export class MockDataService {
     return of(newEvent);
   }
 
-  // Résoudre ou changer le statut d'une alerte
+  
   updateAlertStatus(alertId: string, newStatus: 'PRISE_EN_CHARGE' | 'CLOTUREE' | 'IGNOREE') {
     const alerts = this.alerts$.getValue();
     const alert = alerts.find(a => a.id === alertId);
     if (alert) {
       alert.status = newStatus;
       this.alerts$.next([...alerts]);
+      if (newStatus === 'CLOTUREE') {
+        this.notificationService.sendPushNotification({
+          title: 'Alerte clôturée',
+          body: `L'anomalie sur le véhicule ${alert.vehicleReg} a été résolue.`
+        });
+      }
     }
   }
 }

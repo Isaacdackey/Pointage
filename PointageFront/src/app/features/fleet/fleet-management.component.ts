@@ -5,10 +5,12 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
 import { ToastService } from '../../shared/services/toast.service';
 
+import { FormsModule } from '@angular/forms';
+
 @Component({
   selector: 'app-fleet-management',
   standalone: true,
-  imports: [CommonModule, PageHeaderComponent, StatusBadgeComponent],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, StatusBadgeComponent],
   templateUrl: './fleet-management.component.html',
   styleUrl: './fleet-management.component.scss'
 })
@@ -22,11 +24,49 @@ export class FleetManagementComponent {
   drivers$ = this.mockService.getDrivers();
   trackers$ = this.mockService.getTrackers();
 
+  // Modal Enregistrer un Véhicule
+  isAddModalOpen = false;
+  newVehicle = {
+    registrationNumber: '',
+    make: 'Toyota',
+    model: '',
+    type: 'Fourgonnette livraison',
+    odometerKm: 45000,
+    fuelLevelPercent: 100,
+    assignedDriverId: '',
+    currentTrackerId: 'tr-001'
+  };
+
   formatNumber(val: number): string {
     return val.toLocaleString('fr-FR');
   }
 
   openAddModal() {
-    this.toast.info("Formulaire d'enregistrement de véhicule : affectation traceur et chauffeur.");
+    this.newVehicle = {
+      registrationNumber: '',
+      make: 'Toyota',
+      model: '',
+      type: 'Fourgonnette livraison',
+      odometerKm: 45000,
+      fuelLevelPercent: 100,
+      assignedDriverId: '',
+      currentTrackerId: 'tr-001'
+    };
+    this.isAddModalOpen = true;
+  }
+
+  closeAddModal() {
+    this.isAddModalOpen = false;
+  }
+
+  saveVehicle() {
+    if (!this.newVehicle.registrationNumber || !this.newVehicle.make || !this.newVehicle.model) {
+      this.toast.error('Veuillez renseigner l\'immatriculation, la marque et le modèle.');
+      return;
+    }
+
+    const created = this.mockService.addVehicle(this.newVehicle);
+    this.toast.success(`Véhicule ${created.registrationNumber} enregistré avec succès dans le parc.`);
+    this.isAddModalOpen = false;
   }
 }

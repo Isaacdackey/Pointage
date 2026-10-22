@@ -53,4 +53,123 @@
           </table>
         </div>
       </div>
+
+      <!-- Modal Planifier une Mission -->
+      <div *ngIf="isModalOpen" class="modal-backdrop" (click)="closeModal()" role="dialog" aria-modal="true">
+        <div class="modal-box" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <div class="modal-header-title">
+              <span class="material-symbols-outlined modal-icon">assignment_add</span>
+              <h2>Planifier une Nouvelle Mission</h2>
+            </div>
+            <button class="btn-icon" (click)="closeModal()" aria-label="Fermer">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+
+          <form (ngSubmit)="saveMission()" class="modal-form">
+            <div class="form-group">
+              <label for="m-title">Intitulé de la mission *</label>
+              <input
+                id="m-title"
+                type="text"
+                [(ngModel)]="newMission.title"
+                name="title"
+                required
+                placeholder="ex: Livraison Express Produits Frais"
+                class="form-input"
+              />
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="m-vehicle">Véhicule assigné *</label>
+                <select id="m-vehicle" [(ngModel)]="newMission.vehicleId" name="vehicleId" required class="form-input">
+                  <option value="">-- Sélectionner un véhicule --</option>
+                  <option *ngFor="let v of vehicles$ | async" [value]="v.id">
+                    {{ v.registrationNumber }} ({{ v.make }} {{ v.model }}) - {{ v.status }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="m-driver">Chauffeur assigné *</label>
+                <select id="m-driver" [(ngModel)]="newMission.driverId" name="driverId" required class="form-input">
+                  <option value="">-- Sélectionner un chauffeur --</option>
+                  <option *ngFor="let d of drivers$ | async" [value]="d.id">
+                    {{ d.fullName }} ({{ d.licenseNumber }})
+                  </option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="m-origin">Lieu de départ (Origine) *</label>
+                <input
+                  id="m-origin"
+                  type="text"
+                  [(ngModel)]="newMission.originName"
+                  name="originName"
+                  required
+                  class="form-input"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="m-dest">Destination finale *</label>
+                <input
+                  id="m-dest"
+                  type="text"
+                  [(ngModel)]="newMission.destinationName"
+                  name="destinationName"
+                  required
+                  class="form-input"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="m-dist">Distance estimée (km)</label>
+                <input
+                  id="m-dist"
+                  type="number"
+                  [(ngModel)]="newMission.distanceKm"
+                  name="distanceKm"
+                  min="1"
+                  class="form-input"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="m-time">Date & Heure de départ prévue</label>
+                <input
+                  id="m-time"
+                  type="datetime-local"
+                  [(ngModel)]="newMission.plannedStartTime"
+                  name="plannedStartTime"
+                  class="form-input"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="m-notes">Consignes particulières & sécurité</label>
+              <textarea
+                id="m-notes"
+                [(ngModel)]="newMission.notes"
+                name="notes"
+                rows="2"
+                placeholder="ex: Respect strict de l'itinéraire validé. Déclarer le départ sur l'application mobile."
+                class="form-input"
+              ></textarea>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline" (click)="closeModal()">Annuler</button>
+              <button type="submit" class="btn btn-primary">
+                <span class="material-symbols-outlined">check_circle</span>
+                <span>Créer et assigner la mission</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>

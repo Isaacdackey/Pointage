@@ -176,4 +176,125 @@
           </table>
         </div>
       </section>
+
+      <!-- Modal Enregistrement Véhicule -->
+      <div *ngIf="isAddModalOpen" class="modal-backdrop" (click)="closeAddModal()" role="dialog" aria-modal="true">
+        <div class="modal-box" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <div class="modal-header-title">
+              <span class="material-symbols-outlined modal-icon">directions_car</span>
+              <h2>Enregistrer un Nouveau Véhicule</h2>
+            </div>
+            <button class="btn-icon" (click)="closeAddModal()" aria-label="Fermer">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+
+          <form (ngSubmit)="saveVehicle()" class="modal-form">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="v-reg">Immatriculation *</label>
+                <input
+                  id="v-reg"
+                  type="text"
+                  [(ngModel)]="newVehicle.registrationNumber"
+                  name="registrationNumber"
+                  required
+                  placeholder="ex: DK-9240-BC"
+                  class="form-input"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="v-make">Marque *</label>
+                <input
+                  id="v-make"
+                  type="text"
+                  [(ngModel)]="newVehicle.make"
+                  name="make"
+                  required
+                  placeholder="ex: Toyota"
+                  class="form-input"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="v-model">Modèle *</label>
+                <input
+                  id="v-model"
+                  type="text"
+                  [(ngModel)]="newVehicle.model"
+                  name="model"
+                  required
+                  placeholder="ex: Hilux 4x4"
+                  class="form-input"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="v-type">Catégorie de véhicule</label>
+                <select id="v-type" [(ngModel)]="newVehicle.type" name="type" class="form-input">
+                  <option value="Fourgonnette livraison">Fourgonnette livraison</option>
+                  <option value="Pickup utilitaire">Pickup utilitaire</option>
+                  <option value="Poids Lourd">Poids Lourd</option>
+                  <option value="Utilitaire léger">Utilitaire léger</option>
+                  <option value="Berline de liaison">Berline de liaison</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="v-driver">Chauffeur assigné</label>
+                <select id="v-driver" [(ngModel)]="newVehicle.assignedDriverId" name="assignedDriverId" class="form-input">
+                  <option value="">-- Aucun chauffeur assigné --</option>
+                  <option *ngFor="let d of drivers$ | async" [value]="d.id">
+                    {{ d.fullName }} ({{ d.licenseNumber }})
+                  </option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="v-tracker">Boîtier Traceur GPS</label>
+                <select id="v-tracker" [(ngModel)]="newVehicle.currentTrackerId" name="currentTrackerId" class="form-input">
+                  <option *ngFor="let t of trackers$ | async" [value]="t.id">
+                    {{ t.identifier }} ({{ t.vendor }} {{ t.model }})
+                  </option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="v-odo">Kilométrage initial (km)</label>
+                <input
+                  id="v-odo"
+                  type="number"
+                  [(ngModel)]="newVehicle.odometerKm"
+                  name="odometerKm"
+                  min="0"
+                  class="form-input"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="v-fuel">Niveau de carburant (%)</label>
+                <input
+                  id="v-fuel"
+                  type="number"
+                  [(ngModel)]="newVehicle.fuelLevelPercent"
+                  name="fuelLevelPercent"
+                  min="0"
+                  max="100"
+                  class="form-input"
+                />
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline" (click)="closeAddModal()">Annuler</button>
+              <button type="submit" class="btn btn-primary">
+                <span class="material-symbols-outlined">save</span>
+                <span>Valider l'enregistrement</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>

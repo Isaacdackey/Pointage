@@ -175,6 +175,21 @@
               <span>Serveur GPS : <strong>Opérationnel</strong></span>
             </div>
 
+            <!-- Bouton Activation Notifications Push / PWA -->
+            <button
+              type="button"
+              class="btn-push-toggle"
+              (click)="enablePushNotifications()"
+              [title]="notificationService.isPermissionGranted() ? 'Notifications Push Actives' : 'Activer les notifications Push'"
+            >
+              <span class="material-symbols-outlined" [style.color]="notificationService.isPermissionGranted() ? '#16a34a' : 'inherit'" aria-hidden="true">
+                {{ notificationService.isPermissionGranted() ? 'notifications_active' : 'notification_add' }}
+              </span>
+              <span class="push-label">
+                {{ notificationService.isPermissionGranted() ? 'Push Actif' : 'Activer Push' }}
+              </span>
+            </button>
+
             <!-- Notifications Bell avec badge reel -->
             <div class="notifications-wrapper">
               <button

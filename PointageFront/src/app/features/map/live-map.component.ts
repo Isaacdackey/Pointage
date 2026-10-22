@@ -127,7 +127,12 @@ export class LiveMapComponent implements AfterViewInit, OnDestroy {
 
       const marker = L.marker([vehicle.lastPosition.latitude, vehicle.lastPosition.longitude], {
         icon: customIcon
-      }).addTo(this.map);
+      });
+
+      // Si un tracé est en cours, n'afficher sur la carte que le véhicule sélectionné
+      if (!this.isTripTraceActive || vehicle.id === this.selectedVehicle?.id) {
+        marker.addTo(this.map);
+      }
 
       marker.on('click', () => {
         this.selectVehicle(vehicle);
@@ -137,14 +142,24 @@ export class LiveMapComponent implements AfterViewInit, OnDestroy {
     });
   }
 
+  isTripTraceActive = false;
+  private tripStartMarker?: L.Marker;
+
   selectVehicle(vehicle: Vehicle): void {
+    if (this.selectedVehicle?.id !== vehicle.id) {
+      this.clearHistoricTrip();
+    }
     this.selectedVehicle = vehicle;
     this.centerOnVehicle(vehicle);
   }
 
+  deselectVehicle(): void {
+    this.selectedVehicle = null;
+    this.clearHistoricTrip();
+  }
+
   centerOnVehicle(vehicle: Vehicle): void {
     if (vehicle.lastPosition && this.map) {
-      // Pan with offset to the left so drawer on the right doesn't cover vehicle
       const lat = vehicle.lastPosition.latitude;
       const lng = vehicle.lastPosition.longitude;
       this.map.flyTo([lat, lng], 14, {
@@ -153,26 +168,73 @@ export class LiveMapComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  private tripStartMarker?: L.Marker;
+  toggleHistoricTrip(): void {
+    if (this.isTripTraceActive) {
+      this.clearHistoricTrip();
+    } else {
+      this.traceHistoricTrip();
+    }
+  }
+
+  clearHistoricTrip(): void {
+    if (this.polyline && this.map) {
+      this.map.removeLayer(this.polyline);
+      this.polyline = undefined;
+    }
+    if (this.tripStartMarker && this.map) {
+      this.map.removeLayer(this.tripStartMarker);
+      this.tripStartMarker = undefined;
+    }
+    this.isTripTraceActive = false;
+
+    // Réafficher tous les autres véhicules sur la carte
+    if (this.map) {
+      this.markers.forEach(marker => {
+        if (!this.map.hasLayer(marker)) {
+          marker.addTo(this.map);
+        }
+      });
+    }
+  }
 
   traceHistoricTrip(): void {
-    if (this.polyline) {
-      this.map.removeLayer(this.polyline);
-    }
-    if (this.tripStartMarker) {
-      this.map.removeLayer(this.tripStartMarker);
+    this.clearHistoricTrip();
+    if (!this.selectedVehicle) return;
+
+    // Coordonnées spécifiques selon le véhicule
+    let tripCoords: L.LatLngExpression[] = [];
+    let startLabel = 'Départ 08:30';
+
+    if (this.selectedVehicle.id === 'v2') {
+      tripCoords = [
+        [14.7300, -17.4400], // Bel-Air
+        [14.7150, -17.4480],
+        [14.7000, -17.4420],
+        [14.6850, -17.4350],
+        [14.7392, -17.4520]  // Position actuelle
+      ];
+      startLabel = 'Départ 07:45';
+    } else if (this.selectedVehicle.id === 'v3') {
+      tripCoords = [
+        [14.7880, -16.9320], // Thiès
+        [14.7910, -16.9280],
+        [14.7930, -16.9260]  // Position actuelle Thiès
+      ];
+      startLabel = 'Départ 06:15';
+    } else {
+      // Par défaut v1 (Port de Dakar -> Diamniadio -> Position actuelle)
+      tripCoords = [
+        [14.6850, -17.4320], // Point de départ (Dakar Port)
+        [14.7100, -17.4450],
+        [14.7350, -17.4200],
+        [14.7480, -17.3600],
+        [14.7400, -17.2800],
+        [14.7300, -17.2000], // Passage Diamniadio
+        [14.7167, -17.4677]  // Position actuelle
+      ];
     }
 
-    // Positions GPS chronologiques réelles enregistrées aujourd'hui (Port de Dakar -> Diamniadio -> Position actuelle)
-    const tripCoords: L.LatLngExpression[] = [
-      [14.6850, -17.4320], // Point de départ (Dakar Port)
-      [14.7100, -17.4450],
-      [14.7350, -17.4200],
-      [14.7480, -17.3600],
-      [14.7400, -17.2800],
-      [14.7300, -17.2000], // Passage Diamniadio
-      [14.7167, -17.4677]  // Position actuelle
-    ];
+    const startPos = tripCoords[0] as [number, number];
 
     // Marqueur du point de départ réel
     const startIcon = L.divIcon({
@@ -192,14 +254,14 @@ export class LiveMapComponent implements AfterViewInit, OnDestroy {
           gap: 3px;
         ">
           <span class="material-symbols-outlined" style="font-size: 13px;">flag</span>
-          <span>Départ 08:30</span>
+          <span>${startLabel}</span>
         </div>
       `,
       iconSize: [95, 26],
       iconAnchor: [47, 13]
     });
 
-    this.tripStartMarker = L.marker([14.6850, -17.4320], { icon: startIcon }).addTo(this.map);
+    this.tripStartMarker = L.marker(startPos, { icon: startIcon }).addTo(this.map);
 
     this.polyline = L.polyline(tripCoords, {
       color: '#ea4c0e',
@@ -209,9 +271,20 @@ export class LiveMapComponent implements AfterViewInit, OnDestroy {
     }).addTo(this.map);
 
     this.polyline.bindTooltip(
-      `<strong>Parcours réel GPS enregistré</strong><br/>Véhicule ${this.selectedVehicle?.registrationNumber || ''}<br/>42 km parcourus aujourd'hui`,
+      `<strong>Parcours réel GPS</strong><br/>Véhicule ${this.selectedVehicle.registrationNumber}<br/>Trajet affiché à la demande`,
       { sticky: true }
     );
+
+    this.isTripTraceActive = true;
+
+    // Masquer tous les autres véhicules sur la carte
+    if (this.map) {
+      this.markers.forEach((marker, vehicleId) => {
+        if (vehicleId !== this.selectedVehicle?.id && this.map.hasLayer(marker)) {
+          this.map.removeLayer(marker);
+        }
+      });
+    }
 
     this.map.fitBounds(this.polyline.getBounds(), { padding: [70, 70] });
   }
@@ -223,6 +296,7 @@ export class LiveMapComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.clearHistoricTrip();
     this.sub?.unsubscribe();
   }
 }

@@ -89,7 +89,7 @@
         <section *ngIf="activeMission" class="actions-section" aria-label="Actions de pointage">
           <!-- Primary Dominant Action (State Machine) -->
           <div class="primary-dominant-action">
-            <!-- 1. State: PLANIFIEE -> Dominant: DÉPART -->
+            <!-- 1. State: PLANIFIEE -> Dominant: DÉCLARER LE DÉPART -->
             <button
               *ngIf="activeMission.status === 'PLANIFIEE'"
               (click)="triggerEvent('DEPART')"
@@ -102,7 +102,29 @@
               </div>
             </button>
 
-            <!-- 2. State: EN_COURS -> Dominant: PAUSE (ou ARRIVÉE) -->
+            <!-- 2. State: DEMANDE_DEMARRAGE -> En attente de validation par le superviseur -->
+            <div *ngIf="activeMission.status === 'DEMANDE_DEMARRAGE'" class="pending-approval-card warning-glow">
+              <span class="material-symbols-outlined pending-icon" aria-hidden="true">hourglass_top</span>
+              <div class="pending-details">
+                <h3 class="pending-title">Départ déclaré &bull; En attente d'acceptation</h3>
+                <p class="pending-sub">
+                  Votre demande a été transmise à la console de supervision. Le trajet commencera dès validation par l'agent de contrôle.
+                </p>
+              </div>
+            </div>
+
+            <!-- 3. State: ATTENTE_VALIDATION -> En attente de clôture par le superviseur -->
+            <div *ngIf="activeMission.status === 'ATTENTE_VALIDATION'" class="pending-approval-card ok-glow">
+              <span class="material-symbols-outlined pending-icon" aria-hidden="true">pending_actions</span>
+              <div class="pending-details">
+                <h3 class="pending-title">Arrivée déclarée &bull; En attente de clôture</h3>
+                <p class="pending-sub">
+                  Arrivée à destination transmise. L'agent de contrôle examine la conformité du trajet pour certifier la fin de mission.
+                </p>
+              </div>
+            </div>
+
+            <!-- 4. State: EN_COURS -> Dominant: PAUSE (ou ARRIVÉE) -->
             <button
               *ngIf="activeMission.status === 'EN_COURS'"
               (click)="triggerEvent('PAUSE')"
@@ -115,7 +137,7 @@
               </div>
             </button>
 
-            <!-- 3. State: EN_PAUSE -> Dominant: REPRISE -->
+            <!-- 5. State: EN_PAUSE -> Dominant: REPRISE -->
             <button
               *ngIf="activeMission.status === 'EN_PAUSE'"
               (click)="triggerEvent('REPRISE')"
@@ -143,6 +165,7 @@
 
             <!-- Incident reporting (Discrete modal/bottom sheet trigger) -->
             <button
+              *ngIf="activeMission.status !== 'ATTENTE_VALIDATION'"
               (click)="openIncidentBottomSheet()"
               class="btn btn-outline incident-secondary-btn"
             >

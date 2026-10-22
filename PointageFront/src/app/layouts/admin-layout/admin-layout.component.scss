@@ -1,6 +1,8 @@
 .admin-shell {
       display: flex;
       min-height: 100vh;
+      max-width: 100vw;
+      overflow-x: hidden;
       background: var(--bg);
     }
 
@@ -236,8 +238,10 @@
       display: flex;
       flex-direction: column;
       min-width: 0;
+      max-width: 100%;
       height: 100vh;
       overflow-y: auto;
+      overflow-x: hidden;
     }
 
     .admin-topbar {
@@ -384,6 +388,31 @@
       box-shadow: 0 0 6px var(--ok);
     }
 
+    .btn-push-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--surface-alt);
+      border: 1px solid var(--line);
+      color: var(--ink);
+      padding: 0.4rem 0.75rem;
+      border-radius: var(--r-md);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+
+      .material-symbols-outlined {
+        font-size: 18px;
+      }
+
+      &:hover {
+        background: var(--surface);
+        border-color: var(--brand);
+        color: var(--brand);
+      }
+    }
+
     .notifications-wrapper {
       position: relative;
     }
@@ -500,10 +529,12 @@
 
     .admin-content-area {
       flex: 1;
-      padding: 2rem;
+      padding: 1.5rem 2rem;
+      max-width: 100%;
+      box-sizing: border-box;
     }
 
-    /* Responsive Drawer <= 1024px */
+    /* Responsive Tablette & Écrans Moyens <= 1024px */
     @media (max-width: 1024px) {
       .admin-sidebar {
         position: fixed;
@@ -538,10 +569,68 @@
       }
 
       .search-box {
-        width: 220px;
+        width: 200px;
       }
 
       .admin-content-area {
-        padding: 1.25rem;
+        padding: 1.25rem 1rem;
+      }
+    }
+
+    /* Responsive Mobile <= 768px */
+    @media (max-width: 768px) {
+      .admin-topbar {
+        height: 60px;
+        padding: 0 0.85rem;
+        gap: 0.5rem;
+      }
+
+      .topbar-left {
+        gap: 0.5rem;
+        flex: 1;
+      }
+
+      .search-box {
+        width: 100%;
+        max-width: 220px;
+
+        input {
+          padding: 0.45rem 0.65rem 0.45rem 2.2rem;
+          font-size: 0.8rem;
+        }
+
+        .search-icon {
+          left: 8px;
+          font-size: 17px;
+        }
+      }
+
+      .topbar-right {
+        gap: 0.5rem;
+      }
+
+      .topbar-user-badge {
+        display: none;
+      }
+
+      .admin-content-area {
+        padding: 1rem 0.75rem;
+      }
+
+      .notifications-popover {
+        right: -50px;
+        width: calc(100vw - 32px);
+        max-width: 340px;
+      }
+    }
+
+    /* Petit Mobile <= 480px */
+    @media (max-width: 480px) {
+      .search-box {
+        display: none; // Cache le champ de recherche direct pour laisser la place aux actions
+      }
+
+      .admin-content-area {
+        padding: 0.85rem 0.5rem;
       }
     }

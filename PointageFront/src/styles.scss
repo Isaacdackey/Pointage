@@ -74,6 +74,8 @@
 
 html, body {
   height: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 body {
@@ -84,6 +86,7 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 /* Accessible focus ring */
@@ -269,6 +272,25 @@ body {
     font-size: 0.88rem;
     color: var(--ink-2);
     margin-top: 0.25rem;
+  }
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+
+    h1 {
+      font-size: 1.25rem;
+    }
+
+    /* Boutons d'action dans le header prennent toute la largeur sur mobile */
+    .header-actions,
+    .export-actions,
+    & > button,
+    & > a {
+      width: 100%;
+      justify-content: center;
+    }
   }
 }
 

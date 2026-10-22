@@ -75,6 +75,75 @@ export class ReportsComponent {
   }
 
   exportData(format: 'CSV' | 'EXCEL' | 'PDF') {
-    this.toast.info(`Génération de l'export ${format} pour la période "${this.selectedPeriod}" en cours...`);
+    if (format === 'CSV') {
+      this.downloadCSV();
+    } else if (format === 'EXCEL') {
+      this.downloadExcel();
+    } else if (format === 'PDF') {
+      this.generatePDF();
+    }
+  }
+
+  private downloadCSV() {
+    const headers = ['Vehicule', 'Chauffeur', 'Statut', 'Missions Realisees', 'Distance (km)', 'Vitesse Moyenne (km/h)', 'Ponctualite (%)', 'Alertes Detectees', 'Carburant Estime (L)'];
+    const rows = this.filteredReports.map(r => [
+      `"${r.vehicleReg}"`,
+      `"${r.driverName}"`,
+      `"${r.category === 'ACTIVE' ? 'En mission' : (r.category === 'AVAILABLE' ? 'Disponible' : 'Autre')}"`,
+      r.totalMissions,
+      r.totalKm,
+      r.avgSpeedKph,
+      `${r.ontimePercent}%`,
+      r.alertsCount,
+      r.fuelEstimatedLiters
+    ]);
+
+    const csvContent = '\uFEFF' + [headers.join(';'), ...rows.map(e => e.join(';'))].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `geofleet_rapport_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    this.toast.success('Export CSV généré et téléchargé avec succès !');
+  }
+
+  private downloadExcel() {
+    const headers = ['Véhicule', 'Chauffeur', 'Statut', 'Missions Réalisées', 'Distance (km)', 'Vitesse Moy. (km/h)', 'Ponctualité (%)', 'Alertes', 'Carburant (L)'];
+    const rows = this.filteredReports.map(r => [
+      r.vehicleReg,
+      r.driverName,
+      r.category === 'ACTIVE' ? 'En mission' : (r.category === 'AVAILABLE' ? 'Disponible' : 'Autre'),
+      r.totalMissions,
+      r.totalKm,
+      r.avgSpeedKph,
+      `${r.ontimePercent}%`,
+      r.alertsCount,
+      r.fuelEstimatedLiters
+    ]);
+
+    const tsvContent = '\uFEFF' + [headers.join('\t'), ...rows.map(e => e.join('\t'))].join('\r\n');
+    const blob = new Blob([tsvContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `geofleet_synthese_${new Date().toISOString().slice(0, 10)}.xls`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    this.toast.success('Feuille Excel (XLSX/XLS) téléchargée avec succès !');
+  }
+
+  private generatePDF() {
+    this.toast.info('Préparation de l\'impression du rapport PDF...');
+    setTimeout(() => {
+      window.print();
+    }, 250);
   }
 }

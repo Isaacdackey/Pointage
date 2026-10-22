@@ -102,10 +102,10 @@ export class DriverAppComponent implements OnInit, OnDestroy {
 
     this.mockService.declareDriverEvent(type, this.activeMission.id).subscribe(() => {
       const messages: Record<string, string> = {
-        DEPART: 'Départ certifié et transmis en direct au régulateur.',
+        DEPART: 'Départ déclaré ! Transmis au centre de contrôle en attente d\'acceptation.',
         PAUSE: 'Pause déclarée. Le véhicule est en arrêt momentané.',
         REPRISE: 'Reprise de route enregistrée.',
-        ARRIVEE: 'Arrivée validée et mission terminée avec succès !'
+        ARRIVEE: 'Arrivée déclarée ! En attente de validation et clôture par le superviseur.'
       };
       this.toast.success(messages[type] || 'Pointage enregistré.');
     });

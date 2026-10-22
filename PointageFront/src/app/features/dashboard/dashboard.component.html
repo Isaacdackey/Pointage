@@ -143,7 +143,7 @@
                   <app-status-badge [status]="alt.status"></app-status-badge>
                   <button
                     *ngIf="alt.status !== 'CLOTUREE'"
-                    (click)="resolveAlert(alt.id)"
+                    (click)="openResolveModal(alt)"
                     class="btn btn-outline alert-btn"
                   >
                     Traiter l'anomalie
@@ -151,6 +151,73 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de Traitement d'Anomalie -->
+      <div *ngIf="selectedAlertToResolve" class="modal-backdrop" (click)="closeResolveModal()" role="dialog" aria-modal="true">
+        <div class="modal-box" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <div class="modal-header-title">
+              <span class="material-symbols-outlined modal-icon" aria-hidden="true">verified_user</span>
+              <h2>Traitement de l'anomalie</h2>
+            </div>
+            <button class="btn-icon" (click)="closeResolveModal()" aria-label="Fermer la boîte de dialogue">
+              <span class="material-symbols-outlined" aria-hidden="true">close</span>
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <!-- Rappel de l'anomalie -->
+            <div class="alert-summary-box">
+              <div class="summary-top">
+                <span class="plate-highlight">{{ selectedAlertToResolve.vehicleReg }}</span>
+                <span class="type-highlight">{{ selectedAlertToResolve.type }}</span>
+                <span class="time-sub">{{ selectedAlertToResolve.occurredAt }}</span>
+              </div>
+              <p class="summary-desc">{{ selectedAlertToResolve.description }}</p>
+            </div>
+
+            <!-- Bouton Voir sur la carte -->
+            <div class="map-shortcut-bar">
+              <button type="button" class="btn btn-outline btn-sm btn-map" (click)="viewAlertOnMap()">
+                <span class="material-symbols-outlined" aria-hidden="true">map</span>
+                Localiser le véhicule sur la carte
+              </button>
+            </div>
+
+            <!-- Motif de résolution -->
+            <div class="form-group">
+              <label for="resolutionReasonSelect">Motif de clôture / justification :</label>
+              <select id="resolutionReasonSelect" [(ngModel)]="resolutionReason" class="form-select">
+                <option value="CHAUFFEUR_CONTACTE">Chauffeur contacté & situation régularisée</option>
+                <option value="DEVIATION_JUSTIFIEE">Déviation / itinéraire bis autorisé (travaux/bouchons)</option>
+                <option value="FAUSSE_ALERTE">Fausse alerte / imprécision ponctuelle GPS</option>
+                <option value="MISSION_TERMINEE">Mission terminée / arrivée confirmée</option>
+                <option value="AUTRE">Autre vérification effectuée</option>
+              </select>
+            </div>
+
+            <!-- Commentaire optionnel -->
+            <div class="form-group">
+              <label for="resolutionComment">Commentaire de traçabilité (optionnel) :</label>
+              <textarea
+                id="resolutionComment"
+                [(ngModel)]="resolutionComment"
+                rows="2"
+                class="form-input"
+                placeholder="Ex : Chauffeur a contourné un barrage de gendarmerie, reprise immédiate de l'axe principal."
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" (click)="closeResolveModal()">Annuler</button>
+            <button type="button" class="btn btn-primary" (click)="confirmResolveAlert()">
+              <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+              Valider & Clôturer
+            </button>
           </div>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../shared/services/toast.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-driver-layout',
@@ -15,8 +16,13 @@ export class DriverLayoutComponent {
   private authService = inject(AuthService);
   private toastService = inject(ToastService);
   private router = inject(Router);
+  notificationService = inject(NotificationService);
 
   user$ = this.authService.currentUser$;
+
+  enablePushNotifications() {
+    this.notificationService.requestPermission();
+  }
 
   onLogout() {
     this.authService.logout();

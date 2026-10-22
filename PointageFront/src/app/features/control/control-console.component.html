@@ -101,17 +101,21 @@
             <tbody>
               <tr *ngFor="let m of missions$ | async">
                 <td>
-                  <strong>{{ m.code }}</strong><br/>
+                  <span class="mission-code">{{ m.code }}</span>
                   <span class="subtext">{{ m.title }}</span>
                 </td>
                 <td>
-                  <strong>{{ m.vehicleReg }}</strong><br/>
+                  <span class="mission-code">{{ m.vehicleReg }}</span>
                   <span class="subtext">{{ m.driverName }}</span>
                 </td>
                 <td>
-                  <span *ngIf="m.departureDeclared" class="time-check">
-                    <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">check_circle</span>
+                  <span *ngIf="m.departureDeclared && m.actualStartTime" class="time-check">
+                    <span class="material-symbols-outlined" style="font-size: 15px;" aria-hidden="true">check_circle</span>
                     Déclaré à {{ formatTime(m.actualStartTime) }}
+                  </span>
+                  <span *ngIf="m.departureDeclared && !m.actualStartTime" class="time-check" style="color: #0d9488;">
+                    <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">schedule_send</span>
+                    Départ signalé
                   </span>
                   <span *ngIf="!m.departureDeclared" class="time-pending">
                     <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">schedule</span>
@@ -130,33 +134,64 @@
                 </td>
                 <td>
                   <div *ngIf="m.departureDeclared && m.gpsDepartureDetected" class="tag-ok">
-                    <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">verified</span>
-                    Conforme (Trajet vérifié)
+                    <span class="material-symbols-outlined" style="font-size: 15px;" aria-hidden="true">verified</span>
+                    Conforme
                   </div>
                   <div *ngIf="!m.departureDeclared && m.gpsDepartureDetected" class="tag-warning">
-                    <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">warning</span>
-                    Mouvement sans déclaration
+                    <span class="material-symbols-outlined" style="font-size: 15px;" aria-hidden="true">warning</span>
+                    Sans déclaration
                   </div>
                   <div *ngIf="!m.departureDeclared && !m.gpsDepartureDetected" class="tag-neutral">
-                    En attente de départ
+                    En attente
                   </div>
                   <div *ngIf="m.departureDeclared && !m.gpsDepartureDetected" class="tag-audit">
-                    <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">search</span>
-                    Déclaré mais immobile
+                    <span class="material-symbols-outlined" style="font-size: 15px;" aria-hidden="true">search</span>
+                    Déclaré immobile
                   </div>
                 </td>
                 <td>
                   <app-status-badge [status]="m.status"></app-status-badge>
                 </td>
-                <td style="text-align: right;">
+                <td class="action-cell">
+                  <!-- 1. En attente d'acceptation du départ -->
                   <button
-                    class="btn btn-outline btn-xs"
-                    [disabled]="!m.departureDeclared"
-                    [title]="!m.departureDeclared ? 'Le départ doit être déclaré avant validation' : 'Valider le pointage'"
-                    (click)="askValidation(m)"
+                    *ngIf="m.status === 'DEMANDE_DEMARRAGE'"
+                    class="btn btn-action btn-accept"
+                    (click)="acceptDeparture(m)"
+                    title="Accepter et valider officiellement le départ de la mission"
                   >
-                    Valider le pointage
+                    <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+                    <span>Accepter départ</span>
                   </button>
+
+                  <!-- 2. En attente de validation clôture -->
+                  <button
+                    *ngIf="m.status === 'ATTENTE_VALIDATION'"
+                    class="btn btn-action btn-close-mission"
+                    (click)="validateAndClose(m)"
+                    title="Valider la fin de mission et certifier le trajet"
+                  >
+                    <span class="material-symbols-outlined" aria-hidden="true">verified</span>
+                    <span>Valider & Clôturer</span>
+                  </button>
+
+                  <!-- 3. Déjà en cours -->
+                  <span *ngIf="m.status === 'EN_COURS'" class="state-pill state-tracking">
+                    <span class="material-symbols-outlined" aria-hidden="true">sensors</span>
+                    <span>Suivi GPS actif</span>
+                  </span>
+
+                  <!-- 4. Déjà terminée -->
+                  <span *ngIf="m.status === 'TERMINEE'" class="state-pill state-done">
+                    <span class="material-symbols-outlined" aria-hidden="true">verified</span>
+                    <span>Mission certifiée</span>
+                  </span>
+
+                  <!-- 5. Planifiée -->
+                  <span *ngIf="m.status === 'PLANIFIEE'" class="state-pill state-waiting">
+                    <span class="material-symbols-outlined" aria-hidden="true">hourglass_empty</span>
+                    <span>En attente chauffeur</span>
+                  </span>
                 </td>
               </tr>
             </tbody>

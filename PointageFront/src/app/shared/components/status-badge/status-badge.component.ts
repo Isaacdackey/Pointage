@@ -26,8 +26,10 @@ const STATUS_DICTIONARY: Record<string, StatusConfig> = {
   // Statuts Mission
   'BROUILLON': { label: 'Brouillon', category: 'neutral', icon: 'edit_note' },
   'PLANIFIEE': { label: 'Planifiée', category: 'neutral', icon: 'schedule' },
+  'DEMANDE_DEMARRAGE': { label: 'Départ en attente validation', category: 'warn', icon: 'hourglass_top' },
   'EN_COURS': { label: 'En cours', category: 'info', icon: 'navigation' },
   'EN_PAUSE': { label: 'En pause', category: 'warn', icon: 'pause_circle' },
+  'ATTENTE_VALIDATION': { label: 'Arrivée en attente clôture', category: 'warn', icon: 'pending' },
   'TERMINEE': { label: 'Terminée', category: 'ok', icon: 'task_alt' },
   'EN_ANOMALIE': { label: 'En anomalie', category: 'danger', icon: 'error' },
   'ANNULEE': { label: 'Annulée', category: 'neutral', icon: 'cancel' },

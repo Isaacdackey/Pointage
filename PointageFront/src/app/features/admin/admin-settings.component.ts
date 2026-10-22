@@ -74,7 +74,7 @@ export class AdminSettingsComponent {
       actor: 'Amadou Diallo',
       role: 'ADMIN',
       action: 'VEHICLE_TRACKER_LINK',
-      targetEntity: 'DK-4920-BA ➔ tr-001',
+      targetEntity: 'DK-4920-BA -> tr-001',
       details: 'Association temporelle du traceur Teltonika FMB920 au véhicule Hilux.',
       ipAddress: '196.12.100.10'
     }

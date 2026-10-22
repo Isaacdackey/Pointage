@@ -66,6 +66,17 @@ export class ControlConsoleComponent {
     return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   }
 
+  acceptDeparture(mission: Mission) {
+    this.mockService.acceptDeparture(mission.id);
+    this.toast.success(`Départ accepté pour la mission ${mission.code} (${mission.vehicleReg}). Le chronomètre et le suivi GPS sont officiellement enclenchés.`);
+  }
+
+  validateAndClose(mission: Mission) {
+    this.pendingMissionToValidate = mission;
+    this.confirmMessage = `Confirmez-vous la conformité de l'arrivée et la clôture définitive de la mission ${mission.code} (${mission.vehicleReg} - ${mission.driverName}) ?`;
+    this.confirmModalOpen = true;
+  }
+
   askValidation(mission: Mission) {
     if (!mission.departureDeclared) {
       this.toast.error("Impossible de valider : le départ n'a pas encore été déclaré.");
@@ -78,10 +89,16 @@ export class ControlConsoleComponent {
 
   confirmValidation() {
     if (this.pendingMissionToValidate) {
-      const code = this.pendingMissionToValidate.code;
+      const mission = this.pendingMissionToValidate;
       this.confirmModalOpen = false;
       this.pendingMissionToValidate = null;
-      this.toast.success(`Le pointage de la mission ${code} a été certifié et validé avec succès.`);
+      if (mission.status === 'ATTENTE_VALIDATION') {
+        this.mockService.validateAndCloseMission(mission.id);
+      } else if (mission.status === 'DEMANDE_DEMARRAGE') {
+        this.mockService.acceptDeparture(mission.id);
+      } else {
+        this.toast.success(`Le pointage de la mission ${mission.code} a été certifié.`);
+      }
     }
   }
 
