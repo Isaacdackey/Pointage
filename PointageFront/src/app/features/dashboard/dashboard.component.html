@@ -1,0 +1,157 @@
+<div class="dashboard-page">
+      <!-- Welcome Header -->
+      <app-page-header
+        title="Supervision & Vue d'Ensemble"
+        subtitle="Suivi en temps réel de la flotte, des pointages et de la conformité des trajets."
+      >
+        <div class="header-actions">
+          <div class="live-pill" role="status" aria-live="polite">
+            <span class="pulse-dot"></span>
+            Flux GPS Temps Réel Actif
+          </div>
+          <a routerLink="/map" class="btn btn-primary">
+            <span class="material-symbols-outlined" aria-hidden="true">map</span>
+            Voir la Carte Live
+          </a>
+        </div>
+      </app-page-header>
+
+      <!-- KPI Stat Cards -->
+      <section class="kpi-grid" aria-label="Indicateurs clés de performance">
+        <!-- Card 1: Active Fleet (excluding maintenance) -->
+        <app-kpi-card
+          label="Véhicules Actifs en Flotte"
+          [value]="(activeVehiclesCount$ | async) + ' véhicules'"
+          hint="Hors maintenance et indisponibles"
+          icon="directions_car"
+          iconColor="var(--info)"
+        ></app-kpi-card>
+
+        <!-- Card 2: Today's Missions (Orange Highlight) -->
+        <app-kpi-card
+          label="Missions Aujourd'hui"
+          [value]="(todayMissionsCount$ | async) + ' Trajets'"
+          hint="Calculées depuis le planning temps réel"
+          icon="assignment_turned_in"
+          [highlight]="true"
+        ></app-kpi-card>
+
+        <!-- Card 3: Open Alerts -->
+        <app-kpi-card
+          label="Alertes Ouvertes"
+          [value]="(openAlertsCount$ | async) + ' En cours'"
+          hint="Nouvelles et prises en charge"
+          icon="warning"
+          iconColor="var(--danger)"
+        ></app-kpi-card>
+
+        <!-- Card 4: Compliance rate -->
+        <app-kpi-card
+          label="Taux de Ponctualité"
+          value="96.4%"
+          hint="+2.18% de conformité horaire"
+          icon="trending_up"
+          iconColor="var(--ok)"
+        ></app-kpi-card>
+      </section>
+
+      <!-- Two-column grid : Live Fleet Status & Recent Alerts -->
+      <div class="content-columns">
+        <!-- Live Fleet status -->
+        <div class="card">
+          <div class="panel-header">
+            <h2 class="section-title">État des Véhicules & Dernier Pointage</h2>
+            <a routerLink="/fleet" class="link-more">
+              Gérer le parc <span aria-hidden="true">&rarr;</span>
+            </a>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <caption class="sr-only">Liste des véhicules avec dernier pointage GPS et chauffeur assigné</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Véhicule</th>
+                  <th scope="col">Chauffeur</th>
+                  <th scope="col">Statut</th>
+                  <th scope="col" class="num-cell">Dernière Vitesse</th>
+                  <th scope="col">Fraîcheur GPS</th>
+                  <th scope="col" style="text-align: center;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let v of vehicles$ | async">
+                  <td>
+                    <div class="vehicle-cell">
+                      <strong>{{ v.registrationNumber }}</strong>
+                      <span class="subtext">{{ v.make }} {{ v.model }}</span>
+                    </div>
+                  </td>
+                  <td>{{ v.assignedDriverName || 'Non affecté' }}</td>
+                  <td>
+                    <app-status-badge [status]="v.status"></app-status-badge>
+                  </td>
+                  <td class="num-cell">
+                    <span *ngIf="v.lastPosition" class="speed-val">
+                      {{ v.lastPosition.speedKph }} km/h
+                    </span>
+                    <span *ngIf="!v.lastPosition" class="subtext">-</span>
+                  </td>
+                  <td>
+                    <div class="freshness-tag" [ngClass]="getFreshnessClass(v.lastPosition?.freshnessSeconds)">
+                      <span class="freshness-dot"></span>
+                      {{ formatFreshness(v.lastPosition?.freshnessSeconds) }}
+                    </div>
+                  </td>
+                  <td style="text-align: center;">
+                    <a
+                      [routerLink]="['/map']"
+                      [queryParams]="{ vehicle: v.id }"
+                      class="btn btn-outline action-btn"
+                      [attr.aria-label]="'Localiser ' + v.registrationNumber + ' sur la carte'"
+                    >
+                      <span class="material-symbols-outlined" aria-hidden="true">near_me</span>
+                    </a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Alerts & Action Center -->
+        <div class="card">
+          <div class="panel-header">
+            <h2 class="section-title">Alertes & Anomalies Détectées</h2>
+            <a routerLink="/control" class="link-more">
+              Console de contrôle <span aria-hidden="true">&rarr;</span>
+            </a>
+          </div>
+
+          <div class="alerts-list">
+            <div *ngFor="let alt of alerts$ | async" class="alert-item" [ngClass]="alt.severity.toLowerCase()">
+              <div class="alert-badge" [ngClass]="alt.severity.toLowerCase()">{{ alt.severity }}</div>
+              <div class="alert-body">
+                <div class="alert-top">
+                  <span class="alert-title">
+                    <strong>{{ alt.vehicleReg }}</strong> &bull; {{ alt.type }}
+                  </span>
+                  <span class="alert-time">{{ alt.occurredAt }}</span>
+                </div>
+                <p class="alert-desc">{{ alt.description }}</p>
+                <div class="alert-actions">
+                  <app-status-badge [status]="alt.status"></app-status-badge>
+                  <button
+                    *ngIf="alt.status !== 'CLOTUREE'"
+                    (click)="resolveAlert(alt.id)"
+                    class="btn btn-outline alert-btn"
+                  >
+                    Traiter l'anomalie
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>

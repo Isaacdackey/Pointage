@@ -1,0 +1,179 @@
+<div class="fleet-mgmt-container">
+      <app-page-header
+        title="Gestion de la Flotte, Véhicules & Traceurs GPS"
+        subtitle="Inventaire des véhicules, chauffeurs et état des boîtiers télématiques embarqués."
+      >
+        <button class="btn btn-primary" (click)="openAddModal()">
+          <span class="material-symbols-outlined" aria-hidden="true">add</span>
+          Enregistrer un Véhicule
+        </button>
+      </app-page-header>
+
+      <!-- Tabs with ARIA -->
+      <div class="tabs-bar" role="tablist" aria-label="Catégories de la flotte">
+        <button
+          role="tab"
+          id="tab-vehicules"
+          aria-controls="panel-vehicules"
+          [attr.aria-selected]="activeTab === 'VEHICULES'"
+          [class.active]="activeTab === 'VEHICULES'"
+          (click)="activeTab = 'VEHICULES'"
+          class="tab-btn"
+        >
+          Véhicules ({{ (vehicles$ | async)?.length }})
+        </button>
+
+        <button
+          role="tab"
+          id="tab-chauffeurs"
+          aria-controls="panel-chauffeurs"
+          [attr.aria-selected]="activeTab === 'CHAUFFEURS'"
+          [class.active]="activeTab === 'CHAUFFEURS'"
+          (click)="activeTab = 'CHAUFFEURS'"
+          class="tab-btn"
+        >
+          Chauffeurs ({{ (drivers$ | async)?.length }})
+        </button>
+
+        <button
+          role="tab"
+          id="tab-traceurs"
+          aria-controls="panel-traceurs"
+          [attr.aria-selected]="activeTab === 'TRACEURS'"
+          [class.active]="activeTab === 'TRACEURS'"
+          (click)="activeTab = 'TRACEURS'"
+          class="tab-btn"
+        >
+          Traceurs GPS ({{ (trackers$ | async)?.length }})
+        </button>
+      </div>
+
+      <!-- Tab 1: Véhicules -->
+      <section
+        *ngIf="activeTab === 'VEHICULES'"
+        id="panel-vehicules"
+        role="tabpanel"
+        aria-labelledby="tab-vehicules"
+        class="card"
+      >
+        <div class="table-container">
+          <table class="data-table">
+            <caption class="sr-only">Inventaire complet des véhicules de la flotte</caption>
+            <thead>
+              <tr>
+                <th scope="col">Immatriculation</th>
+                <th scope="col">Marque & Modèle</th>
+                <th scope="col">Type</th>
+                <th scope="col">Chauffeur Assigné</th>
+                <th scope="col">Traceur Rattaché</th>
+                <th scope="col" class="num-cell">Kilométrage</th>
+                <th scope="col">Carburant</th>
+                <th scope="col" style="text-align: right;">Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let v of vehicles$ | async">
+                <td><strong class="plate-badge">{{ v.registrationNumber }}</strong></td>
+                <td>{{ v.make }} {{ v.model }}</td>
+                <td>{{ v.type }}</td>
+                <td>{{ v.assignedDriverName || 'Non affecté' }}</td>
+                <td><code class="tracker-code">{{ v.currentTrackerId }}</code></td>
+                <td class="num-cell">{{ formatNumber(v.odometerKm) }} km</td>
+                <td>
+                  <div class="fuel-bar-wrap" role="progressbar" [attr.aria-valuenow]="v.fuelLevelPercent" aria-valuemin="0" aria-valuemax="100">
+                    <div class="fuel-bar" [style.width.%]="v.fuelLevelPercent"></div>
+                    <span>{{ v.fuelLevelPercent }}%</span>
+                  </div>
+                </td>
+                <td style="text-align: right;">
+                  <app-status-badge [status]="v.status"></app-status-badge>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Tab 2: Chauffeurs -->
+      <section
+        *ngIf="activeTab === 'CHAUFFEURS'"
+        id="panel-chauffeurs"
+        role="tabpanel"
+        aria-labelledby="tab-chauffeurs"
+        class="card"
+      >
+        <div class="table-container">
+          <table class="data-table">
+            <caption class="sr-only">Liste des chauffeurs certifiés et leurs assignations</caption>
+            <thead>
+              <tr>
+                <th scope="col">Nom Complet</th>
+                <th scope="col">Numéro de Permis</th>
+                <th scope="col">Téléphone</th>
+                <th scope="col">Véhicule Habituel</th>
+                <th scope="col" class="num-cell">Missions Réalisées</th>
+                <th scope="col" class="num-cell">Score</th>
+                <th scope="col" style="text-align: right;">Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let d of drivers$ | async">
+                <td><strong>{{ d.fullName }}</strong></td>
+                <td><code>{{ d.licenseNumber }}</code></td>
+                <td>{{ d.phone }}</td>
+                <td>{{ d.assignedVehicleId || 'Non rattaché' }}</td>
+                <td class="num-cell"><strong>{{ d.completedMissions }}</strong></td>
+                <td class="num-cell">
+                  <span class="rating-cell">
+                    <span class="material-symbols-outlined" style="font-size: 15px; color: #f59e0b;" aria-hidden="true">star</span>
+                    {{ d.rating }} / 5
+                  </span>
+                </td>
+                <td style="text-align: right;">
+                  <app-status-badge [status]="d.status"></app-status-badge>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Tab 3: Traceurs GPS -->
+      <section
+        *ngIf="activeTab === 'TRACEURS'"
+        id="panel-traceurs"
+        role="tabpanel"
+        aria-labelledby="tab-traceurs"
+        class="card"
+      >
+        <div class="table-container">
+          <table class="data-table">
+            <caption class="sr-only">Parc des traceurs GPS et état de transmission télématique</caption>
+            <thead>
+              <tr>
+                <th scope="col">Identifiant Unique (IMEI)</th>
+                <th scope="col">Fournisseur</th>
+                <th scope="col">Modèle</th>
+                <th scope="col">Protocole</th>
+                <th scope="col" class="num-cell">Batterie</th>
+                <th scope="col">Dernier Signal</th>
+                <th scope="col" style="text-align: right;">Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let t of trackers$ | async">
+                <td><code class="tracker-code">{{ t.identifier }}</code></td>
+                <td>{{ t.vendor }}</td>
+                <td>{{ t.model }}</td>
+                <td><span class="badge-proto">{{ t.protocol }}</span></td>
+                <td class="num-cell">{{ t.batteryPercent }}%</td>
+                <td>{{ t.lastSeenAt }}</td>
+                <td style="text-align: right;">
+                  <app-status-badge [status]="t.status"></app-status-badge>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>

@@ -1,0 +1,35 @@
+<div *ngIf="isOpen" class="dialog-backdrop" (click)="onBackdropClick($event)">
+      <div
+        class="dialog-box"
+        role="dialog"
+        aria-modal="true"
+        [attr.aria-labelledby]="'dialog-title-' + id"
+      >
+        <div class="dialog-header">
+          <div class="dialog-icon" [ngClass]="type || 'info'">
+            <span class="material-symbols-outlined" aria-hidden="true">{{ iconName }}</span>
+          </div>
+          <h2 [id]="'dialog-title-' + id" class="dialog-title">{{ title }}</h2>
+        </div>
+
+        <p class="dialog-message">{{ message }}</p>
+
+        <div class="dialog-actions">
+          <button
+            type="button"
+            class="btn btn-outline"
+            (click)="cancel.emit()"
+          >
+            {{ cancelText }}
+          </button>
+          <button
+            type="button"
+            class="btn"
+            [ngClass]="confirmBtnClass"
+            (click)="confirm.emit()"
+          >
+            {{ confirmText }}
+          </button>
+        </div>
+      </div>
+    </div>

@@ -1,0 +1,24 @@
+<div class="toast-viewport" aria-live="polite" aria-atomic="true">
+      <div
+        *ngFor="let toast of toasts$ | async"
+        class="toast-item"
+        [ngClass]="'toast-' + toast.type"
+        role="status"
+      >
+        <span class="material-symbols-outlined toast-icon" aria-hidden="true">
+          {{ getIcon(toast.type) }}
+        </span>
+        <div class="toast-content">
+          <strong *ngIf="toast.title" class="toast-title">{{ toast.title }}</strong>
+          <span class="toast-message">{{ toast.message }}</span>
+        </div>
+        <button
+          type="button"
+          class="toast-close"
+          (click)="dismiss(toast.id)"
+          aria-label="Fermer la notification"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+      </div>
+    </div>

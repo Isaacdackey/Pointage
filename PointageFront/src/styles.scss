@@ -1,0 +1,422 @@
+/* ==========================================================================
+   GeoFleet Design System Tokens & Global Base
+   ========================================================================== */
+
+/* Leaflet Map core styles */
+@import 'leaflet/dist/leaflet.css';
+
+:root {
+  /* Brand (Orange fonce WCAG AA conforme, ratio > 4.5:1 sur blanc) */
+  --brand: #ea4c0e;
+  --brand-hover: #cf3d06;
+  --brand-active: #b53303;
+  --brand-soft: #fff4ed;
+  --brand-border: #fed7aa;
+
+  /* Echelle Zinc unique */
+  --ink: #09090b;        /* Zinc 950 - Titres, textes primaires */
+  --ink-2: #52525b;      /* Zinc 600 - Sous-titres, labels */
+  --ink-3: #71717a;      /* Zinc 500 - Textes secondaires */
+  --ink-muted: #a1a1aa;  /* Zinc 400 - Placeholders, icones tertiaires */
+
+  --line: #e4e4e7;       /* Zinc 200 - Bordures principales */
+  --line-subtle: #f4f4f5;/* Zinc 100 - Separateurs discrets */
+
+  --bg: #f8fafc;         /* Slate/Zinc tres doux pour le fond de page */
+  --surface: #ffffff;    /* Cartes et panneaux */
+  --surface-alt: #fafafa;/* Arriere-plans de formulaires, barres */
+
+  /* Couleurs semantiques distinctes */
+  --ok: #16a34a;
+  --ok-soft: #f0fdf4;
+  --ok-border: #bbf7d0;
+
+  --warn: #d97706;
+  --warn-soft: #fffbeb;
+  --warn-border: #fde68a;
+
+  --danger: #dc2626;
+  --danger-soft: #fef2f2;
+  --danger-border: #fecaca;
+
+  --info: #0284c7;
+  --info-soft: #f0f9ff;
+  --info-border: #bae6fd;
+
+  /* Rayons */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-xl: 20px;
+  --r-pill: 9999px;
+
+  /* Ombres douces et precises */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --shadow-brand: 0 4px 14px rgba(234, 76, 14, 0.25);
+
+  /* Typographie */
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+
+/* ==========================================================================
+   Reset & Base
+   ========================================================================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg);
+  color: var(--ink);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Accessible focus ring */
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Respect motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Material Symbols alignment */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  vertical-align: middle;
+  user-select: none;
+}
+
+/* Visually hidden utility for screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ==========================================================================
+   Composants CSS Universels
+   ========================================================================== */
+
+/* Cartes */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Boutons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.15rem;
+  min-height: 40px;
+  border-radius: var(--r-md);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .material-symbols-outlined {
+    font-size: 19px;
+  }
+}
+
+/* Un seul bouton primaire dans toute l'application : Brand Orange */
+.btn-primary {
+  background: var(--brand);
+  color: #ffffff;
+  border-color: var(--brand);
+
+  &:hover {
+    background: var(--brand-hover);
+    border-color: var(--brand-hover);
+  }
+
+  &:active {
+    background: var(--brand-active);
+  }
+}
+
+.btn-secondary {
+  background: var(--ink);
+  color: #ffffff;
+  border-color: var(--ink);
+
+  &:hover {
+    background: #27272a;
+    border-color: #27272a;
+  }
+}
+
+.btn-outline {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line);
+
+  &:hover {
+    background: var(--surface-alt);
+    border-color: var(--ink-3);
+  }
+}
+
+.btn-danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: var(--danger-border);
+
+  &:hover {
+    background: var(--danger);
+    color: #ffffff;
+    border-color: var(--danger);
+  }
+}
+
+.btn-icon {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: var(--surface-alt);
+    color: var(--ink);
+    border-color: var(--ink-muted);
+  }
+}
+
+/* En-tete de page standardise */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  p {
+    font-size: 0.88rem;
+    color: var(--ink-2);
+    margin-top: 0.25rem;
+  }
+}
+
+/* Tableaux de donnees */
+.table-responsive {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.88rem;
+
+  caption {
+    font-size: 0.8rem;
+    color: var(--ink-3);
+    text-align: left;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+  }
+
+  thead th {
+    background: var(--surface-alt);
+    padding: 0.85rem 1rem;
+    color: var(--ink-2);
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  tbody tr {
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background-color: #fafafa;
+    }
+  }
+
+  tbody td {
+    padding: 0.95rem 1rem;
+    border-bottom: 1px solid var(--line-subtle);
+    color: var(--ink);
+    vertical-align: middle;
+  }
+
+  /* Chiffres toujours alignes a droite avec tabular-nums */
+  .cell-numeric,
+  td.numeric,
+  th.numeric {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cell-mono {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+  }
+}
+
+/* Badges generaux */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--r-pill);
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+
+  .material-symbols-outlined {
+    font-size: 14px;
+  }
+
+  &.badge-ok {
+    background: var(--ok-soft);
+    color: var(--ok);
+    border: 1px solid var(--ok-border);
+  }
+
+  &.badge-warn {
+    background: var(--warn-soft);
+    color: var(--warn);
+    border: 1px solid var(--warn-border);
+  }
+
+  &.badge-danger {
+    background: var(--danger-soft);
+    color: var(--danger);
+    border: 1px solid var(--danger-border);
+  }
+
+  &.badge-info {
+    background: var(--info-soft);
+    color: var(--info);
+    border: 1px solid var(--info-border);
+  }
+
+  &.badge-neutral {
+    background: var(--surface-alt);
+    color: var(--ink-2);
+    border: 1px solid var(--line);
+  }
+}
+
+/* Champs de formulaires */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--ink-2);
+  }
+}
+
+.form-input,
+.form-select {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px rgba(234, 76, 14, 0.12);
+  }
+
+  &::placeholder {
+    color: var(--ink-muted);
+  }
+}

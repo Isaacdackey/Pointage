@@ -1,0 +1,225 @@
+<div class="admin-shell" [class.sidebar-collapsed]="isSidebarCollapsed">
+      <!-- Backdrop for mobile drawer -->
+      <div
+        *ngIf="isMobileDrawerOpen"
+        class="mobile-drawer-backdrop"
+        (click)="toggleMobileDrawer()"
+        aria-hidden="true"
+      ></div>
+
+      <!-- Sidebar -->
+      <aside
+        class="admin-sidebar"
+        [class.mobile-open]="isMobileDrawerOpen"
+        aria-label="Navigation principale"
+      >
+        <div class="sidebar-brand">
+          <div class="brand-logo" aria-hidden="true">
+            <span class="material-symbols-outlined">satellite_alt</span>
+          </div>
+          <div class="brand-meta" *ngIf="!isSidebarCollapsed">
+            <span class="brand-title">GeoFleet GPS</span>
+            <span class="brand-tagline">Suivi & Pointage</span>
+          </div>
+          <button
+            type="button"
+            class="sidebar-collapse-toggle desktop-only"
+            (click)="toggleSidebar()"
+            [attr.aria-label]="isSidebarCollapsed ? 'Agrandir la barre latérale' : 'Réduire la barre latérale'"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">
+              {{ isSidebarCollapsed ? 'chevron_right' : 'chevron_left' }}
+            </span>
+          </button>
+        </div>
+
+        <nav class="sidebar-nav" *ngIf="user$ | async as user">
+          <!-- ADMIN & AGENT menus distincts -->
+          <ng-container *ngIf="user.role === 'ADMIN'">
+            <div class="nav-group-title" *ngIf="!isSidebarCollapsed">SUPERVISION</div>
+            <a routerLink="/dashboard" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
+              <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
+              <span class="link-text" *ngIf="!isSidebarCollapsed">Tableau de bord</span>
+            </a>
+            <a routerLink="/map" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
+              <span class="material-symbols-outlined" aria-hidden="true">map</span>
+              <span class="link-text" *ngIf="!isSidebarCollapsed">Carte en direct</span>
+              <span class="badge-live" *ngIf="!isSidebarCollapsed">DIRECT</span>
+            </a>
+            <a routerLink="/control" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
+              <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+              <span class="link-text" *ngIf="!isSidebarCollapsed">Console Contrôle</span>
+            </a>
+
+            <div class="nav-group-title" *ngIf="!isSidebarCollapsed">EXPLOITATION</div>
+            <a routerLink="/missions" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
+              <span class="material-symbols-outlined" aria-hidden="true">assignment</span>
+              <span class="link-text" *ngIf="!isSidebarCollapsed">Missions & Trajets</span>
+            </a>
+            <a routerLink="/fleet" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
+              <span class="material-symbols-outlined" aria-hidden="true">local_shipping</span>
+              <span class="link-text" *ngIf="!isSidebarCollapsed">Flotte & Traceurs</span>
+            </a>
+            <a routerLink="/reports" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
+              <span class="material-symbols-outlined" aria-hidden="true">bar_chart</span>
+              <span class="link-text" *ngIf="!isSidebarCollapsed">Rapports & Synthèse</span>
+            </a>
+
+            <div class="nav-group-title" *ngIf="!isSidebarCollapsed">ADMINISTRATION</div>
+            <a routerLink="/admin" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
+              <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+              <span class="link-text" *ngIf="!isSidebarCollapsed">Seuils & Audit</span>
+            </a>
+          </ng-container>
+
+          <ng-container *ngIf="user.role === 'AGENT'">
+            <div class="nav-group-title" *ngIf="!isSidebarCollapsed">SUPERVISION AGENT</div>
+            <a routerLink="/control" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
+              <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+              <span class="link-text" *ngIf="!isSidebarCollapsed">Console Contrôle</span>
+            </a>
+            <a routerLink="/map" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
+              <span class="material-symbols-outlined" aria-hidden="true">map</span>
+              <span class="link-text" *ngIf="!isSidebarCollapsed">Carte en direct</span>
+              <span class="badge-live" *ngIf="!isSidebarCollapsed">DIRECT</span>
+            </a>
+            <a routerLink="/dashboard" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
+              <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
+              <span class="link-text" *ngIf="!isSidebarCollapsed">Tableau de bord</span>
+            </a>
+            <a routerLink="/missions" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
+              <span class="material-symbols-outlined" aria-hidden="true">assignment</span>
+              <span class="link-text" *ngIf="!isSidebarCollapsed">Missions du Jour</span>
+            </a>
+          </ng-container>
+
+          <!-- Raccourci vers simulation chauffeur si admin -->
+          <div class="nav-group-title" *ngIf="user.role === 'ADMIN' && !isSidebarCollapsed">CHAUFFEUR</div>
+          <a
+            *ngIf="user.role === 'ADMIN'"
+            routerLink="/driver"
+            class="nav-link link-driver"
+            (click)="closeMobileDrawer()"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">smartphone</span>
+            <span class="link-text" *ngIf="!isSidebarCollapsed">Vue Chauffeur (Mobile)</span>
+          </a>
+        </nav>
+
+        <div class="sidebar-footer" *ngIf="user$ | async as user">
+          <div class="user-pill" [title]="user.fullName + ' - ' + user.roleLabel">
+            <div class="user-avatar" aria-hidden="true">{{ user.avatarText }}</div>
+            <div class="user-info" *ngIf="!isSidebarCollapsed">
+              <strong class="user-name">{{ user.fullName }}</strong>
+              <small class="user-role">{{ user.roleLabel }}</small>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="btn-logout"
+            (click)="onLogout()"
+            aria-label="Se déconnecter de l'application"
+            title="Se déconnecter"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Shell Area -->
+      <div class="admin-main">
+        <header class="admin-topbar">
+          <div class="topbar-left">
+            <button
+              type="button"
+              class="mobile-menu-btn"
+              (click)="toggleMobileDrawer()"
+              aria-label="Ouvrir le menu de navigation"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+            </button>
+
+            <!-- Search box connectee au mock -->
+            <div class="search-box">
+              <span class="material-symbols-outlined search-icon" aria-hidden="true">search</span>
+              <input
+                type="search"
+                placeholder="Rechercher un véhicule, un chauffeur..."
+                [(ngModel)]="searchQuery"
+                (input)="onSearchInput()"
+                aria-label="Recherche rapide dans la flotte"
+              />
+              <!-- Results Dropdown -->
+              <div class="search-results-popover" *ngIf="searchResults.length > 0">
+                <div class="search-results-header">Véhicules trouvés ({{ searchResults.length }})</div>
+                <button
+                  type="button"
+                  *ngFor="let item of searchResults"
+                  class="search-result-item"
+                  (click)="goToVehicleMap(item.id)"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">directions_car</span>
+                  <div>
+                    <strong>{{ item.registrationNumber }}</strong> &bull; {{ item.make }} {{ item.model }}
+                    <small>Chauffeur : {{ item.assignedDriverName || 'Aucun' }}</small>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="topbar-right">
+            <!-- Server Ingestion Status indicator -->
+            <div class="system-status-pill" title="Moteur d'ingestion des traceurs GPS actif">
+              <span class="pulse-indicator" aria-hidden="true"></span>
+              <span>Serveur GPS : <strong>Opérationnel</strong></span>
+            </div>
+
+            <!-- Notifications Bell avec badge reel -->
+            <div class="notifications-wrapper">
+              <button
+                type="button"
+                class="btn-icon bell-btn"
+                (click)="toggleNotificationPopover()"
+                aria-label="Afficher les alertes récentes"
+                [attr.aria-expanded]="isNotificationOpen"
+              >
+                <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
+                <span class="badge-count" *ngIf="unreadAlertsCount$ | async as count">
+                  {{ count }}
+                </span>
+              </button>
+
+              <!-- Notifications popover -->
+              <div class="notifications-popover" *ngIf="isNotificationOpen">
+                <div class="popover-header">
+                  <strong>Alertes Nouvelles</strong>
+                  <a routerLink="/control" (click)="isNotificationOpen = false">Voir tout</a>
+                </div>
+                <div class="popover-body">
+                  <div
+                    *ngFor="let alert of newAlerts$ | async"
+                    class="notification-item"
+                    (click)="goToControl()"
+                  >
+                    <span class="material-symbols-outlined notif-icon danger" aria-hidden="true">warning</span>
+                    <div class="notif-text">
+                      <div class="notif-title">{{ alert.vehicleReg }} &bull; {{ alert.type }}</div>
+                      <p class="notif-desc">{{ alert.description }}</p>
+                      <small class="notif-time">{{ alert.occurredAt }}</small>
+                    </div>
+                  </div>
+                  <div class="popover-empty" *ngIf="(newAlerts$ | async)?.length === 0">
+                    Aucune alerte non traitée.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main class="admin-content-area" id="main-content">
+          <router-outlet></router-outlet>
+        </main>
+      </div>
+    </div>

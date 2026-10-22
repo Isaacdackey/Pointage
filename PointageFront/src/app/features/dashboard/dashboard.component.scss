@@ -1,0 +1,216 @@
+.dashboard-page {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .live-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      color: #047857;
+      padding: 0.4rem 0.85rem;
+      border-radius: var(--r-full);
+      font-size: var(--text-sm);
+      font-weight: 600;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--ok);
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .content-columns {
+      display: grid;
+      grid-template-columns: 1.7fr 1.3fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 1024px) {
+      .content-columns {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin: 0;
+    }
+
+    .link-more {
+      color: var(--brand);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .link-more:hover {
+      text-decoration: underline;
+    }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    .vehicle-cell {
+      display: flex;
+      flex-direction: column;
+    }
+    .vehicle-cell strong {
+      color: var(--ink);
+    }
+    .subtext {
+      color: var(--ink-3);
+      font-size: var(--text-xs);
+    }
+
+    .speed-val {
+      font-weight: 700;
+      color: var(--info);
+    }
+
+    .freshness-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: var(--text-xs);
+      padding: 0.2rem 0.55rem;
+      border-radius: var(--r-sm);
+      font-weight: 500;
+    }
+    .freshness-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+    .fresh-green {
+      background: #ecfdf5;
+      color: #047857;
+    }
+    .fresh-green .freshness-dot { background: var(--ok); }
+
+    .fresh-orange {
+      background: #fffbeb;
+      color: #b45309;
+    }
+    .fresh-orange .freshness-dot { background: var(--warn); }
+
+    .fresh-red {
+      background: #fef2f2;
+      color: #b91c1c;
+    }
+    .fresh-red .freshness-dot { background: var(--danger); }
+
+    .action-btn {
+      padding: 0.35rem 0.5rem;
+      border-radius: var(--r-sm);
+    }
+
+    /* Alerts list */
+    .alerts-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .alert-item {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: var(--r-md);
+      padding: 0.85rem;
+      display: flex;
+      gap: 0.75rem;
+    }
+    .alert-item.critique {
+      background: #fffafa;
+    }
+    .alert-item.majeure {
+      background: #fffdfa;
+    }
+    .alert-item.mineure {
+    }
+
+    .alert-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.45rem;
+      border-radius: var(--r-sm);
+      height: fit-content;
+      text-transform: uppercase;
+      background: #f1f5f9;
+      color: var(--ink-2);
+    }
+    .alert-badge.critique { background: #fee2e2; color: #b91c1c; }
+    .alert-badge.majeure { background: #fef3c7; color: #b45309; }
+    .alert-badge.mineure { background: #e0f2fe; color: #0369a1; }
+
+    .alert-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .alert-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: var(--text-sm);
+    }
+
+    .alert-title {
+      color: var(--ink);
+    }
+
+    .alert-time {
+      font-size: var(--text-xs);
+      color: var(--ink-3);
+    }
+
+    .alert-desc {
+      font-size: var(--text-sm);
+      color: var(--ink-2);
+      line-height: 1.4;
+      margin: 0.15rem 0;
+    }
+
+    .alert-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0.4rem;
+    }
+
+    .alert-btn {
+      font-size: var(--text-xs);
+      padding: 0.3rem 0.65rem;
+    }

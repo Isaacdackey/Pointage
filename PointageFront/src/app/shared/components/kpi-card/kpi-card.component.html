@@ -1,0 +1,12 @@
+<div class="kpi-card" [class.highlight]="highlight">
+      <div class="kpi-icon-box" *ngIf="icon">
+        <span class="material-symbols-outlined" aria-hidden="true">{{ icon }}</span>
+      </div>
+      <div class="kpi-body">
+        <span class="kpi-label">{{ label }}</span>
+        <div class="kpi-value">{{ value }}</div>
+        <span *ngIf="hint" class="kpi-hint" [ngClass]="hintType || 'neutral'">
+          {{ hint }}
+        </span>
+      </div>
+    </div>

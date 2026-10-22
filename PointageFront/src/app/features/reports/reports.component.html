@@ -1,0 +1,132 @@
+<div class="reports-container">
+      <app-page-header
+        title="Rapports & Synthèse d'Activité de Flotte"
+        subtitle="Analyse consolidée des trajets, ponctualité des pointages et consommation estimée."
+      >
+        <div class="export-actions">
+          <button (click)="exportData('CSV')" class="btn btn-outline">
+            <span class="material-symbols-outlined" aria-hidden="true">description</span>
+            Export CSV
+          </button>
+          <button (click)="exportData('EXCEL')" class="btn btn-outline">
+            <span class="material-symbols-outlined" aria-hidden="true">table_view</span>
+            Export XLSX
+          </button>
+          <button (click)="exportData('PDF')" class="btn btn-primary">
+            <span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>
+            Rapport PDF
+          </button>
+        </div>
+      </app-page-header>
+
+      <!-- Filter Controls Bar -->
+      <section class="card filters-panel" aria-label="Filtres de rapport">
+        <div class="filter-item">
+          <label for="periodSelect">Période d'analyse :</label>
+          <select id="periodSelect" [(ngModel)]="selectedPeriod" class="form-input">
+            <option value="TODAY">Aujourd'hui</option>
+            <option value="THIS_WEEK">7 derniers jours</option>
+            <option value="THIS_MONTH">Ce mois (Octobre 2026)</option>
+            <option value="CUSTOM">Période personnalisée</option>
+          </select>
+        </div>
+
+        <div class="filter-item">
+          <label for="vehicleScopeSelect">Périmètre Véhicules :</label>
+          <select id="vehicleScopeSelect" [(ngModel)]="vehicleFilter" class="form-input">
+            <option value="ALL">Tous les véhicules ({{ rawData.length }})</option>
+            <option value="ACTIVE">Véhicules en circulation ({{ countByCategory('ACTIVE') }})</option>
+            <option value="AVAILABLE">Disponibles ({{ countByCategory('AVAILABLE') }})</option>
+          </select>
+        </div>
+
+        <div class="filter-item">
+          <label for="statusFilterSelect">Conformité Pointage :</label>
+          <select id="statusFilterSelect" [(ngModel)]="statusFilter" class="form-input">
+            <option value="ALL">Tous les trajets</option>
+            <option value="ONTIME">Trajets à l'heure (&ge; 90%)</option>
+            <option value="DELAY">Avec retards déclarés (< 90%)</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- KPI Summary Cards - Calculated Dynamically -->
+      <section class="kpi-row" aria-label="Statistiques agrégées">
+        <div class="kpi-mini-card">
+          <span class="kpi-lbl">Distance Totale Parcourue</span>
+          <div class="kpi-val">{{ totalKmCalculated }} km</div>
+          <span class="kpi-trend positive">&uarr; +14% vs semaine précédente</span>
+        </div>
+
+        <div class="kpi-mini-card">
+          <span class="kpi-lbl">Taux de Ponctualité Moyen</span>
+          <div class="kpi-val green-text">{{ avgOntimeCalculated }}%</div>
+          <span class="kpi-trend">Départs et arrivées validés</span>
+        </div>
+
+        <div class="kpi-mini-card">
+          <span class="kpi-lbl">Total Missions Traitées</span>
+          <div class="kpi-val">{{ totalMissionsCalculated }}</div>
+          <span class="kpi-trend">Sur le périmètre filtré</span>
+        </div>
+
+        <div class="kpi-mini-card">
+          <span class="kpi-lbl">Carburant Estimé</span>
+          <div class="kpi-val">{{ totalFuelCalculated }} Litres</div>
+          <span class="kpi-trend">Conso moyenne flotte</span>
+        </div>
+      </section>
+
+      <!-- Detailed Report Table -->
+      <section class="card" aria-labelledby="report-table-title">
+        <div class="card-top">
+          <h2 id="report-table-title" class="section-title">Bilan Détaillé par Véhicule & Chauffeur</h2>
+          <span class="badge-count">{{ filteredReports.length }} véhicule(s) affiché(s)</span>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <caption class="sr-only">Tableau récapitulatif des performances par véhicule et chauffeur</caption>
+            <thead>
+              <tr>
+                <th scope="col">Immatriculation</th>
+                <th scope="col">Chauffeur Titulaire</th>
+                <th scope="col" class="num-cell">Missions</th>
+                <th scope="col" class="num-cell">Km Parcourus</th>
+                <th scope="col" class="num-cell">Vitesse Moy.</th>
+                <th scope="col">Taux Ponctualité</th>
+                <th scope="col" style="text-align: center;">Anomalies</th>
+                <th scope="col" class="num-cell">Conso Est.</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of filteredReports">
+                <td><strong class="plate-code">{{ row.vehicleReg }}</strong></td>
+                <td>{{ row.driverName }}</td>
+                <td class="num-cell"><strong>{{ row.totalMissions }}</strong></td>
+                <td class="num-cell">{{ row.totalKm }} km</td>
+                <td class="num-cell">{{ row.avgSpeedKph }} km/h</td>
+                <td>
+                  <div class="progress-wrap" role="progressbar" [attr.aria-valuenow]="row.ontimePercent" aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-fill" [style.width.%]="row.ontimePercent"></div>
+                    <span class="pct">{{ row.ontimePercent }}%</span>
+                  </div>
+                </td>
+                <td style="text-align: center;">
+                  <span class="alert-count-pill" [class.has-alerts]="row.alertsCount > 0">
+                    <span class="material-symbols-outlined" style="font-size: 14px;" aria-hidden="true">warning</span>
+                    {{ row.alertsCount }}
+                  </span>
+                </td>
+                <td class="num-cell">{{ row.fuelEstimatedLiters }} L</td>
+              </tr>
+              <tr *ngIf="filteredReports.length === 0">
+                <td colspan="8" class="empty-cell">
+                  Aucun résultat ne correspond aux filtres appliqués.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>

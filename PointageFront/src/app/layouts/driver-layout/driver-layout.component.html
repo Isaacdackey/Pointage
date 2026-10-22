@@ -1,0 +1,38 @@
+<div class="driver-layout-root">
+  <!-- Minimalist Driver Topbar -->
+  <header class="driver-topbar">
+    <div class="driver-brand">
+      <span class="material-symbols-outlined logo-icon" aria-hidden="true">satellite_alt</span>
+      <span class="brand-title">GeoFleet Chauffeur</span>
+    </div>
+    <div class="driver-topbar-actions" *ngIf="user$ | async as user">
+      <span class="driver-badge">{{ user.fullName }}</span>
+      <button
+        type="button"
+        class="btn-icon btn-logout"
+        (click)="onLogout()"
+        aria-label="Déconnexion"
+        title="Se déconnecter"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Driver Content -->
+  <main class="driver-main-viewport">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Bottom Mobile Bar for fast switching -->
+  <nav class="driver-bottom-nav" aria-label="Navigation chauffeur">
+    <a routerLink="/driver" routerLinkActive="active" class="bottom-nav-item">
+      <span class="material-symbols-outlined" aria-hidden="true">timer</span>
+      <span>Pointage</span>
+    </a>
+    <a routerLink="/missions" routerLinkActive="active" class="bottom-nav-item">
+      <span class="material-symbols-outlined" aria-hidden="true">assignment</span>
+      <span>Missions</span>
+    </a>
+  </nav>
+</div>

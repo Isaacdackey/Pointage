@@ -1,0 +1,177 @@
+<div class="control-console-container">
+      <app-page-header
+        title="Console de Contrôle Opérationnel & Validation"
+        subtitle="Confrontation des déclarations chauffeurs avec la télématique GPS temps réel."
+      >
+        <div class="stats-pills" role="status">
+          <span class="stat-pill pill-active">
+            <span class="pill-dot"></span>
+            {{ activeMissionsCount$ | async }} Missions actives
+          </span>
+          <span class="stat-pill pill-alert">
+            <span class="pill-dot danger"></span>
+            {{ openAnomaliesCount$ | async }} Anomalie(s) détectée(s)
+          </span>
+        </div>
+      </app-page-header>
+
+      <!-- Center of Alerts Management - Moved to TOP sorted by severity -->
+      <section class="card" aria-labelledby="anomalies-heading">
+        <div class="section-top-bar">
+          <div>
+            <h2 id="anomalies-heading" class="section-title">Traitement des Alertes & Gestion des Écarts</h2>
+            <p class="section-desc">Priorisation opérationnelle des alertes triées par sévérité.</p>
+          </div>
+          <div class="filter-switch">
+            <label class="switch-label">
+              <input type="checkbox" [(ngModel)]="onlyAnomalies" />
+              <span>Anomalies critiques et majeures seulement</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="alerts-grid">
+          <div
+            *ngFor="let alt of (filteredAlerts$ | async)"
+            class="alert-box"
+            [ngClass]="alt.severity.toLowerCase()"
+          >
+            <div class="box-header">
+              <span class="severity-tag" [ngClass]="alt.severity.toLowerCase()">
+                <span class="material-symbols-outlined" style="font-size: 15px;" aria-hidden="true">
+                  {{ alt.severity === 'CRITIQUE' ? 'error' : (alt.severity === 'MAJEURE' ? 'warning' : 'info') }}
+                </span>
+                {{ alt.severity }}
+              </span>
+              <span class="time-lbl">{{ alt.occurredAt }}</span>
+            </div>
+            <h3 class="alert-title">{{ alt.vehicleReg }} &bull; {{ alt.type }}</h3>
+            <p class="alert-desc">{{ alt.description }}</p>
+
+            <div class="box-footer">
+              <div class="status-wrapper">
+                <span class="subtext">Statut :</span>
+                <app-status-badge [status]="alt.status"></app-status-badge>
+              </div>
+              <div class="btns-inline">
+                <button
+                  *ngIf="alt.status === 'NOUVELLE'"
+                  (click)="updateStatus(alt.id, 'PRISE_EN_CHARGE')"
+                  class="btn btn-outline btn-xs"
+                >
+                  Prendre en charge
+                </button>
+                <button
+                  *ngIf="alt.status !== 'CLOTUREE'"
+                  (click)="updateStatus(alt.id, 'CLOTUREE')"
+                  class="btn btn-primary btn-xs"
+                >
+                  Clôturer l'alerte
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="(filteredAlerts$ | async)?.length === 0" class="empty-state">
+            <span class="material-symbols-outlined" style="font-size: 32px; color: var(--ok);">verified</span>
+            <p>Aucune anomalie correspondant aux critères sélectionnés.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Missions vs GPS Comparison Table -->
+      <section class="card" aria-labelledby="comparator-heading">
+        <h2 id="comparator-heading" class="section-title">Comparateur Missions : Déclarations vs Vérité Terrain GPS</h2>
+        <p class="section-desc">Contrôle anti-fraude : vérifiez la cohérence entre l'heure déclarée par le chauffeur et la détection du mouvement GPS.</p>
+
+        <div class="table-container">
+          <table class="data-table">
+            <caption class="sr-only">Tableau de confrontation des déclarations chauffeurs et de la détection GPS</caption>
+            <thead>
+              <tr>
+                <th scope="col">Mission</th>
+                <th scope="col">Véhicule & Chauffeur</th>
+                <th scope="col">Départ Déclaré</th>
+                <th scope="col">Départ Détecté GPS</th>
+                <th scope="col">Conformité Déplacement</th>
+                <th scope="col">Statut</th>
+                <th scope="col" style="text-align: right;">Action Contrôle</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let m of missions$ | async">
+                <td>
+                  <strong>{{ m.code }}</strong><br/>
+                  <span class="subtext">{{ m.title }}</span>
+                </td>
+                <td>
+                  <strong>{{ m.vehicleReg }}</strong><br/>
+                  <span class="subtext">{{ m.driverName }}</span>
+                </td>
+                <td>
+                  <span *ngIf="m.departureDeclared" class="time-check">
+                    <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">check_circle</span>
+                    Déclaré à {{ formatTime(m.actualStartTime) }}
+                  </span>
+                  <span *ngIf="!m.departureDeclared" class="time-pending">
+                    <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">schedule</span>
+                    Non déclaré
+                  </span>
+                </td>
+                <td>
+                  <span *ngIf="m.gpsDepartureDetected" class="gps-valid">
+                    <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">sensors</span>
+                    Mouvement confirmé
+                  </span>
+                  <span *ngIf="!m.gpsDepartureDetected" class="gps-idle">
+                    <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">stop_circle</span>
+                    Immobile
+                  </span>
+                </td>
+                <td>
+                  <div *ngIf="m.departureDeclared && m.gpsDepartureDetected" class="tag-ok">
+                    <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">verified</span>
+                    Conforme (Trajet vérifié)
+                  </div>
+                  <div *ngIf="!m.departureDeclared && m.gpsDepartureDetected" class="tag-warning">
+                    <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">warning</span>
+                    Mouvement sans déclaration
+                  </div>
+                  <div *ngIf="!m.departureDeclared && !m.gpsDepartureDetected" class="tag-neutral">
+                    En attente de départ
+                  </div>
+                  <div *ngIf="m.departureDeclared && !m.gpsDepartureDetected" class="tag-audit">
+                    <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">search</span>
+                    Déclaré mais immobile
+                  </div>
+                </td>
+                <td>
+                  <app-status-badge [status]="m.status"></app-status-badge>
+                </td>
+                <td style="text-align: right;">
+                  <button
+                    class="btn btn-outline btn-xs"
+                    [disabled]="!m.departureDeclared"
+                    [title]="!m.departureDeclared ? 'Le départ doit être déclaré avant validation' : 'Valider le pointage'"
+                    (click)="askValidation(m)"
+                  >
+                    Valider le pointage
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Confirmation Dialog Component -->
+      <app-confirm-dialog
+        [isOpen]="confirmModalOpen"
+        title="Validation du pointage mission"
+        [message]="confirmMessage"
+        confirmLabel="Valider et certifier"
+        confirmVariant="primary"
+        (confirm)="confirmValidation()"
+        (cancel)="cancelValidation()"
+      ></app-confirm-dialog>
+    </div>

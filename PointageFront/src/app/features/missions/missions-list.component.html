@@ -1,0 +1,56 @@
+<div class="missions-page">
+      <app-page-header
+        title="Planning & Suivi des Missions"
+        subtitle="Assignation des véhicules, chauffeurs et état d'avancement des trajets en temps réel."
+      >
+        <button class="btn btn-primary" (click)="openNewMissionModal()">
+          <span class="material-symbols-outlined" aria-hidden="true">add</span>
+          Planifier une Mission
+        </button>
+      </app-page-header>
+
+      <div class="card">
+        <div class="table-container">
+          <table class="data-table">
+            <caption class="sr-only">Liste des missions de transport avec suivi des départs et arrivées</caption>
+            <thead>
+              <tr>
+                <th scope="col">Code</th>
+                <th scope="col">Intitulé Mission</th>
+                <th scope="col">Origine &rarr; Destination</th>
+                <th scope="col">Véhicule</th>
+                <th scope="col">Chauffeur</th>
+                <th scope="col" class="num-cell">Distance Est.</th>
+                <th scope="col">Départ Prévu</th>
+                <th scope="col" style="text-align: right;">Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let m of missions$ | async">
+                <td><code class="code-badge">{{ m.code }}</code></td>
+                <td><strong>{{ m.title }}</strong></td>
+                <td>
+                  <div class="route-cell">
+                    <span class="route-point">
+                      <span class="material-symbols-outlined origin-icon" aria-hidden="true">radio_button_checked</span>
+                      {{ m.originName }}
+                    </span>
+                    <span class="route-point">
+                      <span class="material-symbols-outlined dest-icon" aria-hidden="true">flag</span>
+                      {{ m.destinationName }}
+                    </span>
+                  </div>
+                </td>
+                <td><strong>{{ m.vehicleReg }}</strong></td>
+                <td>{{ m.driverName }}</td>
+                <td class="num-cell">{{ m.distanceKm }} km</td>
+                <td>{{ formatDateTime(m.plannedStartTime) }}</td>
+                <td style="text-align: right;">
+                  <app-status-badge [status]="m.status"></app-status-badge>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>

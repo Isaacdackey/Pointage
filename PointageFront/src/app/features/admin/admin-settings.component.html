@@ -1,0 +1,263 @@
+<div class="admin-page-container">
+      <app-page-header
+        title="Administration, Journal d'Audit & Seuils"
+        subtitle="Paramétrage du moteur d'alertes, conformité et traçabilité des opérations de la flotte."
+      >
+        <button
+          *ngIf="activeTab === 'THRESHOLDS'"
+          class="btn btn-primary"
+          [disabled]="!isDirty || !isValid"
+          (click)="saveSettings()"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">save</span>
+          Enregistrer les seuils
+        </button>
+      </app-page-header>
+
+      <!-- Tabs : Audit Logs & Engine Rules with ARIA -->
+      <div class="tabs-header" role="tablist" aria-label="Sections d'administration">
+        <button
+          role="tab"
+          id="tab-audit"
+          aria-controls="panel-audit"
+          [attr.aria-selected]="activeTab === 'AUDIT'"
+          [class.active]="activeTab === 'AUDIT'"
+          (click)="activeTab = 'AUDIT'"
+          class="tab-button"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">history</span>
+          Journal d'Audit Immuable
+        </button>
+
+        <button
+          role="tab"
+          id="tab-thresholds"
+          aria-controls="panel-thresholds"
+          [attr.aria-selected]="activeTab === 'THRESHOLDS'"
+          [class.active]="activeTab === 'THRESHOLDS'"
+          (click)="activeTab = 'THRESHOLDS'"
+          class="tab-button"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+          Seuils d'Alertes & Géozones
+        </button>
+
+        <button
+          role="tab"
+          id="tab-users"
+          aria-controls="panel-users"
+          [attr.aria-selected]="activeTab === 'USERS'"
+          [class.active]="activeTab === 'USERS'"
+          (click)="activeTab = 'USERS'"
+          class="tab-button"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span>
+          Gestion des Utilisateurs & Rôles
+        </button>
+      </div>
+
+      <!-- Tab 1: Audit Log Table -->
+      <section
+        *ngIf="activeTab === 'AUDIT'"
+        id="panel-audit"
+        role="tabpanel"
+        aria-labelledby="tab-audit"
+        class="card"
+      >
+        <div class="card-head">
+          <div>
+            <h2 class="section-title">Traces d'Audit & Journalisation des Événements Sensibles</h2>
+            <p class="sub-text">Historique non altérable de chaque validation de mission, modification de paramètre ou export.</p>
+          </div>
+          <span class="lock-pill" role="status">
+            <span class="material-symbols-outlined" style="font-size: 15px;" aria-hidden="true">lock</span>
+            Journal protégé en écriture
+          </span>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <caption class="sr-only">Journal chronologique des opérations sensibles de l'application</caption>
+            <thead>
+              <tr>
+                <th scope="col">Horodatage (UTC)</th>
+                <th scope="col">Utilisateur (Acteur)</th>
+                <th scope="col">Action Réalisée</th>
+                <th scope="col">Entité Cible</th>
+                <th scope="col">Détails de l'Opération</th>
+                <th scope="col" class="num-cell">Adresse IP</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let a of auditLogs">
+                <td><code class="time-code">{{ formatTimestamp(a.timestamp) }}</code></td>
+                <td>
+                  <strong>{{ a.actor }}</strong><br/>
+                  <small class="role-tag">{{ a.role }}</small>
+                </td>
+                <td><span class="action-badge">{{ a.action }}</span></td>
+                <td><strong>{{ a.targetEntity }}</strong></td>
+                <td>{{ a.details }}</td>
+                <td class="num-cell"><small class="ip-code">{{ a.ipAddress }}</small></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Tab 2: Thresholds and Engine Rules -->
+      <section
+        *ngIf="activeTab === 'THRESHOLDS'"
+        id="panel-thresholds"
+        role="tabpanel"
+        aria-labelledby="tab-thresholds"
+        class="card"
+      >
+        <h2 class="section-title">Configuration des Seuils de Détection Automatique</h2>
+        <p class="sub-text">Ajustez les règles du moteur d'alertes en temps réel. Terme unifié : Traceur GPS.</p>
+
+        <div class="settings-grid">
+          <!-- Vitesse -->
+          <div class="setting-box">
+            <div class="setting-title">
+              <span class="material-symbols-outlined icon-info" aria-hidden="true">speed</span>
+              <strong>Vitesse Maximale Autorisée</strong>
+            </div>
+            <p class="setting-desc">Déclenche une alerte EXCES_VITESSE dès franchissement prolongé (> 30s). Plage : 40 à 150 km/h.</p>
+            <div class="input-inline">
+              <input
+                type="number"
+                min="40"
+                max="150"
+                class="form-input num-input"
+                [(ngModel)]="thresholds.maxSpeedKph"
+                (ngModelChange)="markDirty()"
+              />
+              <span class="unit">km/h</span>
+            </div>
+            <span *ngIf="thresholds.maxSpeedKph < 40 || thresholds.maxSpeedKph > 150" class="field-error">
+              La vitesse doit être comprise entre 40 et 150 km/h.
+            </span>
+          </div>
+
+          <!-- Perte de signal -->
+          <div class="setting-box">
+            <div class="setting-title">
+              <span class="material-symbols-outlined icon-warn" aria-hidden="true">wifi_off</span>
+              <strong>Seuil Perte de Signal (Silence Traceur)</strong>
+            </div>
+            <p class="setting-desc">Alerte PERTE_SIGNAL si aucune trame reçue du traceur pendant cette durée. Plage : 5 à 120 min.</p>
+            <div class="input-inline">
+              <input
+                type="number"
+                min="5"
+                max="120"
+                class="form-input num-input"
+                [(ngModel)]="thresholds.signalLossMinutes"
+                (ngModelChange)="markDirty()"
+              />
+              <span class="unit">minutes</span>
+            </div>
+            <span *ngIf="thresholds.signalLossMinutes < 5 || thresholds.signalLossMinutes > 120" class="field-error">
+              La durée doit être comprise entre 5 et 120 minutes.
+            </span>
+          </div>
+
+          <!-- Tolérance retard -->
+          <div class="setting-box">
+            <div class="setting-title">
+              <span class="material-symbols-outlined icon-danger" aria-hidden="true">schedule</span>
+              <strong>Tolérance Retard Départ Chauffeur</strong>
+            </div>
+            <p class="setting-desc">Alerte RETARD si le pointage de départ n'est pas effectué après l'heure prévue. Plage : 5 à 60 min.</p>
+            <div class="input-inline">
+              <input
+                type="number"
+                min="5"
+                max="60"
+                class="form-input num-input"
+                [(ngModel)]="thresholds.departureDelayToleranceMinutes"
+                (ngModelChange)="markDirty()"
+              />
+              <span class="unit">minutes</span>
+            </div>
+            <span *ngIf="thresholds.departureDelayToleranceMinutes < 5 || thresholds.departureDelayToleranceMinutes > 60" class="field-error">
+              La tolérance doit être comprise entre 5 et 60 minutes.
+            </span>
+          </div>
+
+          <!-- Géofencing -->
+          <div class="setting-box">
+            <div class="setting-title">
+              <span class="material-symbols-outlined icon-ok" aria-hidden="true">share_location</span>
+              <strong>Rayon Géofencing Entrepôt Dakar</strong>
+            </div>
+            <p class="setting-desc">Alerte SORTIE_ZONE si le véhicule sort du périmètre sans mission active. Plage : 100 à 5 000 m.</p>
+            <div class="input-inline">
+              <input
+                type="number"
+                min="100"
+                max="5000"
+                class="form-input num-input"
+                [(ngModel)]="thresholds.geofenceRadiusMeters"
+                (ngModelChange)="markDirty()"
+              />
+              <span class="unit">mètres</span>
+            </div>
+            <span *ngIf="thresholds.geofenceRadiusMeters < 100 || thresholds.geofenceRadiusMeters > 5000" class="field-error">
+              Le rayon doit être compris entre 100 et 5 000 mètres.
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab 3: Users list -->
+      <section
+        *ngIf="activeTab === 'USERS'"
+        id="panel-users"
+        role="tabpanel"
+        aria-labelledby="tab-users"
+        class="card"
+      >
+        <h2 class="section-title">Comptes & Habilitations Utilisateurs</h2>
+        <p class="sub-text">Gestion des accès et rôles autorisés sur la plateforme de pointage.</p>
+
+        <div class="table-container">
+          <table class="data-table">
+            <caption class="sr-only">Liste des utilisateurs du système avec leur rôle et statut</caption>
+            <thead>
+              <tr>
+                <th scope="col">Nom d'Utilisateur</th>
+                <th scope="col">E-mail</th>
+                <th scope="col">Rôle Habilité</th>
+                <th scope="col">Dernière Connexion</th>
+                <th scope="col" style="text-align: right;">Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Amadou Diallo</strong></td>
+                <td>admin&#64;geofleet.sn</td>
+                <td><span class="role-badge admin">ADMIN</span></td>
+                <td>Aujourd'hui 12:45</td>
+                <td style="text-align: right;"><span class="badge-active">Actif</span></td>
+              </tr>
+              <tr>
+                <td><strong>Samba Kane</strong></td>
+                <td>agent.samba&#64;geofleet.sn</td>
+                <td><span class="role-badge agent">AGENT</span></td>
+                <td>Aujourd'hui 13:10</td>
+                <td style="text-align: right;"><span class="badge-active">Actif</span></td>
+              </tr>
+              <tr>
+                <td><strong>Mamadou Diallo</strong></td>
+                <td>chauffeur.diallo&#64;geofleet.sn</td>
+                <td><span class="role-badge driver">DRIVER</span></td>
+                <td>Aujourd'hui 13:28</td>
+                <td style="text-align: right;"><span class="badge-active">Actif</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>

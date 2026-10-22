@@ -1,0 +1,148 @@
+<div class="map-view-container">
+      <!-- Top toolbar styled with brand tokens -->
+      <div class="map-toolbar">
+        <div class="toolbar-title">
+          <h1 class="page-title">Carte Live & Géolocalisation Flotte</h1>
+          <span class="live-indicator">
+            <span class="ping" aria-hidden="true"></span>
+            Supervision active ({{ displayedVehicles.length }} / {{ vehicles.length }} véhicules)
+          </span>
+        </div>
+
+        <div class="filter-group" role="group" aria-label="Filtrer les véhicules affichés">
+          <button
+            (click)="setFilter('ALL')"
+            [class.active]="filterStatus === 'ALL'"
+            class="filter-btn"
+          >
+            Tous ({{ vehicles.length }})
+          </button>
+          <button
+            (click)="setFilter('EN_MISSION')"
+            [class.active]="filterStatus === 'EN_MISSION'"
+            class="filter-btn"
+          >
+            En mission
+          </button>
+          <button
+            (click)="setFilter('DISPONIBLE')"
+            [class.active]="filterStatus === 'DISPONIBLE'"
+            class="filter-btn"
+          >
+            Disponibles
+          </button>
+          <button
+            (click)="setFilter('MAINTENANCE')"
+            [class.active]="filterStatus === 'MAINTENANCE'"
+            class="filter-btn"
+          >
+            Maintenance
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Map & Side Drawer -->
+      <div class="map-layout">
+        <!-- Interactive Leaflet container -->
+        <div #mapContainer class="leaflet-map-wrapper"></div>
+
+        <!-- Legend Card Overlay -->
+        <div class="map-legend" aria-label="Légende de la carte">
+          <span class="legend-title">Légende Flotte</span>
+          <div class="legend-item">
+            <span class="legend-color-dot active-dot"></span>
+            <span>En mission (&lt; 5 min)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color-dot ready-dot"></span>
+            <span>Disponible</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color-dot warning-dot"></span>
+            <span>Maintenance / Arrêt</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color-dot stale-dot"></span>
+            <span class="stale-label">Signal muet (&gt; 5 min)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-line-sample"></span>
+            <span>Parcours réel GPS effectué</span>
+          </div>
+        </div>
+
+        <!-- Vehicle Details Side Card -->
+        <aside class="vehicle-sidebar" *ngIf="selectedVehicle" aria-label="Détails du véhicule sélectionné">
+          <div class="sidebar-header">
+            <div>
+              <h2 class="vehicle-title">{{ selectedVehicle.registrationNumber }}</h2>
+              <p class="car-sub">{{ selectedVehicle.make }} {{ selectedVehicle.model }}</p>
+            </div>
+            <button
+              (click)="selectedVehicle = null"
+              class="close-btn"
+              aria-label="Fermer la fiche véhicule"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">close</span>
+            </button>
+          </div>
+
+          <div class="sidebar-content">
+            <div class="detail-row">
+              <span class="lbl">Statut :</span>
+              <app-status-badge [status]="selectedVehicle.status"></app-status-badge>
+            </div>
+
+            <div class="detail-row">
+              <span class="lbl">Chauffeur titulaire :</span>
+              <strong>{{ selectedVehicle.assignedDriverName || 'Non affecté' }}</strong>
+            </div>
+
+            <div class="detail-row">
+              <span class="lbl">Dernière vitesse :</span>
+              <span class="speed-box">{{ selectedVehicle.lastPosition?.speedKph || 0 }} km/h</span>
+            </div>
+
+            <div class="detail-row">
+              <span class="lbl">Direction (cap) :</span>
+              <span>{{ selectedVehicle.lastPosition?.heading || 0 }}°</span>
+            </div>
+
+            <div class="detail-row">
+              <span class="lbl">Contact moteur :</span>
+              <span [class.green-text]="selectedVehicle.lastPosition?.ignition" [class.red-text]="!selectedVehicle.lastPosition?.ignition">
+                {{ selectedVehicle.lastPosition?.ignition ? 'Contact allumé' : 'Moteur coupé' }}
+              </span>
+            </div>
+
+            <div class="detail-row">
+              <span class="lbl">Traceur GPS :</span>
+              <span class="mono">{{ selectedVehicle.currentTrackerId }}</span>
+            </div>
+
+            <div class="detail-row">
+              <span class="lbl">Fraîcheur GPS :</span>
+              <span
+                class="freshness-badge"
+                [class.stale]="isSignalStale(selectedVehicle.lastPosition?.freshnessSeconds)"
+              >
+                {{ formatSeconds(selectedVehicle.lastPosition?.freshnessSeconds) }}
+              </span>
+            </div>
+
+            <hr class="divider"/>
+
+            <div class="sidebar-actions">
+              <button (click)="traceHistoricTrip()" class="btn btn-primary btn-block">
+                <span class="material-symbols-outlined" aria-hidden="true">history_edu</span>
+                <span>Afficher le parcours réel GPS</span>
+              </button>
+              <button (click)="centerOnVehicle(selectedVehicle)" class="btn btn-outline btn-block">
+                <span class="material-symbols-outlined" aria-hidden="true">my_location</span>
+                <span>Recentrer sur la position actuelle</span>
+              </button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>

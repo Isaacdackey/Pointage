@@ -1,0 +1,248 @@
+.map-view-container {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: calc(100vh - 120px);
+      gap: 0.75rem;
+    }
+
+    .map-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--surface);
+      padding: 0.85rem 1.25rem;
+      border-radius: var(--r-md);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-1);
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .page-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin: 0;
+    }
+
+    .live-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: var(--text-xs);
+      color: #047857;
+      margin-top: 0.15rem;
+      font-weight: 500;
+    }
+
+    .ping {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--ok);
+      box-shadow: 0 0 6px var(--ok);
+    }
+
+    .filter-group {
+      display: flex;
+      gap: 0.35rem;
+      background: var(--bg);
+      padding: 0.25rem;
+      border-radius: var(--r-sm);
+      border: 1px solid var(--line);
+    }
+
+    .filter-btn {
+      background: transparent;
+      border: none;
+      color: var(--ink-2);
+      padding: 0.4rem 0.75rem;
+      border-radius: var(--r-sm);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .filter-btn.active {
+      background: var(--ink);
+      color: var(--surface);
+    }
+
+    .map-layout {
+      position: relative;
+      flex: 1;
+      border-radius: var(--r-md);
+      overflow: hidden;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-1);
+      min-height: 550px;
+    }
+
+    .leaflet-map-wrapper {
+      width: 100%;
+      height: 100%;
+      min-height: 550px;
+      z-index: 1;
+      background: #f8fafc;
+    }
+
+    /* Legend Overlay */
+    .map-legend {
+      position: absolute;
+      bottom: 1.25rem;
+      left: 1.25rem;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--line);
+      border-radius: var(--r-sm);
+      padding: 0.65rem 0.85rem;
+      z-index: 500;
+      box-shadow: var(--shadow-1);
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      font-size: var(--text-xs);
+    }
+
+    .legend-title {
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 0.2rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--ink-2);
+    }
+
+    .legend-color-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .active-dot { background: var(--info); }
+    .ready-dot { background: var(--ok); }
+    .warning-dot { background: var(--warn); }
+    .stale-dot { background: #94a3b8; }
+    .stale-label { text-decoration: line-through; }
+    .legend-line-sample {
+      width: 14px;
+      height: 0;
+      border-top: 3px dashed var(--brand);
+    }
+
+    /* Side details card */
+    .vehicle-sidebar {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      width: 320px;
+      max-width: calc(100% - 2rem);
+      background: rgba(255, 255, 255, 0.97);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--line);
+      border-radius: var(--r-md);
+      z-index: 500;
+      padding: 1.25rem;
+      box-shadow: var(--shadow-2);
+      color: var(--ink);
+    }
+
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.85rem;
+    }
+
+    .vehicle-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin: 0;
+    }
+
+    .car-sub {
+      color: var(--ink-2);
+      font-size: var(--text-xs);
+      margin: 0.15rem 0 0 0;
+    }
+
+    .close-btn {
+      background: transparent;
+      border: none;
+      color: var(--ink-3);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.25rem;
+      border-radius: var(--r-sm);
+    }
+    .close-btn:hover {
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    .sidebar-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: var(--text-sm);
+    }
+
+    .detail-row .lbl {
+      color: var(--ink-2);
+    }
+
+    .speed-box {
+      font-weight: 700;
+      color: var(--info);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .freshness-badge {
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      padding: 0.15rem 0.45rem;
+      border-radius: var(--r-sm);
+      font-size: var(--text-xs);
+      color: #047857;
+      font-weight: 600;
+    }
+    .freshness-badge.stale {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+      color: #64748b;
+      text-decoration: line-through;
+    }
+
+    .mono { font-family: monospace; font-size: var(--text-xs); color: var(--ink-2); }
+    .green-text { color: var(--ok); font-weight: 600; }
+    .red-text { color: var(--danger); font-weight: 600; }
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--line);
+      margin: 0.4rem 0;
+    }
+
+    .sidebar-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .btn-block {
+      width: 100%;
+      justify-content: center;
+    }

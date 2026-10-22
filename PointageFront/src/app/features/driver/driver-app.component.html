@@ -1,0 +1,236 @@
+<div class="driver-page-container">
+      <!-- Mobile device simulation card -->
+      <main class="driver-card" role="region" aria-label="Espace Chauffeur">
+        <!-- Header with Driver Info & Real Connectivity Status -->
+        <header class="driver-header">
+          <div class="driver-profile">
+            <div class="avatar" aria-hidden="true">{{ driverInitials }}</div>
+            <div>
+              <h1 class="driver-name">{{ currentDriverName }}</h1>
+              <span class="driver-sub">Chauffeur Assigné &bull; Flotte GeoFleet</span>
+            </div>
+          </div>
+
+          <div
+            class="network-badge"
+            [class.online]="isOnline"
+            [class.offline]="!isOnline"
+            role="status"
+            aria-live="polite"
+          >
+            <span class="net-dot" aria-hidden="true"></span>
+            {{ isOnline ? 'En ligne' : 'Mode Hors-Ligne' }}
+          </div>
+        </header>
+
+        <!-- Offline Queue Notice if pending -->
+        <div *ngIf="offlineQueue.length > 0" class="offline-sync-alert" role="alert">
+          <div class="sync-info">
+            <span class="material-symbols-outlined" aria-hidden="true">cloud_off</span>
+            <span><strong>{{ offlineQueue.length }}</strong> pointage(s) en attente de synchronisation.</span>
+          </div>
+          <button
+            class="btn btn-primary sync-btn"
+            [disabled]="!isOnline"
+            (click)="syncOfflineQueue()"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">sync</span>
+            Synchroniser
+          </button>
+        </div>
+
+        <!-- Active Mission Card -->
+        <section *ngIf="activeMission" class="mission-block" aria-labelledby="mission-title-id">
+          <div class="mission-top">
+            <app-status-badge [status]="activeMission.status"></app-status-badge>
+            <span class="mission-code">{{ activeMission.code }}</span>
+          </div>
+
+          <h2 id="mission-title-id" class="mission-title">{{ activeMission.title }}</h2>
+
+          <div class="vehicle-assigned-bar">
+            <span class="material-symbols-outlined" aria-hidden="true">directions_car</span>
+            <span>Véhicule assigné : <strong>{{ activeMission.vehicleReg }}</strong></span>
+          </div>
+
+          <!-- Route itinerary -->
+          <div class="route-display" aria-label="Itinéraire de la mission">
+            <div class="stop">
+              <span class="dot-start" aria-hidden="true"></span>
+              <div>
+                <span class="stop-label">Départ</span>
+                <p class="stop-name">{{ activeMission.originName }}</p>
+              </div>
+            </div>
+            <div class="route-line" aria-hidden="true"></div>
+            <div class="stop">
+              <span class="dot-end" aria-hidden="true"></span>
+              <div>
+                <span class="stop-label">Destination</span>
+                <p class="stop-name">{{ activeMission.destinationName }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="safety-banner" role="note">
+            <span class="material-symbols-outlined" aria-hidden="true">security</span>
+            <span>Sécurité : pointage autorisé uniquement lorsque le véhicule est à l'arrêt complet.</span>
+          </div>
+        </section>
+
+        <!-- Fallback if no active mission -->
+        <div *ngIf="!activeMission" class="no-mission-state">
+          <span class="material-symbols-outlined icon-idle" aria-hidden="true">task_alt</span>
+          <h2>Aucune mission en cours</h2>
+          <p>Toutes vos missions ont été complétées ou sont en attente d'affectation par le régulateur.</p>
+        </div>
+
+        <!-- Dominant State Action Button & Secondary Controls -->
+        <section *ngIf="activeMission" class="actions-section" aria-label="Actions de pointage">
+          <!-- Primary Dominant Action (State Machine) -->
+          <div class="primary-dominant-action">
+            <!-- 1. State: PLANIFIEE -> Dominant: DÉPART -->
+            <button
+              *ngIf="activeMission.status === 'PLANIFIEE'"
+              (click)="triggerEvent('DEPART')"
+              class="btn btn-primary state-dominant-btn"
+            >
+              <span class="material-symbols-outlined btn-action-icon" aria-hidden="true">play_arrow</span>
+              <div class="btn-txt-col">
+                <span class="dominant-title">DÉCLARER LE DÉPART</span>
+                <span class="dominant-sub">Début officiel du trajet vers la destination</span>
+              </div>
+            </button>
+
+            <!-- 2. State: EN_COURS -> Dominant: PAUSE (ou ARRIVÉE) -->
+            <button
+              *ngIf="activeMission.status === 'EN_COURS'"
+              (click)="triggerEvent('PAUSE')"
+              class="btn btn-primary state-dominant-btn pause-state"
+            >
+              <span class="material-symbols-outlined btn-action-icon" aria-hidden="true">pause</span>
+              <div class="btn-txt-col">
+                <span class="dominant-title">METTRE EN PAUSE LE TRAJET</span>
+                <span class="dominant-sub">Arrêt temporaire (ravitaillement, repos, attente)</span>
+              </div>
+            </button>
+
+            <!-- 3. State: EN_PAUSE -> Dominant: REPRISE -->
+            <button
+              *ngIf="activeMission.status === 'EN_PAUSE'"
+              (click)="triggerEvent('REPRISE')"
+              class="btn btn-primary state-dominant-btn resume-state"
+            >
+              <span class="material-symbols-outlined btn-action-icon" aria-hidden="true">play_circle</span>
+              <div class="btn-txt-col">
+                <span class="dominant-title">REPRENDRE LA ROUTE</span>
+                <span class="dominant-sub">Reprise de l'itinéraire vers la destination</span>
+              </div>
+            </button>
+          </div>
+
+          <!-- Secondary Actions Grid -->
+          <div class="secondary-actions-bar">
+            <!-- Arrivée button (enabled when EN_COURS or EN_PAUSE) -->
+            <button
+              *ngIf="activeMission.status === 'EN_COURS' || activeMission.status === 'EN_PAUSE'"
+              (click)="triggerEvent('ARRIVEE')"
+              class="btn btn-outline arrival-secondary-btn"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">flag</span>
+              <span>Déclarer l'Arrivée</span>
+            </button>
+
+            <!-- Incident reporting (Discrete modal/bottom sheet trigger) -->
+            <button
+              (click)="openIncidentBottomSheet()"
+              class="btn btn-outline incident-secondary-btn"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">report_problem</span>
+              <span>Signaler un incident</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Events Log -->
+        <section class="receipt-section" aria-labelledby="log-heading">
+          <h2 id="log-heading" class="receipt-title">Historique des Pointages Enregistrés</h2>
+          <div class="events-log">
+            <div *ngFor="let evt of events$ | async" class="event-row">
+              <span class="event-pill" [ngClass]="evt.type.toLowerCase()">{{ evt.type }}</span>
+              <div class="event-details">
+                <strong>{{ evt.comment }}</strong>
+                <span class="event-time">Horodatage : {{ evt.declaredTime }} (Reçu serveur : {{ evt.receivedTime }})</span>
+              </div>
+              <span class="sync-check">
+                <span class="material-symbols-outlined" style="font-size: 14px;" aria-hidden="true">check_circle</span>
+                Certifié
+              </span>
+            </div>
+            <div *ngIf="(events$ | async)?.length === 0" class="no-events">
+              Aucun pointage déclaré pour le moment.
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- Incident Bottom Sheet / Modal (No direct one-tap incident) -->
+      <div
+        *ngIf="incidentSheetOpen"
+        class="sheet-backdrop"
+        (click)="closeIncidentBottomSheet()"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="sheet-title"
+      >
+        <div class="sheet-container" (click)="$event.stopPropagation()">
+          <div class="sheet-handle" aria-hidden="true"></div>
+
+          <div class="sheet-header">
+            <h2 id="sheet-title" class="sheet-title">Signaler une anomalie ou un incident</h2>
+            <button class="sheet-close" (click)="closeIncidentBottomSheet()" aria-label="Fermer">
+              <span class="material-symbols-outlined" aria-hidden="true">close</span>
+            </button>
+          </div>
+
+          <div class="sheet-body">
+            <p class="sheet-desc">
+              Sélectionnez la nature de l'incident et précisez la situation pour transmission immédiate au régulateur.
+            </p>
+
+            <div class="form-group">
+              <label for="incidentTypeSelect" class="form-label">Type d'incident :</label>
+              <select id="incidentTypeSelect" [(ngModel)]="incidentType" class="form-input">
+                <option value="Panne mécanique / Crevaison">Panne mécanique ou crevaison</option>
+                <option value="Embouteillage majeur (> 30 min)">Embouteillage majeur (> 30 min)</option>
+                <option value="Contrôle de police / Douanes">Contrôle routier / Forces de l'ordre</option>
+                <option value="Accident de la circulation">Accident de la circulation</option>
+                <option value="Déviation d'itinéraire imposée">Déviation imposée</option>
+                <option value="Autre aléa terrain">Autre événement imprévu</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="incidentCommentInput" class="form-label">Commentaire explicatif :</label>
+              <textarea
+                id="incidentCommentInput"
+                [(ngModel)]="incidentComment"
+                rows="3"
+                class="form-input"
+                placeholder="Décrivez brièvement la situation actuelle (lieu, état du véhicule, etc.)..."
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="sheet-footer">
+            <button class="btn btn-outline" (click)="closeIncidentBottomSheet()">
+              Annuler
+            </button>
+            <button class="btn btn-primary" (click)="submitIncident()">
+              <span class="material-symbols-outlined" aria-hidden="true">send</span>
+              Confirmer le signalement
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>

@@ -1,0 +1,44 @@
+.missions-page {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    .code-badge {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      padding: 0.2rem 0.5rem;
+      border-radius: var(--r-sm);
+      color: var(--ink);
+      font-weight: 700;
+      font-family: monospace;
+      font-size: var(--text-xs);
+    }
+
+    .route-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      font-size: var(--text-xs);
+    }
+
+    .route-point {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      color: var(--ink-2);
+    }
+
+    .origin-icon {
+      font-size: 14px;
+      color: var(--ok);
+    }
+
+    .dest-icon {
+      font-size: 14px;
+      color: var(--brand);
+    }
