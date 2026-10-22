@@ -107,6 +107,42 @@ export class ControlConsoleComponent {
     this.pendingMissionToValidate = null;
   }
 
+  // Modal d'explicitation de prise en charge
+  takeChargeModalOpen = false;
+  selectedAlertForCharge: Alert | null = null;
+  assignedOperator = 'Isaac (Superviseur Flotte)';
+  engagedAction = 'CONTACT_CHAUFFEUR';
+  investigationNote = '';
+
+  openTakeChargeModal(alert: Alert) {
+    this.selectedAlertForCharge = alert;
+    this.assignedOperator = 'Isaac (Superviseur Flotte)';
+    this.engagedAction = 'CONTACT_CHAUFFEUR';
+    this.investigationNote = '';
+    this.takeChargeModalOpen = true;
+  }
+
+  closeTakeChargeModal() {
+    this.takeChargeModalOpen = false;
+    this.selectedAlertForCharge = null;
+    this.investigationNote = '';
+  }
+
+  confirmTakeCharge() {
+    if (!this.selectedAlertForCharge) return;
+    const alertId = this.selectedAlertForCharge.id;
+    const vehicleReg = this.selectedAlertForCharge.vehicleReg;
+
+    this.mockService.updateAlertStatus(alertId, 'PRISE_EN_CHARGE', {
+      assignedTo: this.assignedOperator,
+      actionType: this.engagedAction,
+      resolutionNote: this.investigationNote
+    });
+
+    this.toast.success(`Anomalie sur ${vehicleReg} prise en charge par ${this.assignedOperator}.`);
+    this.closeTakeChargeModal();
+  }
+
   updateStatus(alertId: string, status: 'PRISE_EN_CHARGE' | 'CLOTUREE') {
     this.mockService.updateAlertStatus(alertId, status);
     const msg = status === 'CLOTUREE' ? "L'alerte a été clôturée." : "L'alerte a été prise en charge.";

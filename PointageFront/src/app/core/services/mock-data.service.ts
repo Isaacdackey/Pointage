@@ -547,16 +547,32 @@ export class MockDataService {
   }
 
   
-  updateAlertStatus(alertId: string, newStatus: 'PRISE_EN_CHARGE' | 'CLOTUREE' | 'IGNOREE') {
+  updateAlertStatus(
+    alertId: string,
+    newStatus: 'PRISE_EN_CHARGE' | 'CLOTUREE' | 'IGNOREE',
+    details?: { assignedTo?: string; actionType?: string; resolutionNote?: string }
+  ) {
     const alerts = this.alerts$.getValue();
     const alert = alerts.find(a => a.id === alertId);
     if (alert) {
       alert.status = newStatus;
+      if (details) {
+        if (details.assignedTo) alert.assignedTo = details.assignedTo;
+        if (details.actionType) alert.actionType = details.actionType;
+        if (details.resolutionNote) alert.resolutionNote = details.resolutionNote;
+        alert.handledAt = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+
       this.alerts$.next([...alerts]);
       if (newStatus === 'CLOTUREE') {
         this.notificationService.sendPushNotification({
           title: 'Alerte clôturée',
           body: `L'anomalie sur le véhicule ${alert.vehicleReg} a été résolue.`
+        });
+      } else if (newStatus === 'PRISE_EN_CHARGE') {
+        this.notificationService.sendPushNotification({
+          title: 'Alerte prise en charge',
+          body: `Anomalie ${alert.vehicleReg} prise en charge par ${alert.assignedTo || 'l\'opérateur'}.`
         });
       }
     }

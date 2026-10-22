@@ -96,6 +96,9 @@ export interface Alert {
   status: AlertStatus;
   description: string;
   assignedTo?: string;
+  actionType?: string;
+  resolutionNote?: string;
+  handledAt?: string;
 }
 
 export interface TripEvent {

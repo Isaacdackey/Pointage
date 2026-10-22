@@ -48,6 +48,13 @@
             <h3 class="alert-title">{{ alt.vehicleReg }} &bull; {{ alt.type }}</h3>
             <p class="alert-desc">{{ alt.description }}</p>
 
+            <!-- Détails de prise en charge si existants -->
+            <div *ngIf="alt.status === 'PRISE_EN_CHARGE' && alt.assignedTo" class="charge-info-pill">
+              <span class="material-symbols-outlined" style="font-size: 14px; color: #0284c7;">support_agent</span>
+              <span>Enquête : <strong>{{ alt.assignedTo }}</strong></span>
+              <span *ngIf="alt.actionType" class="action-tag">({{ alt.actionType }})</span>
+            </div>
+
             <div class="box-footer">
               <div class="status-wrapper">
                 <span class="subtext">Statut :</span>
@@ -56,7 +63,7 @@
               <div class="btns-inline">
                 <button
                   *ngIf="alt.status === 'NOUVELLE'"
-                  (click)="updateStatus(alt.id, 'PRISE_EN_CHARGE')"
+                  (click)="openTakeChargeModal(alt)"
                   class="btn btn-outline btn-xs"
                 >
                   Prendre en charge
@@ -209,4 +216,72 @@
         (confirm)="confirmValidation()"
         (cancel)="cancelValidation()"
       ></app-confirm-dialog>
+
+      <!-- Modal Explicitation Prise en Charge d'Anomalie -->
+      <div *ngIf="takeChargeModalOpen && selectedAlertForCharge" class="modal-backdrop" (click)="closeTakeChargeModal()" role="dialog" aria-modal="true">
+        <div class="modal-box" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <div class="modal-header-title">
+              <span class="material-symbols-outlined modal-icon" aria-hidden="true">assignment_ind</span>
+              <h2>Prise en charge de l'anomalie</h2>
+            </div>
+            <button class="btn-icon" (click)="closeTakeChargeModal()" aria-label="Fermer la fenêtre">
+              <span class="material-symbols-outlined" aria-hidden="true">close</span>
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <!-- Rappel véhicule & anomalie -->
+            <div class="alert-summary-box">
+              <div class="summary-top">
+                <span class="plate-highlight">{{ selectedAlertForCharge.vehicleReg }}</span>
+                <span class="type-highlight">{{ selectedAlertForCharge.type }}</span>
+                <span class="time-sub">{{ selectedAlertForCharge.occurredAt }}</span>
+              </div>
+              <p class="summary-desc">{{ selectedAlertForCharge.description }}</p>
+            </div>
+
+            <!-- Choix de l'opérateur régulateur -->
+            <div class="form-group">
+              <label for="operatorSelect">Opérateur assigné au dossier :</label>
+              <select id="operatorSelect" [(ngModel)]="assignedOperator" class="form-select">
+                <option value="Isaac (Superviseur Flotte)">Isaac (Superviseur Flotte)</option>
+                <option value="Mamadou (Régulateur Exploitation)">Mamadou (Régulateur Exploitation)</option>
+                <option value="Awa (Contrôleur Sécurité)">Awa (Contrôleur Sécurité)</option>
+              </select>
+            </div>
+
+            <!-- Action concrète engagée -->
+            <div class="form-group">
+              <label for="actionEngagedSelect">Action opérationnelle engagée :</label>
+              <select id="actionEngagedSelect" [(ngModel)]="engagedAction" class="form-select">
+                <option value="CONTACT_CHAUFFEUR">Appel téléphonique au chauffeur pour vérification terrain</option>
+                <option value="CONTROLE_GPS">Contrôle télématique approfondi et suivi de trajectoire GPS</option>
+                <option value="APPEL_CLIENT">Contact client / expéditeur pour confirmation de déviation</option>
+                <option value="INSPECTION_MECANIQUE">Envoi d'une équipe technique / assistance dépannage</option>
+              </select>
+            </div>
+
+            <!-- Note d'enquête / consignes -->
+            <div class="form-group">
+              <label for="investigationNote">Consigne ou note d'enquête interne (optionnel) :</label>
+              <textarea
+                id="investigationNote"
+                [(ngModel)]="investigationNote"
+                rows="2"
+                class="form-input"
+                placeholder="Ex : Appel chauffeur en cours, demande d'arrêt sur bas-côté sécurisé pour confirmation."
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" (click)="closeTakeChargeModal()">Annuler</button>
+            <button type="button" class="btn btn-primary" (click)="confirmTakeCharge()">
+              <span class="material-symbols-outlined" aria-hidden="true">check</span>
+              Valider la prise en charge
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
