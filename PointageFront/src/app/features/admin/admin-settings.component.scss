@@ -60,9 +60,9 @@
       display: inline-flex;
       align-items: center;
       gap: 0.35rem;
-      background: #ecfdf5;
-      color: #047857;
-      border: 1px solid #a7f3d0;
+      background: var(--pill-ok-bg);
+      color: var(--pill-ok-fg);
+      border: 1px solid var(--pill-ok-border);
       padding: 0.3rem 0.75rem;
       border-radius: var(--r-full);
       font-size: var(--text-xs);
@@ -110,7 +110,7 @@
     }
 
     .setting-box {
-      background: var(--bg);
+      background: var(--surface-alt);
       border: 1px solid var(--line);
       border-radius: var(--r-md);
       padding: 1.25rem;
@@ -172,10 +172,11 @@
       font-weight: 700;
       padding: 0.2rem 0.55rem;
       border-radius: var(--r-full);
+      border: 1px solid transparent;
     }
-    .role-badge.admin { background: #eff6ff; color: #1d4ed8; }
-    .role-badge.agent { background: #ecfdf5; color: #047857; }
-    .role-badge.driver { background: #fff7ed; color: #c2410c; }
+    .role-badge.admin { background: var(--pill-info-bg); color: var(--pill-info-fg); border-color: var(--pill-info-border); }
+    .role-badge.agent { background: var(--pill-ok-bg); color: var(--pill-ok-fg); border-color: var(--pill-ok-border); }
+    .role-badge.driver { background: var(--pill-brand-bg); color: var(--pill-brand-fg); border-color: var(--pill-brand-border); }
 
     .badge-active {
       font-size: var(--text-xs);

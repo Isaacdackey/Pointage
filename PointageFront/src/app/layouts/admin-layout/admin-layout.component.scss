@@ -20,8 +20,10 @@
       z-index: 1000;
     }
 
-    .admin-shell.sidebar-collapsed .admin-sidebar {
-      width: 72px;
+    @media (min-width: 1025px) {
+      .admin-shell.sidebar-collapsed .admin-sidebar {
+        width: 72px;
+      }
     }
 
     .sidebar-brand {

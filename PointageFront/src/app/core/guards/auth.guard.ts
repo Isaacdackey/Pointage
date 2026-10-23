@@ -17,9 +17,8 @@ export const authGuard: CanActivateFn = () => {
 
 /**
  * Verifie que le role courant est autorise.
- * ADMIN accède a tout.
- * AGENT accède a control, map, dashboard, missions.
- * DRIVER accède a driver, missions.
+ * SUPER_ADMIN : accès complet y compris suppression et administration.
+ * USER : accès opérationnel (dashboard, map, control, missions, fleet, reports) sans suppression.
  */
 export const roleGuard = (allowedRoles: UserRole[]): CanActivateFn => {
   return () => {
@@ -35,13 +34,6 @@ export const roleGuard = (allowedRoles: UserRole[]): CanActivateFn => {
       return true;
     }
 
-    // Redirection inteligente selon le role actuel
-    if (currentRole === 'DRIVER') {
-      return router.createUrlTree(['/driver']);
-    }
-    if (currentRole === 'AGENT') {
-      return router.createUrlTree(['/control']);
-    }
     return router.createUrlTree(['/dashboard']);
   };
 };

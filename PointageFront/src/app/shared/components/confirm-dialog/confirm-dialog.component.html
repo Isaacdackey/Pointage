@@ -4,6 +4,9 @@
         role="dialog"
         aria-modal="true"
         [attr.aria-labelledby]="'dialog-title-' + id"
+        appModalA11y
+        (escapePressed)="cancel.emit()"
+        tabindex="-1"
       >
         <div class="dialog-header">
           <div class="dialog-icon" [ngClass]="type || 'info'">

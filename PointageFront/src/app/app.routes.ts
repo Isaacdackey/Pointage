@@ -25,21 +25,13 @@ export const routes: Routes = [
     ]
   },
 
-  // 3. Layout Chauffeur (Mobile-first plein écran, barre d'action inférieure)
+  // 3. Redirection automatique de l'ancienne route /driver vers le dashboard
   {
     path: 'driver',
-    component: DriverLayoutComponent,
-    canActivate: [authGuard, roleGuard(['DRIVER', 'ADMIN'])],
-    children: [
-      {
-        path: '',
-        loadComponent: () => import('./features/driver/driver-app.component').then(m => m.DriverAppComponent),
-        title: 'Pointage Chauffeur • GeoFleet'
-      }
-    ]
+    redirectTo: 'dashboard'
   },
 
-  // 4. Layout Admin & Agent (Sidebar Zinc + Topbar)
+  // 4. Layout Exploitation & Administration
   {
     path: '',
     component: AdminLayoutComponent,
@@ -48,44 +40,50 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent),
-        canActivate: [roleGuard(['ADMIN', 'AGENT'])],
+        canActivate: [roleGuard(['SUPER_ADMIN', 'USER'])],
         title: 'Tableau de bord • GeoFleet'
       },
       {
         path: 'map',
         loadComponent: () => import('./features/map/live-map.component').then(m => m.LiveMapComponent),
-        canActivate: [roleGuard(['ADMIN', 'AGENT'])],
+        canActivate: [roleGuard(['SUPER_ADMIN', 'USER'])],
         title: 'Carte en direct • GeoFleet'
       },
       {
         path: 'control',
         loadComponent: () => import('./features/control/control-console.component').then(m => m.ControlConsoleComponent),
-        canActivate: [roleGuard(['ADMIN', 'AGENT'])],
+        canActivate: [roleGuard(['SUPER_ADMIN', 'USER'])],
         title: 'Console de Contrôle • GeoFleet'
       },
       {
         path: 'missions',
         loadComponent: () => import('./features/missions/missions-list.component').then(m => m.MissionsListComponent),
-        canActivate: [roleGuard(['ADMIN', 'AGENT', 'DRIVER'])],
+        canActivate: [roleGuard(['SUPER_ADMIN', 'USER'])],
         title: 'Planning des Missions • GeoFleet'
+      },
+      {
+        path: 'sites',
+        loadComponent: () => import('./features/sites/sites-management.component').then(m => m.SitesManagementComponent),
+        canActivate: [roleGuard(['SUPER_ADMIN', 'USER'])],
+        title: 'Sites Favoris & Géofencing • GeoFleet'
       },
       {
         path: 'fleet',
         loadComponent: () => import('./features/fleet/fleet-management.component').then(m => m.FleetManagementComponent),
-        canActivate: [roleGuard(['ADMIN'])],
+        canActivate: [roleGuard(['SUPER_ADMIN', 'USER'])],
         title: 'Gestion de Flotte • GeoFleet'
       },
       {
         path: 'reports',
         loadComponent: () => import('./features/reports/reports.component').then(m => m.ReportsComponent),
-        canActivate: [roleGuard(['ADMIN'])],
+        canActivate: [roleGuard(['SUPER_ADMIN', 'USER'])],
         title: 'Rapports & Synthèse • GeoFleet'
       },
       {
         path: 'admin',
         loadComponent: () => import('./features/admin/admin-settings.component').then(m => m.AdminSettingsComponent),
-        canActivate: [roleGuard(['ADMIN'])],
-        title: 'Seuils & Audit • GeoFleet'
+        canActivate: [roleGuard(['SUPER_ADMIN'])],
+        title: 'Administration & Seuils • GeoFleet'
       }
     ]
   },

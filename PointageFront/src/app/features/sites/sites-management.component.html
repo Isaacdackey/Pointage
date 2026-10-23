@@ -1,0 +1,318 @@
+<div class="sites-container">
+  <app-page-header
+    title="Sites Favoris & Géofencing Logistique"
+    subtitle="Cartographie des bases, stations Total et dépôts clients avec détection automatique des passages et arrêts (rayon 15–30m)."
+  >
+    <div class="header-actions">
+      <button class="btn btn-primary" (click)="openAddModal()">
+        <span class="material-symbols-outlined" aria-hidden="true">add_location_alt</span>
+        Ajouter un Site Favori
+      </button>
+    </div>
+  </app-page-header>
+
+  <!-- Banner explicative issue des consignes de terrain -->
+  <div class="geofence-info-banner">
+    <div class="banner-icon">
+      <span class="material-symbols-outlined">radar</span>
+    </div>
+    <div class="banner-text">
+      <strong>Détection Automatique par Balises Géofencing Virtuelles :</strong>
+      <span>
+        Chaque véhicule entrant dans le périmètre (15m à 30m) d'un site enregistré est immédiatement horodaté.
+        Un arrêt est confirmé et certifié dès lors que le véhicule y reste immobilisé au moins <strong>2 minutes</strong>.
+      </span>
+    </div>
+  </div>
+
+  <!-- Tabs bar -->
+  <div class="tabs-bar" role="tablist" aria-label="Sections Géofencing">
+    <button
+      role="tab"
+      id="tab-sites"
+      aria-controls="panel-sites"
+      [attr.aria-selected]="activeTab === 'SITES'"
+      [class.active]="activeTab === 'SITES'"
+      (click)="activeTab = 'SITES'"
+      class="tab-btn"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true">pin_drop</span>
+      Sites Enregistrés ({{ (geoSites$ | async)?.length }})
+    </button>
+
+    <button
+      role="tab"
+      id="tab-passages"
+      aria-controls="panel-passages"
+      [attr.aria-selected]="activeTab === 'PASSAGES'"
+      [class.active]="activeTab === 'PASSAGES'"
+      (click)="activeTab = 'PASSAGES'"
+      class="tab-btn"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true">history</span>
+      Journal des Passages & Arrêts Détectés
+    </button>
+  </div>
+
+  <!-- TAB 1: SITES FAVORIS -->
+  <section
+    *ngIf="activeTab === 'SITES'"
+    id="panel-sites"
+    role="tabpanel"
+    aria-labelledby="tab-sites"
+  >
+    <div class="sites-grid">
+      <div class="site-card card" *ngFor="let site of geoSites$ | async">
+        <div class="site-card-header">
+          <div class="site-badge" [attr.data-cat]="site.category">
+            <span class="material-symbols-outlined">{{ getCategoryIcon(site.category) }}</span>
+            <span>{{ getCategoryLabel(site.category) }}</span>
+          </div>
+          <span class="radius-chip" title="Rayon de détection GPS automatique">
+            <span class="material-symbols-outlined">all_out</span>
+            {{ site.radiusMeters }} m
+          </span>
+        </div>
+
+        <h3 class="site-title">{{ site.name }}</h3>
+        <p class="site-address">
+          <span class="material-symbols-outlined">place</span>
+          {{ site.address }}
+        </p>
+
+        <div class="site-details">
+          <div class="detail-row">
+            <span class="lbl">GPS :</span>
+            <code class="gps-coords">{{ site.latitude.toFixed(4) }}, {{ site.longitude.toFixed(4) }}</code>
+          </div>
+          <div class="detail-row">
+            <span class="lbl">Seuil arrêt :</span>
+            <strong class="val">{{ site.minStopDurationMinutes }} min requises</strong>
+          </div>
+          <div class="detail-row" *ngIf="site.contactName">
+            <span class="lbl">Contact :</span>
+            <span class="val">{{ site.contactName }} ({{ site.contactPhone }})</span>
+          </div>
+          <div class="detail-notes" *ngIf="site.notes">
+            <span class="material-symbols-outlined">info</span>
+            <em>{{ site.notes }}</em>
+          </div>
+        </div>
+
+        <div class="site-card-footer">
+          <span class="created-at">Enregistré le {{ site.createdAt }}</span>
+          <a routerLink="/map" class="btn-link">
+            <span class="material-symbols-outlined">explore</span>
+            Localiser
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 2: JOURNAL DES PASSAGES AUTOMATIQUES -->
+  <section
+    *ngIf="activeTab === 'PASSAGES'"
+    id="panel-passages"
+    role="tabpanel"
+    aria-labelledby="tab-passages"
+    class="card"
+  >
+    <div class="table-container">
+      <table class="data-table data-table--stack">
+        <caption class="sr-only">Historique des entrées et sorties de sites favoris</caption>
+        <thead>
+          <tr>
+            <th scope="col">Véhicule</th>
+            <th scope="col">Chauffeur</th>
+            <th scope="col">Site Favori Franchi</th>
+            <th scope="col">Heure d'Entrée</th>
+            <th scope="col">Heure de Sortie</th>
+            <th scope="col" class="num-cell">Durée Présence</th>
+            <th scope="col" style="text-align: right;">Arrêt Confirmé</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let visit of siteVisits$ | async">
+            <td data-label="Véhicule">
+              <strong class="plate-badge">{{ visit.vehicleReg }}</strong>
+            </td>
+            <td data-label="Chauffeur">
+              {{ visit.driverName || 'Non renseigné' }}
+            </td>
+            <td data-label="Site Favori">
+              <strong>{{ visit.siteName }}</strong>
+              <small *ngIf="visit.missionId" class="mission-tag">Réf : {{ visit.missionId }}</small>
+            </td>
+            <td data-label="Entrée">
+              <span class="time-in">{{ visit.enteredAt }}</span>
+            </td>
+            <td data-label="Sortie">
+              <span class="time-out">{{ visit.exitedAt || 'Toujours sur site' }}</span>
+            </td>
+            <td data-label="Durée" class="num-cell">
+              <strong>{{ visit.durationMinutes }} min</strong>
+            </td>
+            <td data-label="Statut Arrêt" style="text-align: right;">
+              <span class="badge-status-ok" *ngIf="visit.wasStopConfirmed">
+                <span class="material-symbols-outlined">check_circle</span>
+                Validé (&gt; 2 min)
+              </span>
+              <span class="badge-status-transit" *ngIf="!visit.wasStopConfirmed">
+                <span class="material-symbols-outlined">directions_car</span>
+                Simple passage
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<!-- Modal : Ajouter un Site Favori -->
+<div class="modal-backdrop" *ngIf="isAddModalOpen" (click)="closeAddModal()">
+  <div
+    class="modal-box modal-md"
+    appModalA11y
+    (modalClose)="closeAddModal()"
+    (click)="$event.stopPropagation()"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-title"
+  >
+    <header class="modal-header">
+      <h2 id="modal-title">
+        <span class="material-symbols-outlined" style="vertical-align: middle; margin-right: 0.5rem; color: var(--brand);" aria-hidden="true">add_location_alt</span>
+        Définir un Nouveau Site Favori
+      </h2>
+      <button type="button" class="btn-close" (click)="closeAddModal()" aria-label="Fermer la boîte de dialogue">&times;</button>
+    </header>
+
+    <form (ngSubmit)="saveSite()">
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="site-name">Nom du Site *</label>
+            <input
+              id="site-name"
+              type="text"
+              [(ngModel)]="newSite.name"
+              name="name"
+              required
+              placeholder="ex: Total Station Rufisque 2"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="site-cat">Catégorie *</label>
+            <select id="site-cat" [(ngModel)]="newSite.category" name="category" class="form-input">
+              <option value="DEPOT_CLIENT">Dépôt / Client</option>
+              <option value="STATION_SERVICE">Station-Service (Total)</option>
+              <option value="PORT_LOGISTIQUE">Port & Logistique</option>
+              <option value="USINE_CHANTIER">Usine & Chantier</option>
+              <option value="SIEGE_ENTREPRISE">Siège & Base Entreprise</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="site-radius">Rayon de détection (mètres) *</label>
+            <input
+              id="site-radius"
+              type="number"
+              [(ngModel)]="newSite.radiusMeters"
+              name="radiusMeters"
+              min="10"
+              max="200"
+              step="5"
+              required
+              class="form-input"
+            />
+            <small style="color: var(--ink-3); font-size: var(--text-xs);">Recommandé : 15m à 30m</small>
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="site-address">Adresse / Localisation *</label>
+            <input
+              id="site-address"
+              type="text"
+              [(ngModel)]="newSite.address"
+              name="address"
+              required
+              placeholder="ex: Route Nationale 1, Sortie Rufisque Est"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="site-lat">Latitude (GPS) *</label>
+            <input
+              id="site-lat"
+              type="number"
+              [(ngModel)]="newSite.latitude"
+              name="latitude"
+              step="0.0001"
+              required
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="site-lng">Longitude (GPS) *</label>
+            <input
+              id="site-lng"
+              type="number"
+              [(ngModel)]="newSite.longitude"
+              name="longitude"
+              step="0.0001"
+              required
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="site-contact">Responsable sur site</label>
+            <input
+              id="site-contact"
+              type="text"
+              [(ngModel)]="newSite.contactName"
+              name="contactName"
+              placeholder="ex: Chef de quai"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="site-phone">Téléphone contact</label>
+            <input
+              id="site-phone"
+              type="tel"
+              [(ngModel)]="newSite.contactPhone"
+              name="contactPhone"
+              placeholder="+221 77 000 00 00"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="site-notes">Instructions & Remarques</label>
+            <textarea
+              id="site-notes"
+              [(ngModel)]="newSite.notes"
+              name="notes"
+              rows="2"
+              placeholder="Consignes d'accès, port de casque obligatoire, etc."
+              class="form-input"
+            ></textarea>
+          </div>
+        </div>
+      </div>
+
+      <footer class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeAddModal()">Annuler</button>
+        <button type="submit" class="btn btn-primary">Enregistrer le Site</button>
+      </footer>
+    </form>
+  </div>
+</div>

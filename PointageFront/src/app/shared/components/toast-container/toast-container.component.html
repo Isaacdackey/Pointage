@@ -3,7 +3,7 @@
         *ngFor="let toast of toasts$ | async"
         class="toast-item"
         [ngClass]="'toast-' + toast.type"
-        role="status"
+        [attr.role]="toast.type === 'danger' ? 'alert' : 'status'"
       >
         <span class="material-symbols-outlined toast-icon" aria-hidden="true">
           {{ getIcon(toast.type) }}

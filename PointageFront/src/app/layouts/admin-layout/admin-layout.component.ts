@@ -6,6 +6,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { MockDataService } from '../../core/services/mock-data.service';
 import { ToastService } from '../../shared/services/toast.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { ThemeService } from '../../core/services/theme.service';
 import { map } from 'rxjs/operators';
 
 @Component({
@@ -21,6 +22,7 @@ export class AdminLayoutComponent {
   private toastService = inject(ToastService);
   private router = inject(Router);
   notificationService = inject(NotificationService);
+  themeService = inject(ThemeService);
 
   user$ = this.authService.currentUser$;
   isSidebarCollapsed = false;

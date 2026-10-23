@@ -1,10 +1,12 @@
-import { Component, AfterViewInit, inject, OnDestroy, ElementRef, ViewChild } from '@angular/core';
+import { Component, AfterViewInit, inject, OnDestroy, ElementRef, ViewChild, effect, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import * as L from 'leaflet';
 import { MockDataService } from '../../core/services/mock-data.service';
-import { Vehicle } from '../../core/models/fleet.models';
+import { Vehicle, GeoSite, VehicleType } from '../../core/models/fleet.models';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
+import { ThemeService } from '../../core/services/theme.service';
+import { escapeHtml } from '../../shared/utils/security.utils';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -19,33 +21,94 @@ export class LiveMapComponent implements AfterViewInit, OnDestroy {
 
   private mockService = inject(MockDataService);
   private route = inject(ActivatedRoute);
+  themeService = inject(ThemeService);
 
   private map!: L.Map;
   private markers: Map<string, L.Marker> = new Map();
+  private siteCircles: L.Circle[] = [];
+  private siteMarkers: L.Marker[] = [];
   private polyline?: L.Polyline;
 
   vehicles: Vehicle[] = [];
+  geoSites: GeoSite[] = [];
   selectedVehicle: Vehicle | null = null;
   filterStatus: string = 'ALL';
 
+  // Mode Salle d'Opérations & Grand Écran TV
+  isWallboardFullscreen = false;
+  showSitesLayer = true;
+
+  private tileLayer!: L.TileLayer;
   private sub?: Subscription;
+  private sitesSub?: Subscription;
+
+  // Tuiles OpenStreetMap 100% gratuites sans clé API requise
+  private readonly osmTilesUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+  constructor() {
+    // Réaction au changement de thème pour rafraîchir les pins
+    effect(() => {
+      this.themeService.isDark();
+      this.renderVehicleMarkers();
+      if (this.showSitesLayer) {
+        this.renderGeofenceSites();
+      }
+    });
+  }
 
   ngAfterViewInit(): void {
     this.initMap();
-    this.loadVehiclesAndListenParams();
+    this.loadSitesAndVehicles();
   }
 
   private initMap(): void {
-    // Center initially on Dakar / Sénégal region
-    this.map = L.map(this.mapContainer.nativeElement).setView([14.7167, -17.4677], 12);
+    // Centre initial : Dakar & Région métropolitaine
+    this.map = L.map(this.mapContainer.nativeElement, {
+      zoomControl: false // Déplacé pour l'esthétique du Wallboard
+    }).setView([14.7250, -17.4350], 12);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributeurs'
+    // Contrôles de zoom repositionnés en haut à droite
+    L.control.zoom({ position: 'topright' }).addTo(this.map);
+
+    this.tileLayer = L.tileLayer(this.osmTilesUrl, {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributeurs',
+      maxZoom: 19
     }).addTo(this.map);
   }
 
-  private loadVehiclesAndListenParams(): void {
-    // Single combined subscription to avoid nested memory leak
+
+  toggleMapTheme(): void {
+    this.themeService.toggle();
+  }
+
+  toggleWallboardFullscreen(): void {
+    this.isWallboardFullscreen = !this.isWallboardFullscreen;
+    setTimeout(() => {
+      if (this.map) {
+        this.map.invalidateSize();
+      }
+    }, 200);
+  }
+
+  toggleSitesLayer(): void {
+    this.showSitesLayer = !this.showSitesLayer;
+    if (this.showSitesLayer) {
+      this.renderGeofenceSites();
+    } else {
+      this.clearGeofenceSites();
+    }
+  }
+
+  private loadSitesAndVehicles(): void {
+    // 1. Charger les Sites Favoris / Géofencing (Phase 3)
+    this.sitesSub = this.mockService.getGeoSites().subscribe(sites => {
+      this.geoSites = sites;
+      if (this.showSitesLayer) {
+        this.renderGeofenceSites();
+      }
+    });
+
+    // 2. Charger les Véhicules avec GPS
     this.sub = this.mockService.getVehicles().subscribe(data => {
       this.vehicles = data;
       this.renderVehicleMarkers();
@@ -65,6 +128,10 @@ export class LiveMapComponent implements AfterViewInit, OnDestroy {
     return this.vehicles.filter(v => v.status === this.filterStatus);
   }
 
+  get movingVehiclesCount(): number {
+    return this.vehicles.filter(v => v.lastPosition && v.lastPosition.speedKph > 0).length;
+  }
+
   setFilter(status: string): void {
     this.filterStatus = status;
     this.renderVehicleMarkers();
@@ -74,10 +141,79 @@ export class LiveMapComponent implements AfterViewInit, OnDestroy {
     return !!seconds && seconds > 300;
   }
 
+  private getVehicleTypeIcon(type: VehicleType): string {
+    switch (type) {
+      case 'MOTO':
+      case 'SCOOTER': return 'two_wheeler';
+      case 'TRICYCLE': return 'electric_rickshaw';
+      case 'CAMION': return 'rv_hookup';
+      case 'FOURGONNETTE': return 'local_shipping';
+      case 'PICKUP': return 'directions_car';
+      case 'BERLINE': return 'commute';
+      default: return 'directions_car';
+    }
+  }
+
+  private renderGeofenceSites(): void {
+    this.clearGeofenceSites();
+    if (!this.map) return;
+
+    this.geoSites.forEach(site => {
+      // 1. Cercle de détection géofencing (15m à 35m)
+      const circle = L.circle([site.latitude, site.longitude], {
+        radius: site.radiusMeters,
+        color: '#3b82f6',
+        fillColor: '#3b82f6',
+        fillOpacity: 0.22,
+        weight: 2,
+        dashArray: '4, 4'
+      }).addTo(this.map);
+
+      circle.bindTooltip(
+        `<strong>📍 ${site.name}</strong><br/>Rayon télématique : ${site.radiusMeters}m<br/>Arrêt min. : ${site.minStopDurationMinutes} min`,
+        { direction: 'top' }
+      );
+      this.siteCircles.push(circle);
+
+      // 2. Marqueur icône du site
+      const siteIcon = L.divIcon({
+        className: 'custom-telematics-pin',
+        html: `
+          <div class="pin-site">
+            <span class="material-symbols-outlined site-icon" aria-hidden="true">pin_drop</span>
+          </div>
+        `,
+        iconSize: [0, 0]
+      });
+
+      const safeName = escapeHtml(site.name);
+      const safeAddress = escapeHtml(site.address);
+
+      const marker = L.marker([site.latitude, site.longitude], { icon: siteIcon }).addTo(this.map);
+      marker.bindPopup(`
+        <div class="popup-site-content">
+          <h3 class="popup-site-title">${safeName}</h3>
+          <p class="popup-site-desc">${safeAddress}</p>
+          <div class="popup-site-radius">Périmètre : ${site.radiusMeters} mètres</div>
+        </div>
+      `);
+      this.siteMarkers.push(marker);
+    });
+  }
+
+  private clearGeofenceSites(): void {
+    if (this.map) {
+      this.siteCircles.forEach(c => this.map.removeLayer(c));
+      this.siteMarkers.forEach(m => this.map.removeLayer(m));
+    }
+    this.siteCircles = [];
+    this.siteMarkers = [];
+  }
+
   private renderVehicleMarkers(): void {
     if (!this.map) return;
 
-    // Clear old markers
+    // Supprimer les anciens marqueurs
     this.markers.forEach(m => this.map.removeLayer(m));
     this.markers.clear();
 
@@ -85,51 +221,40 @@ export class LiveMapComponent implements AfterViewInit, OnDestroy {
       if (!vehicle.lastPosition) return;
 
       const isStale = this.isSignalStale(vehicle.lastPosition.freshnessSeconds);
-      const isEnMission = vehicle.status === 'EN_MISSION';
+      const isMoving = vehicle.lastPosition.speedKph > 0;
+      const typeIcon = this.getVehicleTypeIcon(vehicle.type);
 
-      let bgColor = isEnMission ? 'var(--info)' : (vehicle.status === 'DISPONIBLE' ? 'var(--ok)' : 'var(--warn)');
-      let textDecoration = 'none';
-      let opacity = '1';
-
-      if (isStale) {
-        bgColor = '#64748b';
-        textDecoration = 'line-through';
-        opacity = '0.75';
+      // Couleurs adaptées au Wallboard
+      let pinColor = '#10b981'; // Vert : en mouvement
+      if (vehicle.status === 'MAINTENANCE') {
+        pinColor = '#f59e0b';
+      } else if (!isMoving) {
+        pinColor = '#3b82f6'; // Bleu : immobile / disponible
       }
 
+      if (isStale) {
+        pinColor = '#64748b'; // Gris : signal muet
+      }
+
+      const safeReg = escapeHtml(vehicle.registrationNumber);
+
+      // Création du marqueur télématique responsive
       const customIcon = L.divIcon({
-        className: 'custom-vehicle-pin',
+        className: 'custom-telematics-pin',
         html: `
-          <div style="
-            background: ${bgColor};
-            color: #ffffff;
-            padding: 4px 8px;
-            border-radius: 9999px;
-            font-size: 11px;
-            font-weight: 700;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.25);
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            border: 2px solid #ffffff;
-            opacity: ${opacity};
-            text-decoration: ${textDecoration};
-            cursor: pointer;
-            white-space: nowrap;
-          ">
-            <span class="material-symbols-outlined" style="font-size: 14px;">directions_car</span>
-            <span>${vehicle.registrationNumber}</span>
+          <div class="pin-vehicle" style="--pin: ${pinColor};">
+            <span class="material-symbols-outlined pin-icon" aria-hidden="true">${typeIcon}</span>
+            <span>${safeReg}</span>
+            <span class="pin-speed">${vehicle.lastPosition.speedKph} km/h</span>
           </div>
         `,
-        iconSize: [110, 30],
-        iconAnchor: [55, 15]
+        iconSize: [0, 0]
       });
 
       const marker = L.marker([vehicle.lastPosition.latitude, vehicle.lastPosition.longitude], {
         icon: customIcon
       });
 
-      // Si un tracé est en cours, n'afficher sur la carte que le véhicule sélectionné
       if (!this.isTripTraceActive || vehicle.id === this.selectedVehicle?.id) {
         marker.addTo(this.map);
       }
@@ -187,7 +312,6 @@ export class LiveMapComponent implements AfterViewInit, OnDestroy {
     }
     this.isTripTraceActive = false;
 
-    // Réafficher tous les autres véhicules sur la carte
     if (this.map) {
       this.markers.forEach(marker => {
         if (!this.map.hasLayer(marker)) {
@@ -201,64 +325,49 @@ export class LiveMapComponent implements AfterViewInit, OnDestroy {
     this.clearHistoricTrip();
     if (!this.selectedVehicle) return;
 
-    // Coordonnées spécifiques selon le véhicule
     let tripCoords: L.LatLngExpression[] = [];
     let startLabel = 'Départ 08:30';
 
     if (this.selectedVehicle.id === 'v2') {
       tripCoords = [
-        [14.7300, -17.4400], // Bel-Air
+        [14.7300, -17.4400],
         [14.7150, -17.4480],
         [14.7000, -17.4420],
         [14.6850, -17.4350],
-        [14.7392, -17.4520]  // Position actuelle
+        [14.7392, -17.4520]
       ];
       startLabel = 'Départ 07:45';
     } else if (this.selectedVehicle.id === 'v3') {
       tripCoords = [
-        [14.7880, -16.9320], // Thiès
+        [14.7880, -16.9320],
         [14.7910, -16.9280],
-        [14.7930, -16.9260]  // Position actuelle Thiès
+        [14.7930, -16.9260]
       ];
       startLabel = 'Départ 06:15';
     } else {
-      // Par défaut v1 (Port de Dakar -> Diamniadio -> Position actuelle)
       tripCoords = [
-        [14.6850, -17.4320], // Point de départ (Dakar Port)
+        [14.6850, -17.4320],
         [14.7100, -17.4450],
         [14.7350, -17.4200],
         [14.7480, -17.3600],
         [14.7400, -17.2800],
-        [14.7300, -17.2000], // Passage Diamniadio
-        [14.7167, -17.4677]  // Position actuelle
+        [14.7300, -17.2000],
+        [14.7167, -17.4677]
       ];
     }
 
     const startPos = tripCoords[0] as [number, number];
 
-    // Marqueur du point de départ réel
+    const safeStartLabel = escapeHtml(startLabel);
     const startIcon = L.divIcon({
-      className: 'start-pin',
+      className: 'custom-telematics-pin',
       html: `
-        <div style="
-          background: #047857;
-          color: white;
-          padding: 3px 8px;
-          border-radius: 9999px;
-          font-size: 11px;
-          font-weight: 700;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-          border: 2px solid white;
-          display: flex;
-          align-items: center;
-          gap: 3px;
-        ">
-          <span class="material-symbols-outlined" style="font-size: 13px;">flag</span>
-          <span>${startLabel}</span>
+        <div class="pin-start">
+          <span class="material-symbols-outlined flag-icon" aria-hidden="true">flag</span>
+          <span>${safeStartLabel}</span>
         </div>
       `,
-      iconSize: [95, 26],
-      iconAnchor: [47, 13]
+      iconSize: [0, 0]
     });
 
     this.tripStartMarker = L.marker(startPos, { icon: startIcon }).addTo(this.map);
@@ -270,14 +379,14 @@ export class LiveMapComponent implements AfterViewInit, OnDestroy {
       opacity: 0.95
     }).addTo(this.map);
 
+    const safeVehicleReg = escapeHtml(this.selectedVehicle.registrationNumber);
     this.polyline.bindTooltip(
-      `<strong>Parcours réel GPS</strong><br/>Véhicule ${this.selectedVehicle.registrationNumber}<br/>Trajet affiché à la demande`,
+      `<strong>Parcours réel GPS</strong><br/>Véhicule ${safeVehicleReg}`,
       { sticky: true }
     );
 
     this.isTripTraceActive = true;
 
-    // Masquer tous les autres véhicules sur la carte
     if (this.map) {
       this.markers.forEach((marker, vehicleId) => {
         if (vehicleId !== this.selectedVehicle?.id && this.map.hasLayer(marker)) {
@@ -289,6 +398,13 @@ export class LiveMapComponent implements AfterViewInit, OnDestroy {
     this.map.fitBounds(this.polyline.getBounds(), { padding: [70, 70] });
   }
 
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    if (this.map) {
+      this.map.invalidateSize();
+    }
+  }
+
   formatSeconds(seconds?: number): string {
     if (!seconds) return 'Inconnu';
     if (seconds < 60) return `Il y a ${seconds}s`;
@@ -297,6 +413,8 @@ export class LiveMapComponent implements AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.clearHistoricTrip();
+    this.clearGeofenceSites();
     this.sub?.unsubscribe();
+    this.sitesSub?.unsubscribe();
   }
 }

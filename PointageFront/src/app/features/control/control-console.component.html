@@ -50,7 +50,7 @@
 
             <!-- Détails de prise en charge si existants -->
             <div *ngIf="alt.status === 'PRISE_EN_CHARGE' && alt.assignedTo" class="charge-info-pill">
-              <span class="material-symbols-outlined" style="font-size: 14px; color: #0284c7;">support_agent</span>
+              <span class="material-symbols-outlined support-icon">support_agent</span>
               <span>Enquête : <strong>{{ alt.assignedTo }}</strong></span>
               <span *ngIf="alt.actionType" class="action-tag">({{ alt.actionType }})</span>
             </div>
@@ -86,23 +86,23 @@
         </div>
       </section>
 
-      <!-- Missions vs GPS Comparison Table -->
+      <!-- Missions vs GPS Telemetry Table -->
       <section class="card" aria-labelledby="comparator-heading">
-        <h2 id="comparator-heading" class="section-title">Comparateur Missions : Déclarations vs Vérité Terrain GPS</h2>
-        <p class="section-desc">Contrôle anti-fraude : vérifiez la cohérence entre l'heure déclarée par le chauffeur et la détection du mouvement GPS.</p>
+        <h2 id="comparator-heading" class="section-title">Contrôle des Trajets & Détection des Déviations GPS</h2>
+        <p class="section-desc">Surveillance passive 100% télématique : vérification du respect du corridor, des délais et confirmation des franchissements de sites.</p>
 
         <div class="table-container">
           <table class="data-table data-table--stack">
-            <caption class="sr-only">Tableau de confrontation des déclarations chauffeurs et de la détection GPS</caption>
+            <caption class="sr-only">Tableau de confrontation télématique GPS et respect des corridors de livraison</caption>
             <thead>
               <tr>
-                <th scope="col">Mission</th>
+                <th scope="col">Mission & Trajet</th>
                 <th scope="col">Véhicule & Chauffeur</th>
-                <th scope="col">Départ Déclaré</th>
-                <th scope="col">Départ Détecté GPS</th>
-                <th scope="col">Conformité Déplacement</th>
+                <th scope="col">Mouvement GPS</th>
+                <th scope="col">Corridor & Respect Trajet</th>
+                <th scope="col">Ponctualité (ETA)</th>
                 <th scope="col">Statut</th>
-                <th scope="col" style="text-align: right;">Action Contrôle</th>
+                <th scope="col" style="text-align: right;">Contrôle Télématique</th>
               </tr>
             </thead>
             <tbody>
@@ -110,94 +110,80 @@
                 <td data-label="Mission">
                   <span class="mission-code">{{ m.code }}</span>
                   <span class="subtext">{{ m.title }}</span>
+                  <small style="color: var(--ink-3); display: block; margin-top: 2px;">{{ m.originName }} &rarr; {{ m.destinationName }}</small>
                 </td>
                 <td data-label="Véhicule & Chauffeur">
                   <span class="mission-code">{{ m.vehicleReg }}</span>
                   <span class="subtext">{{ m.driverName }}</span>
                 </td>
-                <td data-label="Départ Déclaré">
-                  <span *ngIf="m.departureDeclared && m.actualStartTime" class="time-check">
-                    <span class="material-symbols-outlined" style="font-size: 15px;" aria-hidden="true">check_circle</span>
-                    Déclaré à {{ formatTime(m.actualStartTime) }}
-                  </span>
-                  <span *ngIf="m.departureDeclared && !m.actualStartTime" class="time-check" style="color: #0d9488;">
-                    <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">schedule_send</span>
-                    Départ signalé
-                  </span>
-                  <span *ngIf="!m.departureDeclared" class="time-pending">
-                    <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">schedule</span>
-                    Non déclaré
-                  </span>
-                </td>
-                <td data-label="Détecté GPS">
+                <td data-label="Mouvement GPS">
                   <span *ngIf="m.gpsDepartureDetected" class="gps-valid">
                     <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">sensors</span>
-                    Mouvement confirmé
+                    Départ détecté
                   </span>
                   <span *ngIf="!m.gpsDepartureDetected" class="gps-idle">
                     <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">stop_circle</span>
-                    Immobile
+                    Immobile / En attente
                   </span>
                 </td>
-                <td data-label="Conformité">
-                  <div *ngIf="m.departureDeclared && m.gpsDepartureDetected" class="tag-ok">
+                <td data-label="Corridor">
+                  <div *ngIf="m.hasDeviation" class="tag-audit" title="{{ m.deviationDetails }}">
+                    <span class="material-symbols-outlined" style="font-size: 15px;" aria-hidden="true">wrong_location</span>
+                    Déviation détectée
+                  </div>
+                  <div *ngIf="!m.hasDeviation && m.gpsDepartureDetected" class="tag-ok">
                     <span class="material-symbols-outlined" style="font-size: 15px;" aria-hidden="true">verified</span>
-                    Conforme
+                    Corridor conforme
                   </div>
-                  <div *ngIf="!m.departureDeclared && m.gpsDepartureDetected" class="tag-warning">
-                    <span class="material-symbols-outlined" style="font-size: 15px;" aria-hidden="true">warning</span>
-                    Sans déclaration
+                  <div *ngIf="!m.gpsDepartureDetected" class="tag-neutral">
+                    Non démarré
                   </div>
-                  <div *ngIf="!m.departureDeclared && !m.gpsDepartureDetected" class="tag-neutral">
-                    En attente
-                  </div>
-                  <div *ngIf="m.departureDeclared && !m.gpsDepartureDetected" class="tag-audit">
-                    <span class="material-symbols-outlined" style="font-size: 15px;" aria-hidden="true">search</span>
-                    Déclaré immobile
-                  </div>
+                </td>
+                <td data-label="Ponctualité">
+                  <span *ngIf="m.isDelayed" class="tag-warning delay-text">
+                    +{{ m.delayMinutes }} min retard
+                  </span>
+                  <span *ngIf="!m.isDelayed && m.status === 'EN_COURS'" class="ontime-text">
+                    À l'heure (ETA OK)
+                  </span>
+                  <span *ngIf="m.status === 'TERMINEE'" class="text-secondary-sub">
+                    Clôturée
+                  </span>
+                  <span *ngIf="m.status === 'PLANIFIEE'" class="text-secondary-sub">
+                    Prévue
+                  </span>
                 </td>
                 <td data-label="Statut">
                   <app-status-badge [status]="m.status"></app-status-badge>
                 </td>
-                <td data-label="Action" class="action-cell">
-                  <!-- 1. En attente d'acceptation du départ -->
+                <td data-label="Contrôle" class="action-cell">
+                  <!-- Mission en anomalie : résolution -->
                   <button
-                    *ngIf="m.status === 'DEMANDE_DEMARRAGE'"
-                    class="btn btn-action btn-accept"
-                    (click)="acceptDeparture(m)"
-                    title="Accepter et valider officiellement le départ de la mission"
-                  >
-                    <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
-                    <span>Accepter départ</span>
-                  </button>
-
-                  <!-- 2. En attente de validation clôture -->
-                  <button
-                    *ngIf="m.status === 'ATTENTE_VALIDATION'"
-                    class="btn btn-action btn-close-mission"
+                    *ngIf="m.status === 'EN_ANOMALIE'"
+                    class="btn btn-action btn-anomaly-resolve"
                     (click)="validateAndClose(m)"
-                    title="Valider la fin de mission et certifier le trajet"
+                    title="Prendre contact et résoudre l'anomalie de trajet"
                   >
-                    <span class="material-symbols-outlined" aria-hidden="true">verified</span>
-                    <span>Valider & Clôturer</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+                    <span>Traiter l'écart</span>
                   </button>
 
-                  <!-- 3. Déjà en cours -->
+                  <!-- Mission en cours normale -->
                   <span *ngIf="m.status === 'EN_COURS'" class="state-pill state-tracking">
                     <span class="material-symbols-outlined" aria-hidden="true">sensors</span>
-                    <span>Suivi GPS actif</span>
+                    <span>Télématique Active</span>
                   </span>
 
-                  <!-- 4. Déjà terminée -->
+                  <!-- Mission terminée -->
                   <span *ngIf="m.status === 'TERMINEE'" class="state-pill state-done">
                     <span class="material-symbols-outlined" aria-hidden="true">verified</span>
-                    <span>Mission certifiée</span>
+                    <span>Arrivée Certifiée</span>
                   </span>
 
-                  <!-- 5. Planifiée -->
+                  <!-- Mission planifiée -->
                   <span *ngIf="m.status === 'PLANIFIEE'" class="state-pill state-waiting">
                     <span class="material-symbols-outlined" aria-hidden="true">hourglass_empty</span>
-                    <span>En attente chauffeur</span>
+                    <span>En attente départ</span>
                   </span>
                 </td>
               </tr>

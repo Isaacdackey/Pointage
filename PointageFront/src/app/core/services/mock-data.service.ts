@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { Vehicle, Driver, Tracker, Mission, Alert, GpsPosition, TripEvent } from '../models/fleet.models';
+import { Vehicle, Driver, Tracker, Mission, Alert, GpsPosition, TripEvent, MaintenanceRecord, VehicleType, GeoSite, SiteVisitLog } from '../models/fleet.models';
 import { NotificationService } from './notification.service';
 
 @Injectable({
@@ -13,14 +13,18 @@ export class MockDataService {
       id: 'v1',
       registrationNumber: 'DK-4920-BA',
       make: 'Toyota',
-      model: 'Hilux 4x4',
-      type: 'Pickup utilitaire',
+      model: 'Hilux Double Cabine',
+      type: 'PICKUP',
       status: 'EN_MISSION',
       currentTrackerId: 'tr-001',
       assignedDriverId: 'd1',
       assignedDriverName: 'Mamadou Diallo',
+      assignedDriverPhone: '+221 77 123 45 67',
       odometerKm: 84320,
-      fuelLevelPercent: 78,
+      technicalInspectionExpiry: '2027-04-15',
+      insuranceExpiry: '2027-02-28',
+      registrationCardNumber: 'CG-SN-2024-8842',
+      canCutEngineRemotely: true,
       lastPosition: {
         vehicleId: 'v1',
         trackerId: 'tr-001',
@@ -38,14 +42,18 @@ export class MockDataService {
       id: 'v2',
       registrationNumber: 'DK-8112-BB',
       make: 'Renault',
-      model: 'Master Furgon',
-      type: 'Fourgonnette livraison',
+      model: 'Master Furgon L3H2',
+      type: 'FOURGONNETTE',
       status: 'EN_MISSION',
       currentTrackerId: 'tr-002',
       assignedDriverId: 'd2',
       assignedDriverName: 'Abdoulaye Ndiaye',
+      assignedDriverPhone: '+221 78 456 78 90',
       odometerKm: 142100,
-      fuelLevelPercent: 42,
+      technicalInspectionExpiry: '2026-12-10',
+      insuranceExpiry: '2026-11-30',
+      registrationCardNumber: 'CG-SN-2023-4102',
+      canCutEngineRemotely: true,
       lastPosition: {
         vehicleId: 'v2',
         trackerId: 'tr-002',
@@ -63,14 +71,18 @@ export class MockDataService {
       id: 'v3',
       registrationNumber: 'TH-3310-A',
       make: 'Mercedes-Benz',
-      model: 'Actros 1845',
-      type: 'Poids Lourd',
+      model: 'Actros 1845 Tracteur',
+      type: 'CAMION',
       status: 'DISPONIBLE',
       currentTrackerId: 'tr-003',
       assignedDriverId: 'd3',
       assignedDriverName: 'Ousmane Sow',
+      assignedDriverPhone: '+221 70 889 01 23',
       odometerKm: 210500,
-      fuelLevelPercent: 90,
+      technicalInspectionExpiry: '2027-01-20',
+      insuranceExpiry: '2027-03-31',
+      registrationCardNumber: 'CG-SN-2022-9901',
+      canCutEngineRemotely: true,
       lastPosition: {
         vehicleId: 'v3',
         trackerId: 'tr-003',
@@ -88,12 +100,15 @@ export class MockDataService {
       id: 'v4',
       registrationNumber: 'DK-1092-BC',
       make: 'Peugeot',
-      model: 'Partner',
-      type: 'Utilitaire léger',
+      model: 'Partner Van',
+      type: 'FOURGONNETTE',
       status: 'MAINTENANCE',
       currentTrackerId: 'tr-004',
       odometerKm: 65400,
-      fuelLevelPercent: 25,
+      technicalInspectionExpiry: '2026-10-30',
+      insuranceExpiry: '2026-11-15',
+      registrationCardNumber: 'CG-SN-2024-1189',
+      canCutEngineRemotely: false,
       lastPosition: {
         vehicleId: 'v4',
         trackerId: 'tr-004',
@@ -109,19 +124,101 @@ export class MockDataService {
     },
     {
       id: 'v5',
-      registrationNumber: 'SL-6654-B',
-      make: 'Isuzu',
-      model: 'D-Max',
-      type: 'Pick-up',
-      status: 'INDISPONIBLE',
+      registrationNumber: 'DK-5521-BD',
+      make: 'Yamaha',
+      model: 'Crux 110 Express',
+      type: 'MOTO',
+      status: 'EN_MISSION',
       currentTrackerId: 'tr-005',
       assignedDriverId: 'd4',
       assignedDriverName: 'Cheikh Fall',
-      odometerKm: 119800,
-      fuelLevelPercent: 60,
+      assignedDriverPhone: '+221 77 654 32 10',
+      odometerKm: 28400,
+      technicalInspectionExpiry: '2027-06-15',
+      insuranceExpiry: '2027-05-31',
+      registrationCardNumber: 'CG-SN-2025-0145',
+      canCutEngineRemotely: false,
       lastPosition: {
         vehicleId: 'v5',
         trackerId: 'tr-005',
+        latitude: 14.6850,
+        longitude: -17.4580,
+        eventTime: new Date(Date.now() - 15 * 1000).toISOString(),
+        receivedAt: new Date(Date.now() - 12 * 1000).toISOString(),
+        speedKph: 42,
+        heading: 210,
+        ignition: true,
+        freshnessSeconds: 15
+      }
+    },
+    {
+      id: 'v6',
+      registrationNumber: 'DK-7789-BE',
+      make: 'Honda',
+      model: 'Activa 125',
+      type: 'SCOOTER',
+      status: 'DISPONIBLE',
+      currentTrackerId: 'tr-001',
+      odometerKm: 15200,
+      technicalInspectionExpiry: '2027-07-20',
+      insuranceExpiry: '2027-06-30',
+      registrationCardNumber: 'CG-SN-2025-0891',
+      canCutEngineRemotely: false,
+      lastPosition: {
+        vehicleId: 'v6',
+        trackerId: 'tr-001',
+        latitude: 14.7100,
+        longitude: -17.4600,
+        eventTime: new Date(Date.now() - 600 * 1000).toISOString(),
+        receivedAt: new Date(Date.now() - 590 * 1000).toISOString(),
+        speedKph: 0,
+        heading: 0,
+        ignition: false,
+        freshnessSeconds: 600
+      }
+    },
+    {
+      id: 'v7',
+      registrationNumber: 'DK-9012-BF',
+      make: 'Bajaj',
+      model: 'Maxima Cargo',
+      type: 'TRICYCLE',
+      status: 'EN_MISSION',
+      currentTrackerId: 'tr-002',
+      odometerKm: 34100,
+      technicalInspectionExpiry: '2026-11-25',
+      insuranceExpiry: '2026-12-31',
+      registrationCardNumber: 'CG-SN-2024-5541',
+      canCutEngineRemotely: false,
+      lastPosition: {
+        vehicleId: 'v7',
+        trackerId: 'tr-002',
+        latitude: 14.7250,
+        longitude: -17.4410,
+        eventTime: new Date(Date.now() - 45 * 1000).toISOString(),
+        receivedAt: new Date(Date.now() - 40 * 1000).toISOString(),
+        speedKph: 35,
+        heading: 110,
+        ignition: true,
+        freshnessSeconds: 45
+      }
+    },
+    {
+      id: 'v8',
+      registrationNumber: 'SL-6654-B',
+      make: 'Isuzu',
+      model: 'D-Max 4x4',
+      type: 'PICKUP',
+      status: 'DISPONIBLE',
+      currentTrackerId: 'tr-003',
+      odometerKm: 119800,
+      technicalInspectionExpiry: '2027-02-18',
+      insuranceExpiry: '2027-01-31',
+      registrationCardNumber: 'CG-SN-2023-8874',
+      canCutEngineRemotely: true,
+      lastPosition: {
+        vehicleId: 'v8',
+        trackerId: 'tr-003',
         latitude: 14.7500,
         longitude: -17.3800,
         eventTime: new Date(Date.now() - 14400 * 1000).toISOString(),
@@ -130,6 +227,84 @@ export class MockDataService {
         heading: 45,
         ignition: false,
         freshnessSeconds: 14400
+      }
+    },
+    {
+      id: 'v9',
+      registrationNumber: 'DK-3344-BG',
+      make: 'Hyundai',
+      model: 'HD72 Benne',
+      type: 'CAMION',
+      status: 'DISPONIBLE',
+      currentTrackerId: 'tr-004',
+      odometerKm: 185000,
+      technicalInspectionExpiry: '2027-03-12',
+      insuranceExpiry: '2027-04-15',
+      registrationCardNumber: 'CG-SN-2022-7712',
+      canCutEngineRemotely: true,
+      lastPosition: {
+        vehicleId: 'v9',
+        trackerId: 'tr-004',
+        latitude: 14.7800,
+        longitude: -17.3200,
+        eventTime: new Date(Date.now() - 3600 * 1000).toISOString(),
+        receivedAt: new Date(Date.now() - 3590 * 1000).toISOString(),
+        speedKph: 0,
+        heading: 0,
+        ignition: false,
+        freshnessSeconds: 3600
+      }
+    },
+    {
+      id: 'v10',
+      registrationNumber: 'DK-2211-BH',
+      make: 'Toyota',
+      model: 'Corolla Berline',
+      type: 'BERLINE',
+      status: 'DISPONIBLE',
+      currentTrackerId: 'tr-005',
+      odometerKm: 52000,
+      technicalInspectionExpiry: '2027-08-30',
+      insuranceExpiry: '2027-09-15',
+      registrationCardNumber: 'CG-SN-2025-1102',
+      canCutEngineRemotely: true,
+      lastPosition: {
+        vehicleId: 'v10',
+        trackerId: 'tr-005',
+        latitude: 14.7000,
+        longitude: -17.4700,
+        eventTime: new Date(Date.now() - 1800 * 1000).toISOString(),
+        receivedAt: new Date(Date.now() - 1790 * 1000).toISOString(),
+        speedKph: 0,
+        heading: 0,
+        ignition: false,
+        freshnessSeconds: 1800
+      }
+    },
+    {
+      id: 'v11',
+      registrationNumber: 'DK-9900-BJ',
+      make: 'Piaggio',
+      model: 'Ape Xtra LDX',
+      type: 'TRICYCLE',
+      status: 'DISPONIBLE',
+      currentTrackerId: 'tr-001',
+      odometerKm: 19800,
+      technicalInspectionExpiry: '2027-05-10',
+      insuranceExpiry: '2027-04-30',
+      registrationCardNumber: 'CG-SN-2025-2231',
+      canCutEngineRemotely: false,
+      lastPosition: {
+        vehicleId: 'v11',
+        trackerId: 'tr-001',
+        latitude: 14.7300,
+        longitude: -17.4300,
+        eventTime: new Date(Date.now() - 900 * 1000).toISOString(),
+        receivedAt: new Date(Date.now() - 890 * 1000).toISOString(),
+        speedKph: 0,
+        heading: 0,
+        ignition: false,
+        freshnessSeconds: 900
       }
     }
   ]);
@@ -155,57 +330,77 @@ export class MockDataService {
       id: 'm1',
       code: 'MIS-2026-089',
       title: 'Approvisionnement Entrepôt Diamniadio',
-      status: 'PLANIFIEE',
+      status: 'EN_COURS',
       vehicleId: 'v1',
       vehicleReg: 'DK-4920-BA',
       driverId: 'd1',
       driverName: 'Mamadou Diallo',
-      originName: 'Port Autonome de Dakar',
+      originName: 'Port Autonome de Dakar (Quai 4)',
       destinationName: 'Plateforme Industrielle Diamniadio',
-      plannedStartTime: new Date(Date.now() + 1800 * 1000).toISOString(),
-      plannedEndTime: new Date(Date.now() + 9000 * 1000).toISOString(),
+      originSiteId: 'site-3',
+      destinationSiteId: 'site-4',
+      plannedStartTime: new Date(Date.now() - 3600 * 1000).toISOString(),
+      plannedEndTime: new Date(Date.now() + 3600 * 1000).toISOString(),
+      actualStartTime: new Date(Date.now() - 3400 * 1000).toISOString(),
       distanceKm: 42,
-      departureDeclared: false,
-      gpsDepartureDetected: false,
-      notes: 'Colis prioritaires et fragiles. Respecter les limitations de vitesse.'
+      gpsDepartureDetected: true,
+      gpsArrivalDetected: false,
+      hasDeviation: false,
+      delayMinutes: 0,
+      isDelayed: false,
+      currentProgressPercent: 68,
+      lastCheckpointPassed: 'Péage Bargny (14:10)',
+      notes: 'Colis prioritaires. Corridor Autoroute à Péage assigné.'
     },
     {
       id: 'm2',
       code: 'MIS-2026-090',
       title: 'Livraison Clients Centre-Ville Plateau',
-      status: 'ATTENTE_VALIDATION',
+      status: 'EN_ANOMALIE',
       vehicleId: 'v2',
       vehicleReg: 'DK-8112-BB',
       driverId: 'd2',
       driverName: 'Abdoulaye Ndiaye',
-      originName: 'Dépôt Hann Bel-Air',
+      originName: 'Siège GeoFleet & Dépôt Central',
       destinationName: 'Dakar Plateau Commercial',
+      originSiteId: 'site-5',
       plannedStartTime: new Date(Date.now() - 5400 * 1000).toISOString(),
-      plannedEndTime: new Date(Date.now() + 1800 * 1000).toISOString(),
+      plannedEndTime: new Date(Date.now() - 900 * 1000).toISOString(),
       actualStartTime: new Date(Date.now() - 5200 * 1000).toISOString(),
       distanceKm: 18,
-      departureDeclared: true,
-      arrivalDeclared: true,
       gpsDepartureDetected: true,
-      arrivalRequestedAt: 'Il y a 10 min'
+      gpsArrivalDetected: false,
+      hasDeviation: true,
+      deviationDetails: 'Véhicule détecté sur la Corniche Ouest (hors corridor direct).',
+      delayMinutes: 35,
+      isDelayed: true,
+      currentProgressPercent: 40,
+      lastCheckpointPassed: 'Rond-Point Poste Médina',
+      notes: 'Déviation constatée par la télématique GPS. Alerte générée automatiquement.'
     },
     {
       id: 'm3',
       code: 'MIS-2026-091',
-      title: 'Transport Matériaux Thiès -> Dakar',
-      status: 'DEMANDE_DEMARRAGE',
+      title: 'Transfert Matériaux Port -> Zone Industrielle',
+      status: 'PLANIFIEE',
       vehicleId: 'v3',
       vehicleReg: 'TH-3310-A',
       driverId: 'd3',
       driverName: 'Ousmane Sow',
-      originName: 'Carrière de Thiès',
-      destinationName: 'Chantier VDN Extension Dakar',
-      plannedStartTime: new Date(Date.now() - 1200 * 1000).toISOString(),
-      plannedEndTime: new Date(Date.now() + 18000 * 1000).toISOString(),
-      distanceKm: 78,
-      departureDeclared: true,
-      gpsDepartureDetected: true,
-      departureRequestedAt: 'Il y a 3 min'
+      originName: 'DP World - Terminal à Conteneurs',
+      destinationName: 'Plateforme Industrielle Diamniadio',
+      originSiteId: 'site-3',
+      destinationSiteId: 'site-4',
+      plannedStartTime: new Date(Date.now() + 1800 * 1000).toISOString(),
+      plannedEndTime: new Date(Date.now() + 16200 * 1000).toISOString(),
+      distanceKm: 48,
+      gpsDepartureDetected: false,
+      gpsArrivalDetected: false,
+      hasDeviation: false,
+      delayMinutes: 0,
+      isDelayed: false,
+      currentProgressPercent: 0,
+      notes: 'Départ prévu à 18h30 dès déchargement quai.'
     },
     {
       id: 'm4',
@@ -216,16 +411,22 @@ export class MockDataService {
       vehicleReg: 'DK-4920-BA',
       driverId: 'd1',
       driverName: 'Mamadou Diallo',
-      originName: 'Dakar Yoff',
+      originName: 'Siège GeoFleet & Dépôt Central',
       destinationName: 'Rufisque Centre',
+      originSiteId: 'site-5',
       plannedStartTime: new Date(Date.now() - 86400 * 1000).toISOString(),
       plannedEndTime: new Date(Date.now() - 75000 * 1000).toISOString(),
       actualStartTime: new Date(Date.now() - 86000 * 1000).toISOString(),
       actualEndTime: new Date(Date.now() - 74800 * 1000).toISOString(),
       distanceKm: 32,
-      departureDeclared: true,
-      arrivalDeclared: true,
-      gpsDepartureDetected: true
+      gpsDepartureDetected: true,
+      gpsArrivalDetected: true,
+      hasDeviation: false,
+      delayMinutes: 0,
+      isDelayed: false,
+      currentProgressPercent: 100,
+      lastCheckpointPassed: 'Site Destination (Arrêt 45 min)',
+      notes: 'Tournée clôturée sans anomalie.'
     }
   ]);
 
@@ -287,6 +488,10 @@ export class MockDataService {
     return this.vehicles$.asObservable();
   }
 
+  getVehiclesDirect(): Vehicle[] {
+    return this.vehicles$.getValue();
+  }
+
   getDrivers(): Observable<Driver[]> {
     return this.drivers$.asObservable();
   }
@@ -307,11 +512,14 @@ export class MockDataService {
     registrationNumber: string;
     make: string;
     model: string;
-    type: string;
+    type: VehicleType;
     odometerKm?: number;
-    fuelLevelPercent?: number;
     assignedDriverId?: string;
     currentTrackerId?: string;
+    technicalInspectionExpiry?: string;
+    insuranceExpiry?: string;
+    registrationCardNumber?: string;
+    canCutEngineRemotely?: boolean;
   }): Vehicle {
     const drivers = this.drivers$.getValue();
     const assignedDriver = drivers.find(d => d.id === newVehicle.assignedDriverId);
@@ -324,13 +532,17 @@ export class MockDataService {
       registrationNumber: (newVehicle.registrationNumber || '').trim().toUpperCase(),
       make: (newVehicle.make || '').trim(),
       model: (newVehicle.model || '').trim(),
-      type: newVehicle.type || 'Utilitaire',
+      type: newVehicle.type || 'FOURGONNETTE',
       status: 'DISPONIBLE',
       currentTrackerId: trackerId,
       assignedDriverId: newVehicle.assignedDriverId,
       assignedDriverName: assignedDriver?.fullName,
+      assignedDriverPhone: assignedDriver?.phone,
       odometerKm: newVehicle.odometerKm || 0,
-      fuelLevelPercent: newVehicle.fuelLevelPercent ?? 100,
+      technicalInspectionExpiry: newVehicle.technicalInspectionExpiry,
+      insuranceExpiry: newVehicle.insuranceExpiry,
+      registrationCardNumber: newVehicle.registrationCardNumber,
+      canCutEngineRemotely: newVehicle.canCutEngineRemotely ?? false,
       lastPosition: {
         vehicleId: id,
         trackerId: trackerId,
@@ -362,6 +574,8 @@ export class MockDataService {
     driverId: string;
     originName: string;
     destinationName: string;
+    originSiteId?: string;
+    destinationSiteId?: string;
     distanceKm?: number;
     plannedStartTime?: string;
     notes?: string;
@@ -383,11 +597,17 @@ export class MockDataService {
       driverName: driver?.fullName || 'Chauffeur Non Assigné',
       originName: newMission.originName || 'Dakar Centre',
       destinationName: newMission.destinationName || 'Diamniadio',
+      originSiteId: newMission.originSiteId,
+      destinationSiteId: newMission.destinationSiteId,
       distanceKm: newMission.distanceKm || 35,
       plannedStartTime: newMission.plannedStartTime || new Date().toISOString(),
       plannedEndTime: new Date(Date.now() + 4 * 3600 * 1000).toISOString(),
-      departureDeclared: false,
       gpsDepartureDetected: false,
+      gpsArrivalDetected: false,
+      hasDeviation: false,
+      delayMinutes: 0,
+      isDelayed: false,
+      currentProgressPercent: 0,
       notes: newMission.notes
     };
 
@@ -395,8 +615,8 @@ export class MockDataService {
     this.missions$.next([mission, ...currentMissions]);
 
     this.notificationService.sendPushNotification({
-      title: 'Nouvelle Mission Planifiée',
-      body: `${mission.code} : ${mission.title} assignée à ${mission.driverName} (${mission.vehicleReg}).`
+      title: 'Nouvelle Tournée / Mission Planifiée',
+      body: `${mission.code} assignée à ${mission.driverName} (${mission.vehicleReg}). Trajet surveillé par télématique.`
     });
 
     return mission;
@@ -576,5 +796,239 @@ export class MockDataService {
         });
       }
     }
+  }
+
+  // Carnet d'Entretien / Maintenance
+  private maintenanceRecords$ = new BehaviorSubject<MaintenanceRecord[]>([
+    {
+      id: 'maint-1',
+      vehicleId: 'v4',
+      vehicleReg: 'DK-1092-BC',
+      type: 'REPARATION',
+      title: 'Remplacement kit embrayage & révision freinage',
+      description: 'Changement disque d\'embrayage et plaquettes de frein avant suite usure prononcée.',
+      serviceDate: '2026-10-22',
+      costCfa: 185000,
+      provider: 'Garage Central Dakar',
+      odometerKm: 65400,
+      status: 'EN_COURS',
+      performedBy: 'Mamadou Ba (Mécanicien Référent)'
+    },
+    {
+      id: 'maint-2',
+      vehicleId: 'v2',
+      vehicleReg: 'DK-8112-BB',
+      type: 'VIDANGE',
+      title: 'Vidange complète 140 000 km + Filtres',
+      description: 'Huile moteur 5W30 synthèse, filtre à huile, filtre à gazole et filtre d\'habitacle.',
+      serviceDate: '2026-10-14',
+      costCfa: 72000,
+      provider: 'Total Lubrifiants Hann',
+      odometerKm: 140200,
+      status: 'TERMINEE',
+      performedBy: 'Samba Kane (Exploitation)',
+      nextDueOdometerKm: 150000,
+      nextDueDate: '2027-01-15'
+    },
+    {
+      id: 'maint-3',
+      vehicleId: 'v3',
+      vehicleReg: 'TH-3310-A',
+      type: 'VISITE_TECHNIQUE',
+      title: 'Visite Technique Poids Lourd Annuelle',
+      description: 'Contrôle périodique obligatoire réussi sans contre-visite. Vignette validée.',
+      serviceDate: '2026-09-28',
+      costCfa: 45000,
+      provider: 'Centre Contrôle Technique Automobile (CCTA)',
+      odometerKm: 208000,
+      status: 'TERMINEE',
+      nextDueDate: '2027-09-28'
+    },
+    {
+      id: 'maint-4',
+      vehicleId: 'v1',
+      vehicleReg: 'DK-4920-BA',
+      type: 'PNEUMATIQUE',
+      title: 'Remplacement 2 pneus arrière tout-terrain',
+      description: 'Montage pneus Bridgestone Dueler A/T avec équilibrage train arrière.',
+      serviceDate: '2026-09-15',
+      costCfa: 160000,
+      provider: 'Sénégal Pneus Diamniadio',
+      odometerKm: 81200,
+      status: 'TERMINEE'
+    }
+  ]);
+
+  getMaintenanceRecords(): Observable<MaintenanceRecord[]> {
+    return this.maintenanceRecords$.asObservable();
+  }
+
+  addMaintenanceRecord(record: Omit<MaintenanceRecord, 'id'>): MaintenanceRecord {
+    const newRecord: MaintenanceRecord = {
+      ...record,
+      id: 'maint-' + Date.now()
+    };
+    const current = this.maintenanceRecords$.getValue();
+    this.maintenanceRecords$.next([newRecord, ...current]);
+
+    this.notificationService.sendPushNotification({
+      title: 'Intervention Maintenance Enregistrée',
+      body: `${newRecord.title} pour le véhicule ${newRecord.vehicleReg} (${newRecord.costCfa.toLocaleString('fr-FR')} FCFA).`
+    });
+
+    return newRecord;
+  }
+
+  // Sites Favoris & Géofencing (Total Almadies, DP World, etc.)
+  private geoSites$ = new BehaviorSubject<GeoSite[]>([
+    {
+      id: 'site-1',
+      name: 'Total Almadies',
+      category: 'STATION_SERVICE',
+      address: 'Route des Almadies, en face King Fahd Palace',
+      latitude: 14.7450,
+      longitude: -17.5180,
+      radiusMeters: 20,
+      minStopDurationMinutes: 2,
+      contactName: 'Abdou Diop (Gérant Station)',
+      contactPhone: '+221 33 820 11 22',
+      notes: 'Point de ravitaillement conventionné et livraison lubrifiants',
+      createdAt: '2026-09-01'
+    },
+    {
+      id: 'site-2',
+      name: 'Total Mbao',
+      category: 'STATION_SERVICE',
+      address: 'Nationale 1, Sortie Forêt de Mbao',
+      latitude: 14.7410,
+      longitude: -17.3240,
+      radiusMeters: 25,
+      minStopDurationMinutes: 2,
+      contactName: 'Moussa Gueye',
+      contactPhone: '+221 33 834 50 00',
+      notes: 'Station relai axe Dakar - Rufisque',
+      createdAt: '2026-09-05'
+    },
+    {
+      id: 'site-3',
+      name: 'DP World - Terminal à Conteneurs',
+      category: 'PORT_LOGISTIQUE',
+      address: 'Zone Portuaire Nord, Port Autonome de Dakar',
+      latitude: 14.6890,
+      longitude: -17.4280,
+      radiusMeters: 30,
+      minStopDurationMinutes: 3,
+      contactName: 'Superviseur Quai 4',
+      contactPhone: '+221 33 849 70 00',
+      notes: 'Accès réservé badges portuaires et camions porte-conteneurs',
+      createdAt: '2026-09-10'
+    },
+    {
+      id: 'site-4',
+      name: 'Plateforme Industrielle Diamniadio',
+      category: 'USINE_CHANTIER',
+      address: 'Pôle Urbain Diamniadio, Sortie Autoroute à Péage',
+      latitude: 14.7210,
+      longitude: -17.1850,
+      radiusMeters: 35,
+      minStopDurationMinutes: 2,
+      contactName: 'Service Réception Entrepôt',
+      contactPhone: '+221 33 879 90 90',
+      notes: 'Plateforme centrale de déchargement logistique',
+      createdAt: '2026-09-12'
+    },
+    {
+      id: 'site-5',
+      name: 'Siège GeoFleet & Dépôt Central',
+      category: 'SIEGE_ENTREPRISE',
+      address: 'Zone Industrielle Hann Bel-Air, Dakar',
+      latitude: 14.7167,
+      longitude: -17.4677,
+      radiusMeters: 40,
+      minStopDurationMinutes: 1,
+      contactName: 'Poste de Garde Central',
+      contactPhone: '+221 33 832 00 00',
+      notes: 'Point de départ et retour officiel de l\'ensemble des tournées',
+      createdAt: '2026-08-01'
+    }
+  ]);
+
+  private siteVisits$ = new BehaviorSubject<SiteVisitLog[]>([
+    {
+      id: 'vis-1',
+      siteId: 'site-1',
+      siteName: 'Total Almadies',
+      vehicleId: 'v1',
+      vehicleReg: 'DK-4920-BA',
+      driverName: 'Mamadou Diallo',
+      enteredAt: 'Aujourd\'hui 09:42',
+      exitedAt: 'Aujourd\'hui 09:58',
+      durationMinutes: 16,
+      wasStopConfirmed: true,
+      missionId: 'MIS-2026-089'
+    },
+    {
+      id: 'vis-2',
+      siteId: 'site-3',
+      siteName: 'DP World - Terminal à Conteneurs',
+      vehicleId: 'v3',
+      vehicleReg: 'TH-3310-A',
+      driverName: 'Ousmane Sow',
+      enteredAt: 'Aujourd\'hui 08:15',
+      exitedAt: 'Aujourd\'hui 09:05',
+      durationMinutes: 50,
+      wasStopConfirmed: true,
+      missionId: 'MIS-2026-091'
+    },
+    {
+      id: 'vis-3',
+      siteId: 'site-2',
+      siteName: 'Total Mbao',
+      vehicleId: 'v7',
+      vehicleReg: 'DK-9012-BF',
+      driverName: 'Chauffeur Flotte',
+      enteredAt: 'Aujourd\'hui 11:20',
+      exitedAt: 'Aujourd\'hui 11:28',
+      durationMinutes: 8,
+      wasStopConfirmed: true
+    },
+    {
+      id: 'vis-4',
+      siteId: 'site-4',
+      siteName: 'Plateforme Industrielle Diamniadio',
+      vehicleId: 'v2',
+      vehicleReg: 'DK-8112-BB',
+      driverName: 'Abdoulaye Ndiaye',
+      enteredAt: 'Hier 15:30',
+      exitedAt: 'Hier 16:45',
+      durationMinutes: 75,
+      wasStopConfirmed: true,
+      missionId: 'MIS-2026-090'
+    }
+  ]);
+
+  getGeoSites(): Observable<GeoSite[]> {
+    return this.geoSites$.asObservable();
+  }
+
+  getSiteVisits(): Observable<SiteVisitLog[]> {
+    return this.siteVisits$.asObservable();
+  }
+
+  addGeoSite(site: Omit<GeoSite, 'id' | 'createdAt'>): GeoSite {
+    const newSite: GeoSite = {
+      ...site,
+      id: 'site-' + Date.now(),
+      createdAt: new Date().toISOString().substring(0, 10)
+    };
+    const current = this.geoSites$.getValue();
+    this.geoSites$.next([newSite, ...current]);
+
+    this.notificationService.sendPushNotification({
+      title: 'Nouveau Site Favori Enregistré',
+      body: `Site ${newSite.name} ajouté avec rayon de géofencing de ${newSite.radiusMeters}m.`
+    });
+
+    return newSite;
   }
 }

@@ -28,6 +28,56 @@ export class DashboardComponent {
   missions$ = this.mockService.getMissions();
   alerts$ = this.mockService.getAlerts();
 
+  // Pagination État des Véhicules
+  currentPage = 1;
+  pageSize = 4;
+
+  paginatedVehicles$ = this.vehicles$.pipe(
+    map(vehicles => {
+      const start = (this.currentPage - 1) * this.pageSize;
+      return vehicles.slice(start, start + this.pageSize);
+    })
+  );
+
+  totalVehiclesCount$ = this.vehicles$.pipe(
+    map(vehicles => vehicles.length)
+  );
+
+  totalPages$ = this.vehicles$.pipe(
+    map(vehicles => Math.ceil(vehicles.length / this.pageSize))
+  );
+
+  setPage(page: number, totalPages: number) {
+    if (page >= 1 && page <= totalPages) {
+      this.currentPage = page;
+      // Re-déclenche le rafraîchissement
+      this.refreshPagination();
+    }
+  }
+
+  nextPage(totalPages: number) {
+    if (this.currentPage < totalPages) {
+      this.currentPage++;
+      this.refreshPagination();
+    }
+  }
+
+  prevPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.refreshPagination();
+    }
+  }
+
+  private refreshPagination() {
+    this.paginatedVehicles$ = this.vehicles$.pipe(
+      map(vehicles => {
+        const start = (this.currentPage - 1) * this.pageSize;
+        return vehicles.slice(start, start + this.pageSize);
+      })
+    );
+  }
+
   // Modal de traitement de l'anomalie
   selectedAlertToResolve: Alert | null = null;
   resolutionReason: string = 'CHAUFFEUR_CONTACTE';

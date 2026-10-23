@@ -3,96 +3,206 @@
         title="Gestion de la Flotte, Véhicules & Traceurs GPS"
         subtitle="Inventaire des véhicules, chauffeurs et état des boîtiers télématiques embarqués."
       >
-        <button class="btn btn-primary" (click)="openAddModal()">
-          <span class="material-symbols-outlined" aria-hidden="true">add</span>
-          Enregistrer un Véhicule
-        </button>
-      </app-page-header>
+  <div class="header-actions">
+    <button *ngIf="activeTab === 'VEHICULES'" class="btn btn-primary" (click)="openAddModal()">
+      <span class="material-symbols-outlined" aria-hidden="true">add</span>
+      Enregistrer un Véhicule
+    </button>
+    <button *ngIf="activeTab === 'MAINTENANCE'" class="btn btn-primary" (click)="openAddMaintenance()">
+      <span class="material-symbols-outlined" aria-hidden="true">build</span>
+      Nouvelle Intervention
+    </button>
+  </div>
+</app-page-header>
 
-      <!-- Tabs with ARIA -->
-      <div class="tabs-bar" role="tablist" aria-label="Catégories de la flotte">
-        <button
-          role="tab"
-          id="tab-vehicules"
-          aria-controls="panel-vehicules"
-          [attr.aria-selected]="activeTab === 'VEHICULES'"
-          [class.active]="activeTab === 'VEHICULES'"
-          (click)="activeTab = 'VEHICULES'"
-          class="tab-btn"
-        >
-          Véhicules ({{ (vehicles$ | async)?.length }})
-        </button>
+<!-- Tabs with ARIA -->
+<div class="tabs-bar" role="tablist" aria-label="Catégories de la flotte">
+  <button
+    role="tab"
+    id="tab-vehicules"
+    aria-controls="panel-vehicules"
+    [attr.aria-selected]="activeTab === 'VEHICULES'"
+    [class.active]="activeTab === 'VEHICULES'"
+    (click)="activeTab = 'VEHICULES'"
+    class="tab-btn"
+  >
+    Véhicules ({{ (vehicles$ | async)?.length }})
+  </button>
 
-        <button
-          role="tab"
-          id="tab-chauffeurs"
-          aria-controls="panel-chauffeurs"
-          [attr.aria-selected]="activeTab === 'CHAUFFEURS'"
-          [class.active]="activeTab === 'CHAUFFEURS'"
-          (click)="activeTab = 'CHAUFFEURS'"
-          class="tab-btn"
-        >
-          Chauffeurs ({{ (drivers$ | async)?.length }})
-        </button>
+  <button
+    role="tab"
+    id="tab-maintenance"
+    aria-controls="panel-maintenance"
+    [attr.aria-selected]="activeTab === 'MAINTENANCE'"
+    [class.active]="activeTab === 'MAINTENANCE'"
+    (click)="activeTab = 'MAINTENANCE'"
+    class="tab-btn"
+  >
+    Carnet d'Entretien ({{ (maintenanceRecords$ | async)?.length }})
+  </button>
 
-        <button
-          role="tab"
-          id="tab-traceurs"
-          aria-controls="panel-traceurs"
-          [attr.aria-selected]="activeTab === 'TRACEURS'"
-          [class.active]="activeTab === 'TRACEURS'"
-          (click)="activeTab = 'TRACEURS'"
-          class="tab-btn"
-        >
-          Traceurs GPS ({{ (trackers$ | async)?.length }})
-        </button>
+  <button
+    role="tab"
+    id="tab-chauffeurs"
+    aria-controls="panel-chauffeurs"
+    [attr.aria-selected]="activeTab === 'CHAUFFEURS'"
+    [class.active]="activeTab === 'CHAUFFEURS'"
+    (click)="activeTab = 'CHAUFFEURS'"
+    class="tab-btn"
+  >
+    Chauffeurs ({{ (drivers$ | async)?.length }})
+  </button>
+
+  <button
+    role="tab"
+    id="tab-traceurs"
+    aria-controls="panel-traceurs"
+    [attr.aria-selected]="activeTab === 'TRACEURS'"
+    [class.active]="activeTab === 'TRACEURS'"
+    (click)="activeTab = 'TRACEURS'"
+    class="tab-btn"
+  >
+    Traceurs GPS ({{ (trackers$ | async)?.length }})
+  </button>
+</div>
+
+<!-- Tab 1: Véhicules -->
+<section
+  *ngIf="activeTab === 'VEHICULES'"
+  id="panel-vehicules"
+  role="tabpanel"
+  aria-labelledby="tab-vehicules"
+  class="card"
+>
+  <div class="table-container">
+    <table class="data-table data-table--stack">
+      <caption class="sr-only">Inventaire complet des véhicules de la flotte</caption>
+      <thead>
+        <tr>
+          <th scope="col">Immatriculation</th>
+          <th scope="col">Marque & Modèle</th>
+          <th scope="col">Catégorie</th>
+          <th scope="col">Chauffeur Assigné</th>
+          <th scope="col">Traceur Rattaché</th>
+          <th scope="col" class="num-cell">Kilométrage</th>
+          <th scope="col">Validité Visite Tech</th>
+          <th scope="col" style="text-align: right;">Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let v of paginatedVehicles$ | async">
+          <td data-label="Immatriculation"><strong class="plate-badge">{{ v.registrationNumber }}</strong></td>
+          <td data-label="Marque & Modèle">{{ v.make }} {{ v.model }}</td>
+          <td data-label="Catégorie">
+            <span class="type-pill">{{ v.type }}</span>
+          </td>
+          <td data-label="Chauffeur">
+            <div>{{ v.assignedDriverName || 'Non affecté' }}</div>
+            <small *ngIf="v.assignedDriverPhone" style="color: var(--ink-3);">{{ v.assignedDriverPhone }}</small>
+          </td>
+          <td data-label="Traceur"><code class="tracker-code">{{ v.currentTrackerId }}</code></td>
+          <td data-label="Kilométrage" class="num-cell">{{ formatNumber(v.odometerKm) }} km</td>
+          <td data-label="Visite Tech">
+            <span [class.text-warn]="v.technicalInspectionExpiry?.startsWith('2026')">
+              {{ v.technicalInspectionExpiry || 'Non renseigné' }}
+            </span>
+          </td>
+          <td data-label="Statut" style="text-align: right;">
+            <app-status-badge [status]="v.status"></app-status-badge>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination Bar Véhicules -->
+  <div class="table-pagination" *ngIf="totalVehiclesCount > pageSizeVehicles">
+    <div class="pagination-info">
+      Affichage de <strong>{{ ((currentPageVehicles - 1) * pageSizeVehicles) + 1 }}</strong> à <strong>{{ currentPageVehicles * pageSizeVehicles > totalVehiclesCount ? totalVehiclesCount : currentPageVehicles * pageSizeVehicles }}</strong> sur <strong>{{ totalVehiclesCount }}</strong> véhicules enregistrés
+    </div>
+
+    <div class="pagination-actions">
+      <button
+        type="button"
+        class="btn-page-nav"
+        [disabled]="currentPageVehicles === 1"
+        (click)="prevPageVehicles()"
+        aria-label="Page précédente"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+        Précédent
+      </button>
+
+      <div class="page-numbers">
+        <span class="current-page-pill">Page {{ currentPageVehicles }} / {{ totalPagesVehicles }}</span>
       </div>
 
-      <!-- Tab 1: Véhicules -->
-      <section
-        *ngIf="activeTab === 'VEHICULES'"
-        id="panel-vehicules"
-        role="tabpanel"
-        aria-labelledby="tab-vehicules"
-        class="card"
+      <button
+        type="button"
+        class="btn-page-nav"
+        [disabled]="currentPageVehicles >= totalPagesVehicles"
+        (click)="nextPageVehicles()"
+        aria-label="Page suivante"
       >
-        <div class="table-container">
-          <table class="data-table data-table--stack">
-            <caption class="sr-only">Inventaire complet des véhicules de la flotte</caption>
-            <thead>
-              <tr>
-                <th scope="col">Immatriculation</th>
-                <th scope="col">Marque & Modèle</th>
-                <th scope="col">Type</th>
-                <th scope="col">Chauffeur Assigné</th>
-                <th scope="col">Traceur Rattaché</th>
-                <th scope="col" class="num-cell">Kilométrage</th>
-                <th scope="col">Carburant</th>
-                <th scope="col" style="text-align: right;">Statut</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let v of vehicles$ | async">
-                <td data-label="Immatriculation"><strong class="plate-badge">{{ v.registrationNumber }}</strong></td>
-                <td data-label="Marque & Modèle">{{ v.make }} {{ v.model }}</td>
-                <td data-label="Type">{{ v.type }}</td>
-                <td data-label="Chauffeur">{{ v.assignedDriverName || 'Non affecté' }}</td>
-                <td data-label="Traceur"><code class="tracker-code">{{ v.currentTrackerId }}</code></td>
-                <td data-label="Kilométrage" class="num-cell">{{ formatNumber(v.odometerKm) }} km</td>
-                <td data-label="Carburant">
-                  <div class="fuel-bar-wrap" role="progressbar" [attr.aria-valuenow]="v.fuelLevelPercent" aria-valuemin="0" aria-valuemax="100">
-                    <div class="fuel-bar" [style.width.%]="v.fuelLevelPercent"></div>
-                    <span>{{ v.fuelLevelPercent }}%</span>
-                  </div>
-                </td>
-                <td data-label="Statut" style="text-align: right;">
-                  <app-status-badge [status]="v.status"></app-status-badge>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+        Suivant
+        <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- Tab 2: Carnet d'Entretien / Maintenance -->
+<section
+  *ngIf="activeTab === 'MAINTENANCE'"
+  id="panel-maintenance"
+  role="tabpanel"
+  aria-labelledby="tab-maintenance"
+  class="card"
+>
+  <div class="table-container">
+    <table class="data-table data-table--stack">
+      <caption class="sr-only">Historique des entretiens et réparations de la flotte</caption>
+      <thead>
+        <tr>
+          <th scope="col">Date</th>
+          <th scope="col">Véhicule</th>
+          <th scope="col">Type Intervention</th>
+          <th scope="col">Détails & Travaux</th>
+          <th scope="col">Prestataire / Garage</th>
+          <th scope="col" class="num-cell">Km Compteur</th>
+          <th scope="col" class="num-cell">Montant (FCFA)</th>
+          <th scope="col" style="text-align: right;">Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let m of maintenanceRecords$ | async">
+          <td data-label="Date">{{ m.serviceDate }}</td>
+          <td data-label="Véhicule"><strong class="plate-badge">{{ m.vehicleReg }}</strong></td>
+          <td data-label="Type">
+            <span class="badge" [ngClass]="{
+              'badge-info': m.type === 'VIDANGE',
+              'badge-success': m.type === 'VISITE_TECHNIQUE',
+              'badge-warn': m.type === 'FREINAGE' || m.type === 'PNEUMATIQUE',
+              'badge-danger': m.type === 'REPARATION' || m.type === 'ACCIDENT'
+            }">{{ m.type }}</span>
+          </td>
+          <td data-label="Détails">
+            <strong>{{ m.title }}</strong>
+            <div style="font-size: 0.8rem; color: var(--ink-2);">{{ m.description }}</div>
+          </td>
+          <td data-label="Prestataire">{{ m.provider }}</td>
+          <td data-label="Kilométrage" class="num-cell">{{ formatNumber(m.odometerKm) }} km</td>
+          <td data-label="Montant" class="num-cell"><strong>{{ formatNumber(m.costCfa) }} FCFA</strong></td>
+          <td data-label="Statut" style="text-align: right;">
+            <span class="badge" [ngClass]="m.status === 'TERMINEE' ? 'badge-success' : 'badge-warn'">
+              {{ m.status }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 
       <!-- Tab 2: Chauffeurs -->
       <section
@@ -125,7 +235,7 @@
                 <td data-label="Missions" class="num-cell"><strong>{{ d.completedMissions }}</strong></td>
                 <td data-label="Score" class="num-cell">
                   <span class="rating-cell">
-                    <span class="material-symbols-outlined" style="font-size: 15px; color: #f59e0b;" aria-hidden="true">star</span>
+                    <span class="material-symbols-outlined star-icon" aria-hidden="true">star</span>
                     {{ d.rating }} / 5
                   </span>
                 </td>
@@ -232,13 +342,15 @@
               </div>
 
               <div class="form-group">
-                <label for="v-type">Catégorie de véhicule</label>
+                <label for="v-type">Catégorie de véhicule *</label>
                 <select id="v-type" [(ngModel)]="newVehicle.type" name="type" class="form-input">
-                  <option value="Fourgonnette livraison">Fourgonnette livraison</option>
-                  <option value="Pickup utilitaire">Pickup utilitaire</option>
-                  <option value="Poids Lourd">Poids Lourd</option>
-                  <option value="Utilitaire léger">Utilitaire léger</option>
-                  <option value="Berline de liaison">Berline de liaison</option>
+                  <option value="MOTO">Moto (Livraison express)</option>
+                  <option value="SCOOTER">Scooter urbain</option>
+                  <option value="TRICYCLE">Tricycle Cargo</option>
+                  <option value="FOURGONNETTE">Fourgonnette utilitaire</option>
+                  <option value="CAMION">Camion / Poids Lourd</option>
+                  <option value="PICKUP">Pick-up 4x4</option>
+                  <option value="BERLINE">Berline de liaison</option>
                 </select>
               </div>
 
@@ -253,7 +365,7 @@
               </div>
 
               <div class="form-group">
-                <label for="v-tracker">Boîtier Traceur GPS</label>
+                <label for="v-tracker">Boîtier Traceur GPS *</label>
                 <select id="v-tracker" [(ngModel)]="newVehicle.currentTrackerId" name="currentTrackerId" class="form-input">
                   <option *ngFor="let t of trackers$ | async" [value]="t.id">
                     {{ t.identifier }} ({{ t.vendor }} {{ t.model }})
@@ -274,14 +386,23 @@
               </div>
 
               <div class="form-group">
-                <label for="v-fuel">Niveau de carburant (%)</label>
+                <label for="v-tech">Expiration Visite Technique</label>
                 <input
-                  id="v-fuel"
-                  type="number"
-                  [(ngModel)]="newVehicle.fuelLevelPercent"
-                  name="fuelLevelPercent"
-                  min="0"
-                  max="100"
+                  id="v-tech"
+                  type="date"
+                  [(ngModel)]="newVehicle.technicalInspectionExpiry"
+                  name="technicalInspectionExpiry"
+                  class="form-input"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="v-ins">Expiration Assurance</label>
+                <input
+                  id="v-ins"
+                  type="date"
+                  [(ngModel)]="newVehicle.insuranceExpiry"
+                  name="insuranceExpiry"
                   class="form-input"
                 />
               </div>
@@ -292,6 +413,131 @@
               <button type="submit" class="btn btn-primary">
                 <span class="material-symbols-outlined">save</span>
                 <span>Valider l'enregistrement</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Modal Ajouter Intervention Maintenance -->
+      <div *ngIf="isAddMaintenanceOpen" class="modal-backdrop" (click)="closeAddMaintenance()" role="dialog" aria-modal="true">
+        <div class="modal-box modal-lg" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <div class="modal-header-title">
+              <span class="material-symbols-outlined modal-icon">build</span>
+              <h2>Enregistrer une Intervention de Maintenance</h2>
+            </div>
+            <button class="btn-icon" (click)="closeAddMaintenance()" aria-label="Fermer">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+
+          <form (ngSubmit)="saveMaintenance()" class="modal-form">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="m-veh">Véhicule concerné *</label>
+                <select id="m-veh" [(ngModel)]="newMaintenance.vehicleId" name="vehicleId" required class="form-input">
+                  <option *ngFor="let v of vehicles$ | async" [value]="v.id">
+                    {{ v.registrationNumber }} - {{ v.make }} {{ v.model }} ({{ v.type }})
+                  </option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="m-type">Type d'intervention *</label>
+                <select id="m-type" [(ngModel)]="newMaintenance.type" name="type" required class="form-input">
+                  <option value="VIDANGE">Vidange moteur & filtres</option>
+                  <option value="VISITE_TECHNIQUE">Visite technique périodique</option>
+                  <option value="FREINAGE">Freinage (plaquettes, disques)</option>
+                  <option value="PNEUMATIQUE">Pneumatiques / Parallélisme</option>
+                  <option value="REPARATION">Réparation mécanique / Carrosserie</option>
+                  <option value="ACCIDENT">Constat accident / Sinistre</option>
+                  <option value="AUTRE">Autre entretien</option>
+                </select>
+              </div>
+
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="m-title">Intitulé des travaux *</label>
+                <input
+                  id="m-title"
+                  type="text"
+                  [(ngModel)]="newMaintenance.title"
+                  name="title"
+                  required
+                  placeholder="ex: Remplacement kit courroie distribution"
+                  class="form-input"
+                />
+              </div>
+
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="m-desc">Description & pièces remplacées</label>
+                <textarea
+                  id="m-desc"
+                  [(ngModel)]="newMaintenance.description"
+                  name="description"
+                  rows="2"
+                  placeholder="Détails des opérations effectuées par le mécanicien..."
+                  class="form-input"
+                ></textarea>
+              </div>
+
+              <div class="form-group">
+                <label for="m-date">Date de l'intervention *</label>
+                <input
+                  id="m-date"
+                  type="date"
+                  [(ngModel)]="newMaintenance.serviceDate"
+                  name="serviceDate"
+                  required
+                  class="form-input"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="m-cost">Coût total (FCFA) *</label>
+                <input
+                  id="m-cost"
+                  type="number"
+                  [(ngModel)]="newMaintenance.costCfa"
+                  name="costCfa"
+                  min="0"
+                  step="1000"
+                  required
+                  class="form-input"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="m-prov">Garage / Prestataire *</label>
+                <input
+                  id="m-prov"
+                  type="text"
+                  [(ngModel)]="newMaintenance.provider"
+                  name="provider"
+                  required
+                  placeholder="ex: Garage Central Dakar"
+                  class="form-input"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="m-km">Kilométrage compteur</label>
+                <input
+                  id="m-km"
+                  type="number"
+                  [(ngModel)]="newMaintenance.odometerKm"
+                  name="odometerKm"
+                  min="0"
+                  class="form-input"
+                />
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline" (click)="closeAddMaintenance()">Annuler</button>
+              <button type="submit" class="btn btn-primary">
+                <span class="material-symbols-outlined">save</span>
+                <span>Enregistrer l'intervention</span>
               </button>
             </div>
           </form>

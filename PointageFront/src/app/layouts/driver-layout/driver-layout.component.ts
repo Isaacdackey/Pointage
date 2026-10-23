@@ -4,6 +4,7 @@ import { RouterOutlet, RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../shared/services/toast.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { ThemeService } from '../../core/services/theme.service';
 
 @Component({
   selector: 'app-driver-layout',
@@ -17,6 +18,7 @@ export class DriverLayoutComponent {
   private toastService = inject(ToastService);
   private router = inject(Router);
   notificationService = inject(NotificationService);
+  themeService = inject(ThemeService);
 
   user$ = this.authService.currentUser$;
 

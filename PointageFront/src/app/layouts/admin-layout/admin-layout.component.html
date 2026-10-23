@@ -34,76 +34,48 @@
         </div>
 
         <nav class="sidebar-nav" *ngIf="user$ | async as user">
-          <!-- ADMIN & AGENT menus distincts -->
-          <ng-container *ngIf="user.role === 'ADMIN'">
-            <div class="nav-group-title" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">SUPERVISION</div>
-            <a routerLink="/dashboard" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
-              <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
-              <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Tableau de bord</span>
-            </a>
-            <a routerLink="/map" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
-              <span class="material-symbols-outlined" aria-hidden="true">map</span>
-              <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Carte en direct</span>
-              <span class="badge-live" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">DIRECT</span>
-            </a>
-            <a routerLink="/control" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
-              <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
-              <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Console Contrôle</span>
-            </a>
+          <!-- SUPER_ADMIN & USER : Menus harmonisés pour l'exploitation logistique -->
+          <div class="nav-group-title" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">SUPERVISION FLOTTE</div>
+          <a routerLink="/dashboard" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
+            <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
+            <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Tableau de bord</span>
+          </a>
+          <a routerLink="/map" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
+            <span class="material-symbols-outlined" aria-hidden="true">map</span>
+            <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Carte en direct</span>
+            <span class="badge-live" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">DIRECT</span>
+          </a>
+          <a routerLink="/control" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
+            <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+            <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Console Contrôle</span>
+          </a>
 
-            <div class="nav-group-title" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">EXPLOITATION</div>
-            <a routerLink="/missions" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
-              <span class="material-symbols-outlined" aria-hidden="true">assignment</span>
-              <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Missions & Trajets</span>
-            </a>
-            <a routerLink="/fleet" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
-              <span class="material-symbols-outlined" aria-hidden="true">local_shipping</span>
-              <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Flotte & Traceurs</span>
-            </a>
-            <a routerLink="/reports" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
-              <span class="material-symbols-outlined" aria-hidden="true">bar_chart</span>
-              <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Rapports & Synthèse</span>
-            </a>
+          <div class="nav-group-title" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">LOGISTIQUE & TERRAIN</div>
+          <a routerLink="/missions" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
+            <span class="material-symbols-outlined" aria-hidden="true">assignment</span>
+            <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Missions & Trajets</span>
+          </a>
+          <a routerLink="/sites" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
+            <span class="material-symbols-outlined" aria-hidden="true">pin_drop</span>
+            <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Sites Favoris (Géofencing)</span>
+          </a>
+          <a routerLink="/fleet" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
+            <span class="material-symbols-outlined" aria-hidden="true">local_shipping</span>
+            <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Flotte & Traceurs</span>
+          </a>
+          <a routerLink="/reports" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
+            <span class="material-symbols-outlined" aria-hidden="true">bar_chart</span>
+            <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Rapports & Synthèse</span>
+          </a>
 
+          <!-- Menu exclusif SUPER_ADMIN -->
+          <ng-container *ngIf="user.role === 'SUPER_ADMIN'">
             <div class="nav-group-title" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">ADMINISTRATION</div>
             <a routerLink="/admin" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
               <span class="material-symbols-outlined" aria-hidden="true">tune</span>
-              <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Seuils & Audit</span>
+              <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Comptes, Seuils & Audit</span>
             </a>
           </ng-container>
-
-          <ng-container *ngIf="user.role === 'AGENT'">
-            <div class="nav-group-title" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">SUPERVISION AGENT</div>
-            <a routerLink="/control" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
-              <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
-              <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Console Contrôle</span>
-            </a>
-            <a routerLink="/map" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
-              <span class="material-symbols-outlined" aria-hidden="true">map</span>
-              <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Carte en direct</span>
-              <span class="badge-live" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">DIRECT</span>
-            </a>
-            <a routerLink="/dashboard" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
-              <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
-              <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Tableau de bord</span>
-            </a>
-            <a routerLink="/missions" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
-              <span class="material-symbols-outlined" aria-hidden="true">assignment</span>
-              <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Missions du Jour</span>
-            </a>
-          </ng-container>
-
-          <!-- Raccourci vers simulation chauffeur si admin -->
-          <div class="nav-group-title" *ngIf="user.role === 'ADMIN' && (!isSidebarCollapsed || isMobileDrawerOpen)">CHAUFFEUR</div>
-          <a
-            *ngIf="user.role === 'ADMIN'"
-            routerLink="/driver"
-            class="nav-link link-driver"
-            (click)="closeMobileDrawer()"
-          >
-            <span class="material-symbols-outlined" aria-hidden="true">smartphone</span>
-            <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Vue Chauffeur (Mobile)</span>
-          </a>
         </nav>
 
         <div class="sidebar-footer" *ngIf="user$ | async as user">
@@ -182,11 +154,25 @@
               (click)="enablePushNotifications()"
               [title]="notificationService.isPermissionGranted() ? 'Notifications Push Actives' : 'Activer les notifications Push'"
             >
-              <span class="material-symbols-outlined" [style.color]="notificationService.isPermissionGranted() ? '#16a34a' : 'inherit'" aria-hidden="true">
+              <span class="material-symbols-outlined" [style.color]="notificationService.isPermissionGranted() ? 'var(--ok)' : 'inherit'" aria-hidden="true">
                 {{ notificationService.isPermissionGranted() ? 'notifications_active' : 'notification_add' }}
               </span>
               <span class="push-label">
                 {{ notificationService.isPermissionGranted() ? 'Push Actif' : 'Activer Push' }}
+              </span>
+            </button>
+
+            <!-- Bouton Toggle Thème Sombre / Clair Global -->
+            <button
+              type="button"
+              class="btn-icon theme-toggle-btn"
+              (click)="themeService.toggle()"
+              [title]="themeService.isDark() ? 'Basculer en mode clair' : 'Activer le mode sombre'"
+              [attr.aria-label]="themeService.isDark() ? 'Activer le mode clair' : 'Activer le mode sombre'"
+              [attr.aria-pressed]="themeService.isDark()"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">
+                {{ themeService.isDark() ? 'light_mode' : 'dark_mode' }}
               </span>
             </button>
 

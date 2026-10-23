@@ -1,175 +1,256 @@
 <div class="missions-page">
-      <app-page-header
-        title="Planning & Suivi des Missions"
-        subtitle="Assignation des véhicules, chauffeurs et état d'avancement des trajets en temps réel."
-      >
-        <button class="btn btn-primary" (click)="openNewMissionModal()">
-          <span class="material-symbols-outlined" aria-hidden="true">add</span>
-          Planifier une Mission
-        </button>
-      </app-page-header>
+  <app-page-header
+    title="Dispatching & Planning des Missions / Tournées"
+    subtitle="Organisation logistique des tournées, assignation des véhicules et surveillance télématique 100% passive (détection automatique des départs, déviations et retards)."
+  >
+    <button class="btn btn-primary" (click)="openNewMissionModal()">
+      <span class="material-symbols-outlined" aria-hidden="true">add_task</span>
+      Planifier une Tournée
+    </button>
+  </app-page-header>
 
-      <div class="card">
-        <div class="table-container">
-          <table class="data-table data-table--stack">
-            <caption class="sr-only">Liste des missions de transport avec suivi des départs et arrivées</caption>
-            <thead>
-              <tr>
-                <th scope="col">Code</th>
-                <th scope="col">Intitulé Mission</th>
-                <th scope="col">Origine &rarr; Destination</th>
-                <th scope="col">Véhicule</th>
-                <th scope="col">Chauffeur</th>
-                <th scope="col" class="num-cell">Distance Est.</th>
-                <th scope="col">Départ Prévu</th>
-                <th scope="col" style="text-align: right;">Statut</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let m of missions$ | async">
-                <td data-label="Code"><code class="code-badge">{{ m.code }}</code></td>
-                <td data-label="Intitulé"><strong>{{ m.title }}</strong></td>
-                <td data-label="Trajet">
-                  <div class="route-cell">
-                    <span class="route-point">
-                      <span class="material-symbols-outlined origin-icon" aria-hidden="true">radio_button_checked</span>
-                      {{ m.originName }}
-                    </span>
-                    <span class="route-point">
-                      <span class="material-symbols-outlined dest-icon" aria-hidden="true">flag</span>
-                      {{ m.destinationName }}
-                    </span>
-                  </div>
-                </td>
-                <td data-label="Véhicule"><strong>{{ m.vehicleReg }}</strong></td>
-                <td data-label="Chauffeur">{{ m.driverName }}</td>
-                <td data-label="Distance Est." class="num-cell">{{ m.distanceKm }} km</td>
-                <td data-label="Départ Prévu">{{ formatDateTime(m.plannedStartTime) }}</td>
-                <td data-label="Statut" style="text-align: right;">
-                  <app-status-badge [status]="m.status"></app-status-badge>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+  <!-- Note méthodologique conforme aux consignes mentor -->
+  <div class="telemetry-banner">
+    <div class="banner-icon">
+      <span class="material-symbols-outlined">satellite_alt</span>
+    </div>
+    <div class="banner-text">
+      <strong>Fonctionnement Logistique Télématique :</strong>
+      <span>
+        Les chauffeurs ne disposent d'aucune application mobile à manipuler en conduisant.
+        GeoFleet détecte automatiquement les départs dès la première trame de mouvement, confronte le trajet au corridor autorisé, certifie les arrivées dans les <strong>Sites Favoris</strong> (15–30m) et signale tout retard ou arrêt anormal.
+      </span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-container">
+      <table class="data-table data-table--stack">
+        <caption class="sr-only">Liste des tournées et suivi télématique des véhicules</caption>
+        <thead>
+          <tr>
+            <th scope="col" class="th-code">Code</th>
+            <th scope="col">Tournée / Mission</th>
+            <th scope="col">Origine &rarr; Destination</th>
+            <th scope="col">Véhicule & Chauffeur</th>
+            <th scope="col">Progression Trajet</th>
+            <th scope="col">Surveillance Corridor & Retard</th>
+            <th scope="col" style="text-align: right;">Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let m of missions$ | async">
+            <td data-label="Code" class="cell-code">
+              <code class="code-badge">{{ m.code }}</code>
+            </td>
+            <td data-label="Tournée">
+              <strong>{{ m.title }}</strong>
+              <div class="sub-date" *ngIf="m.plannedStartTime">
+                Prévu : {{ formatDateTime(m.plannedStartTime) }}
+              </div>
+            </td>
+            <td data-label="Trajet">
+              <div class="route-cell">
+                <span class="route-point">
+                  <span class="material-symbols-outlined origin-icon" aria-hidden="true">radio_button_checked</span>
+                  {{ m.originName }}
+                </span>
+                <span class="route-point">
+                  <span class="material-symbols-outlined dest-icon" aria-hidden="true">flag</span>
+                  {{ m.destinationName }}
+                </span>
+              </div>
+              <small class="route-dist">{{ m.distanceKm }} km estimés</small>
+            </td>
+            <td data-label="Affectation">
+              <strong>{{ m.vehicleReg }}</strong>
+              <div class="sub-driver">{{ m.driverName }}</div>
+            </td>
+            <td data-label="Progression">
+              <div class="progress-wrapper" *ngIf="m.status === 'EN_COURS' || m.status === 'EN_ANOMALIE'">
+                <div class="progress-bar-bg">
+                  <div class="progress-bar-fill" [style.width.%]="m.currentProgressPercent"></div>
+                </div>
+                <div class="progress-label">
+                  <span>{{ m.currentProgressPercent }}%</span>
+                  <small *ngIf="m.lastCheckpointPassed">{{ m.lastCheckpointPassed }}</small>
+                </div>
+              </div>
+              <span *ngIf="m.status === 'PLANIFIEE'" class="pill-inactive">
+                <span class="material-symbols-outlined">schedule</span>
+                En attente départ
+              </span>
+              <span *ngIf="m.status === 'TERMINEE'" class="pill-completed">
+                <span class="material-symbols-outlined">check_circle</span>
+                Trajet 100% achevé
+              </span>
+            </td>
+            <td data-label="Surveillance">
+              <div *ngIf="m.hasDeviation" class="badge-alert-deviation" title="{{ m.deviationDetails }}">
+                <span class="material-symbols-outlined">wrong_location</span>
+                <span>Déviation Détectée</span>
+              </div>
+              <div *ngIf="m.isDelayed" class="badge-alert-delay">
+                <span class="material-symbols-outlined">timelapse</span>
+                <span>Retard +{{ m.delayMinutes }} min</span>
+              </div>
+              <div *ngIf="!m.hasDeviation && !m.isDelayed && m.status === 'EN_COURS'" class="badge-telemetry-ok">
+                <span class="material-symbols-outlined">verified</span>
+                <span>Corridor Respecté</span>
+              </div>
+              <span *ngIf="m.status === 'PLANIFIEE' || m.status === 'TERMINEE'" class="text-neutral">-</span>
+            </td>
+            <td data-label="Statut" style="text-align: right;">
+              <app-status-badge [status]="m.status"></app-status-badge>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal Planifier une Tournée / Mission -->
+  <div *ngIf="isModalOpen" class="modal-backdrop" (click)="closeModal()" role="dialog" aria-modal="true">
+    <div class="modal-box modal-lg" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-header-title">
+          <span class="material-symbols-outlined modal-icon">assignment_add</span>
+          <h2>Planifier une Nouvelle Tournée / Mission</h2>
         </div>
+        <button class="btn-icon" (click)="closeModal()" aria-label="Fermer">
+          <span class="material-symbols-outlined">close</span>
+        </button>
       </div>
 
-      <!-- Modal Planifier une Mission -->
-      <div *ngIf="isModalOpen" class="modal-backdrop" (click)="closeModal()" role="dialog" aria-modal="true">
-        <div class="modal-box modal-lg" (click)="$event.stopPropagation()">
-          <div class="modal-header">
-            <div class="modal-header-title">
-              <span class="material-symbols-outlined modal-icon">assignment_add</span>
-              <h2>Planifier une Nouvelle Mission</h2>
-            </div>
-            <button class="btn-icon" (click)="closeModal()" aria-label="Fermer">
-              <span class="material-symbols-outlined">close</span>
-            </button>
+      <form (ngSubmit)="saveMission()" class="modal-form">
+        <div class="form-group">
+          <label for="m-title">Intitulé de la tournée / Objet *</label>
+          <input
+            id="m-title"
+            type="text"
+            [(ngModel)]="newMission.title"
+            name="title"
+            required
+            placeholder="ex: Tournée Livraison Conteneurs Port &rarr; Diamniadio"
+            class="form-input"
+          />
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="m-vehicle">Véhicule assigné *</label>
+            <select id="m-vehicle" [(ngModel)]="newMission.vehicleId" name="vehicleId" required class="form-input">
+              <option value="">-- Choisir un véhicule disponible --</option>
+              <option *ngFor="let v of vehicles$ | async" [value]="v.id">
+                {{ v.registrationNumber }} ({{ v.type }} - {{ v.make }} {{ v.model }})
+              </option>
+            </select>
           </div>
 
-          <form (ngSubmit)="saveMission()" class="modal-form">
-            <div class="form-group">
-              <label for="m-title">Intitulé de la mission *</label>
-              <input
-                id="m-title"
-                type="text"
-                [(ngModel)]="newMission.title"
-                name="title"
-                required
-                placeholder="ex: Livraison Express Produits Frais"
-                class="form-input"
-              />
-            </div>
+          <div class="form-group">
+            <label for="m-driver">Chauffeur responsable *</label>
+            <select id="m-driver" [(ngModel)]="newMission.driverId" name="driverId" required class="form-input">
+              <option value="">-- Choisir un chauffeur --</option>
+              <option *ngFor="let d of drivers$ | async" [value]="d.id">
+                {{ d.fullName }} (Permis {{ d.licenseNumber }})
+              </option>
+            </select>
+          </div>
 
-            <div class="form-grid">
-              <div class="form-group">
-                <label for="m-vehicle">Véhicule assigné *</label>
-                <select id="m-vehicle" [(ngModel)]="newMission.vehicleId" name="vehicleId" required class="form-input">
-                  <option value="">-- Sélectionner un véhicule --</option>
-                  <option *ngFor="let v of vehicles$ | async" [value]="v.id">
-                    {{ v.registrationNumber }} ({{ v.make }} {{ v.model }}) - {{ v.status }}
-                  </option>
-                </select>
-              </div>
+          <div class="form-group" *ngIf="geoSites$ | async as sites">
+            <label for="m-origin-site">Point de départ (Site Favori ou Libre) *</label>
+            <select
+              id="m-origin-site"
+              [(ngModel)]="newMission.originSiteId"
+              name="originSiteId"
+              (ngModelChange)="onOriginSiteChange($event, sites)"
+              class="form-input"
+            >
+              <option value="">-- Saisie libre ou sélectionner un site --</option>
+              <option *ngFor="let s of sites" [value]="s.id">
+                📍 {{ s.name }} ({{ s.address }})
+              </option>
+            </select>
+            <input
+              type="text"
+              [(ngModel)]="newMission.originName"
+              name="originName"
+              placeholder="Adresse ou nom de l'origine"
+              class="form-input"
+              style="margin-top: 0.35rem;"
+              required
+            />
+          </div>
 
-              <div class="form-group">
-                <label for="m-driver">Chauffeur assigné *</label>
-                <select id="m-driver" [(ngModel)]="newMission.driverId" name="driverId" required class="form-input">
-                  <option value="">-- Sélectionner un chauffeur --</option>
-                  <option *ngFor="let d of drivers$ | async" [value]="d.id">
-                    {{ d.fullName }} ({{ d.licenseNumber }})
-                  </option>
-                </select>
-              </div>
+          <div class="form-group" *ngIf="geoSites$ | async as sites">
+            <label for="m-dest-site">Destination (Site Favori ou Libre) *</label>
+            <select
+              id="m-dest-site"
+              [(ngModel)]="newMission.destinationSiteId"
+              name="destinationSiteId"
+              (ngModelChange)="onDestinationSiteChange($event, sites)"
+              class="form-input"
+            >
+              <option value="">-- Saisie libre ou sélectionner un site --</option>
+              <option *ngFor="let s of sites" [value]="s.id">
+                🏁 {{ s.name }} ({{ s.address }})
+              </option>
+            </select>
+            <input
+              type="text"
+              [(ngModel)]="newMission.destinationName"
+              name="destinationName"
+              placeholder="Adresse ou nom de la destination"
+              class="form-input"
+              style="margin-top: 0.35rem;"
+              required
+            />
+          </div>
 
-              <div class="form-group">
-                <label for="m-origin">Lieu de départ (Origine) *</label>
-                <input
-                  id="m-origin"
-                  type="text"
-                  [(ngModel)]="newMission.originName"
-                  name="originName"
-                  required
-                  class="form-input"
-                />
-              </div>
+          <div class="form-group">
+            <label for="m-dist">Distance estimée (km)</label>
+            <input
+              id="m-dist"
+              type="number"
+              [(ngModel)]="newMission.distanceKm"
+              name="distanceKm"
+              min="1"
+              class="form-input"
+            />
+          </div>
 
-              <div class="form-group">
-                <label for="m-dest">Destination finale *</label>
-                <input
-                  id="m-dest"
-                  type="text"
-                  [(ngModel)]="newMission.destinationName"
-                  name="destinationName"
-                  required
-                  class="form-input"
-                />
-              </div>
-
-              <div class="form-group">
-                <label for="m-dist">Distance estimée (km)</label>
-                <input
-                  id="m-dist"
-                  type="number"
-                  [(ngModel)]="newMission.distanceKm"
-                  name="distanceKm"
-                  min="1"
-                  class="form-input"
-                />
-              </div>
-
-              <div class="form-group">
-                <label for="m-time">Date & Heure de départ prévue</label>
-                <input
-                  id="m-time"
-                  type="datetime-local"
-                  [(ngModel)]="newMission.plannedStartTime"
-                  name="plannedStartTime"
-                  class="form-input"
-                />
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="m-notes">Consignes particulières & sécurité</label>
-              <textarea
-                id="m-notes"
-                [(ngModel)]="newMission.notes"
-                name="notes"
-                rows="2"
-                placeholder="ex: Respect strict de l'itinéraire validé. Déclarer le départ sur l'application mobile."
-                class="form-input"
-              ></textarea>
-            </div>
-
-            <div class="modal-footer">
-              <button type="button" class="btn btn-outline" (click)="closeModal()">Annuler</button>
-              <button type="submit" class="btn btn-primary">
-                <span class="material-symbols-outlined">check_circle</span>
-                <span>Créer et assigner la mission</span>
-              </button>
-            </div>
-          </form>
+          <div class="form-group">
+            <label for="m-time">Date & Heure de départ planifiée</label>
+            <input
+              id="m-time"
+              type="datetime-local"
+              [(ngModel)]="newMission.plannedStartTime"
+              name="plannedStartTime"
+              class="form-input"
+            />
+          </div>
         </div>
-      </div>
+
+        <div class="form-group">
+          <label for="m-notes">Consignes de transport & Corridor imposé</label>
+          <textarea
+            id="m-notes"
+            [(ngModel)]="newMission.notes"
+            name="notes"
+            rows="2"
+            placeholder="ex: Emprunter obligatoirement la VDN ou la RN1. Vitesse limitée à 70 km/h."
+            class="form-input"
+          ></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" (click)="closeModal()">Annuler</button>
+          <button type="submit" class="btn btn-primary">
+            <span class="material-symbols-outlined">satellite_alt</span>
+            <span>Enregistrer et Activer la Surveillance Télématique</span>
+          </button>
+        </div>
+      </form>
     </div>
+  </div>
+</div>

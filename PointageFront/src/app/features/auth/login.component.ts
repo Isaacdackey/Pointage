@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService, UserRole } from '../../core/services/auth.service';
 import { ToastService } from '../../shared/services/toast.service';
+import { ThemeService } from '../../core/services/theme.service';
 
 @Component({
   selector: 'app-login',
@@ -16,34 +17,26 @@ export class LoginComponent {
   private router = inject(Router);
   private authService = inject(AuthService);
   private toastService = inject(ToastService);
+  themeService = inject(ThemeService);
 
-  selectedRole: UserRole = 'ADMIN';
+  selectedRole: UserRole = 'SUPER_ADMIN';
   username = 'admin@geofleet.sn';
   password = '••••••••••••';
   rememberMe = true;
 
   selectRole(role: UserRole) {
     this.selectedRole = role;
-    if (role === 'ADMIN') {
+    if (role === 'SUPER_ADMIN') {
       this.username = 'admin@geofleet.sn';
-    } else if (role === 'AGENT') {
-      this.username = 'agent.samba@geofleet.sn';
     } else {
-      this.username = 'chauffeur.diallo@geofleet.sn';
+      this.username = 'logistique@geofleet.sn';
     }
   }
 
   onSubmit() {
     const session = this.authService.login(this.selectedRole, this.username);
     this.toastService.success(`Bienvenue ${session.fullName} (${session.roleLabel})`);
-
-    if (this.selectedRole === 'DRIVER') {
-      this.router.navigate(['/driver']);
-    } else if (this.selectedRole === 'AGENT') {
-      this.router.navigate(['/control']);
-    } else {
-      this.router.navigate(['/dashboard']);
-    }
+    this.router.navigate(['/dashboard']);
   }
 
   onForgotPassword() {

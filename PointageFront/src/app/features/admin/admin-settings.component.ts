@@ -40,29 +40,29 @@ export class AdminSettingsComponent {
   auditLogs: AuditEntry[] = [
     {
       id: 'aud-1',
-      timestamp: '2026-10-19T13:25:12Z',
+      timestamp: '2026-10-23T11:25:12Z',
       actor: 'Samba Kane',
-      role: 'AGENT',
-      action: 'MISSION_VALIDATE',
-      targetEntity: 'Mission MIS-2026-089',
-      details: 'Validation de la conformité du départ déclaré (11:00 vs 11:02 GPS).',
+      role: 'USER',
+      action: 'VEHICLE_REASSIGN',
+      targetEntity: 'Véhicule DK-4920-BA',
+      details: 'Réassignation temporaire du véhicule suite absence chauffeur titulaire.',
       ipAddress: '196.12.100.45'
     },
     {
       id: 'aud-2',
-      timestamp: '2026-10-19T13:12:44Z',
-      actor: 'Mamadou Diallo',
-      role: 'DRIVER',
-      action: 'DRIVER_POINTAGE_DEPART',
-      targetEntity: 'Véhicule DK-4920-BA',
-      details: 'Pointage mobile Départ déclaré avec succès.',
-      ipAddress: '41.82.201.12'
+      timestamp: '2026-10-23T10:12:44Z',
+      actor: 'Amadou Diallo',
+      role: 'SUPER_ADMIN',
+      action: 'SITE_CREATED',
+      targetEntity: 'Site Total Almadies',
+      details: 'Création du site favori géofencé (rayon 20m).',
+      ipAddress: '196.12.100.10'
     },
     {
       id: 'aud-3',
-      timestamp: '2026-10-19T11:40:02Z',
+      timestamp: '2026-10-23T09:40:02Z',
       actor: 'Amadou Diallo',
-      role: 'ADMIN',
+      role: 'SUPER_ADMIN',
       action: 'CONFIG_RULE_UPDATE',
       targetEntity: 'Règle Vitesse Maximale',
       details: 'Mise à jour du seuil de vitesse voie express à 90 km/h.',

@@ -47,3 +47,6 @@ audio/*.mp3
 
 .vercel
 .env*
+
+# Retranscriptions audio et notes de session
+retranscription*.md

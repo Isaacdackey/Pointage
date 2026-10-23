@@ -111,29 +111,34 @@
     }
 
     .progress-wrap {
-      width: 120px;
-      background: var(--bg);
-      border: 1px solid var(--line);
-      border-radius: var(--r-sm);
-      height: 16px;
-      position: relative;
-      overflow: hidden;
       display: flex;
       align-items: center;
+      gap: 0.65rem;
+      min-width: 140px;
+    }
+
+    .progress-track {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: var(--r-full);
+      height: 8px;
+      overflow: hidden;
+      position: relative;
     }
 
     .progress-fill {
       height: 100%;
-      background: var(--ok);
+      background: linear-gradient(90deg, #10b981, #34d399);
+      border-radius: var(--r-full);
     }
 
     .progress-wrap .pct {
-      position: absolute;
-      width: 100%;
-      text-align: center;
-      font-size: 0.68rem;
+      font-size: 0.8rem;
       font-weight: 700;
       color: var(--ink);
+      min-width: 42px;
+      text-align: right;
     }
 
     .alert-count-pill {
@@ -144,12 +149,14 @@
       border-radius: var(--r-full);
       font-size: var(--text-xs);
       font-weight: 600;
-      background: #ecfdf5;
-      color: #047857;
+      background: var(--pill-ok-bg);
+      color: var(--pill-ok-fg);
+      border: 1px solid var(--pill-ok-border);
     }
     .alert-count-pill.has-alerts {
-      background: #fef2f2;
-      color: #b91c1c;
+      background: var(--pill-danger-bg);
+      color: var(--pill-danger-fg);
+      border: 1px solid var(--pill-danger-border);
     }
 
     .empty-cell {

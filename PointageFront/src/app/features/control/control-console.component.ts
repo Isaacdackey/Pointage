@@ -78,8 +78,8 @@ export class ControlConsoleComponent {
   }
 
   askValidation(mission: Mission) {
-    if (!mission.departureDeclared) {
-      this.toast.error("Impossible de valider : le départ n'a pas encore été déclaré.");
+    if (!mission.gpsDepartureDetected) {
+      this.toast.error("Impossible de certifier : aucun mouvement ou départ GPS détecté sur ce véhicule.");
       return;
     }
     this.pendingMissionToValidate = mission;

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 
-export type UserRole = 'ADMIN' | 'AGENT' | 'DRIVER';
+export type UserRole = 'SUPER_ADMIN' | 'USER';
 
 export interface UserSession {
   username: string;
@@ -10,34 +10,29 @@ export interface UserSession {
   roleLabel: string;
   location: string;
   avatarText: string;
+  canDelete: boolean;
 }
 
 const STORAGE_KEY = 'geofleet_session';
 
 const DEFAULT_USERS: Record<UserRole, UserSession> = {
-  ADMIN: {
+  SUPER_ADMIN: {
     username: 'admin@geofleet.sn',
     fullName: 'Amadou Diallo',
-    role: 'ADMIN',
-    roleLabel: 'Administrateur Général',
-    location: 'Poste Central Dakar',
-    avatarText: 'AD'
+    role: 'SUPER_ADMIN',
+    roleLabel: 'Super Administrateur',
+    location: 'Direction Générale - Dakar',
+    avatarText: 'AD',
+    canDelete: true
   },
-  AGENT: {
-    username: 'agent.samba@geofleet.sn',
+  USER: {
+    username: 'logistique@geofleet.sn',
     fullName: 'Samba Kane',
-    role: 'AGENT',
-    roleLabel: 'Agent de Contrôle',
-    location: 'Centre de Supervision',
-    avatarText: 'SK'
-  },
-  DRIVER: {
-    username: 'chauffeur.diallo@geofleet.sn',
-    fullName: 'Mamadou Diallo',
-    role: 'DRIVER',
-    roleLabel: 'Chauffeur Flotte',
-    location: 'Cabine Véhicule DK-4920-BA',
-    avatarText: 'MD'
+    role: 'USER',
+    roleLabel: 'Responsable Flotte & Logistique',
+    location: 'Poste Exploitation - Diamniadio',
+    avatarText: 'SK',
+    canDelete: false
   }
 };
 
@@ -57,8 +52,8 @@ export class AuthService {
     } catch {
       // fallback
     }
-    // Par defaut pour le mock, on demarre en ADMIN si aucune session
-    return DEFAULT_USERS.ADMIN;
+    // Par defaut pour le mock, on demarre en SUPER_ADMIN si aucune session
+    return DEFAULT_USERS.SUPER_ADMIN;
   }
 
   getCurrentUser(): UserSession | null {

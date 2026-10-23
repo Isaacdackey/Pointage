@@ -6,25 +6,37 @@
 @import 'leaflet/dist/leaflet.css';
 
 :root {
-  /* Brand (Orange fonce WCAG AA conforme, ratio > 4.5:1 sur blanc) */
+  color-scheme: light;
+
+  /* Brand (Orange foncé WCAG AA conforme ≥ 5:1 avec blanc pour brand-solid) */
   --brand: #ea4c0e;
-  --brand-hover: #cf3d06;
-  --brand-active: #b53303;
+  --brand-solid: #c2410c; /* Ratio ≥ 5:1 sur blanc pour fond de bouton */
+  --brand-hover: #b53303;
+  --brand-active: #9a2c02;
   --brand-soft: #fff4ed;
   --brand-border: #fed7aa;
+  --brand-text: #ea4c0e;
+  --text-on-brand: #ffffff;
 
   /* Echelle Zinc unique */
   --ink: #09090b;        /* Zinc 950 - Titres, textes primaires */
   --ink-2: #52525b;      /* Zinc 600 - Sous-titres, labels */
   --ink-3: #71717a;      /* Zinc 500 - Textes secondaires */
-  --ink-muted: #a1a1aa;  /* Zinc 400 - Placeholders, icones tertiaires */
+  --ink-muted: #a1a1aa;  /* Zinc 400 - Placeholders, icones tertiaires decoratives */
 
   --line: #e4e4e7;       /* Zinc 200 - Bordures principales */
   --line-subtle: #f4f4f5;/* Zinc 100 - Separateurs discrets */
 
   --bg: #f8fafc;         /* Slate/Zinc tres doux pour le fond de page */
+  --bg-hover: #f1f5f9;   /* Survol de lignes / boutons */
+  --bg-inset: #f1f5f9;   /* Fonds en creux / conteneurs imbriqués */
+  --bg-overlay: rgba(255, 255, 255, 0.95);
   --surface: #ffffff;    /* Cartes et panneaux */
   --surface-alt: #fafafa;/* Arriere-plans de formulaires, barres */
+
+  /* Voile et focus */
+  --scrim: rgba(9, 9, 11, 0.6);
+  --focus-ring: rgba(234, 76, 14, 0.35);
 
   /* Couleurs semantiques distinctes */
   --ok: #16a34a;
@@ -42,6 +54,31 @@
   --info: #0284c7;
   --info-soft: #f0f9ff;
   --info-border: #bae6fd;
+
+  /* Tokens sémantiques statut (pills) - Mode Clair */
+  --pill-ok-bg: #f0fdf4;
+  --pill-ok-fg: #15803d;
+  --pill-ok-border: #bbf7d0;
+
+  --pill-warn-bg: #fffbeb;
+  --pill-warn-fg: #b45309;
+  --pill-warn-border: #fde68a;
+
+  --pill-danger-bg: #fef2f2;
+  --pill-danger-fg: #b91c1c;
+  --pill-danger-border: #fecaca;
+
+  --pill-info-bg: #f0f9ff;
+  --pill-info-fg: #0369a1;
+  --pill-info-border: #bae6fd;
+
+  --pill-neutral-bg: #f4f4f5;
+  --pill-neutral-fg: #52525b;
+  --pill-neutral-border: #e4e4e7;
+
+  --pill-brand-bg: #fff4ed;
+  --pill-brand-fg: #c2410c;
+  --pill-brand-border: #fed7aa;
 
   /* Rayons */
   --r-xs: 4px;
@@ -69,6 +106,82 @@
   --text-md: 0.95rem;
 }
 
+/* Mode Sombre Global (Salle de Contrôle & Wallboard) */
+body.dark-theme {
+  color-scheme: dark;
+
+  --bg: #0b0f19;
+  --bg-hover: #1e293b;
+  --bg-inset: #070a10;
+  --bg-overlay: rgba(17, 24, 39, 0.95);
+  --surface: #111827;
+  --surface-alt: #1f2937;
+  
+  --ink: #f9fafb;
+  --ink-2: #d1d5db;
+  --ink-3: #9ca3af;
+  --ink-muted: #9ca3af; /* Min 4.5:1 sur fond sombre pour texte accessible */
+
+  --line: #374151;        /* Contraste ameliore pour séparer les cartes du fond */
+  --line-subtle: #2a3441; /* Lignes et pointillés secondaires */
+
+  --brand-text: #fb923c;  /* Orange lumineux lisible sur surfaces sombres */
+
+  /* Couleurs sémantiques adaptées au Dark Mode */
+  --ok-soft: rgba(16, 185, 129, 0.15);
+  --ok-border: rgba(16, 185, 129, 0.3);
+  --ok: #34d399;
+
+  --warn-soft: rgba(245, 158, 11, 0.15);
+  --warn-border: rgba(245, 158, 11, 0.3);
+  --warn: #fbbf24;
+
+  --danger-soft: rgba(239, 68, 68, 0.15);
+  --danger-border: rgba(239, 68, 68, 0.3);
+  --danger: #f87171;
+
+  --info-soft: rgba(59, 130, 246, 0.15);
+  --info-border: rgba(59, 130, 246, 0.3);
+  --info: #60a5fa;
+
+  /* Tokens sémantiques statut (pills) - Mode Sombre */
+  --pill-ok-bg: rgba(16, 185, 129, 0.15);
+  --pill-ok-fg: #34d399;
+  --pill-ok-border: rgba(16, 185, 129, 0.3);
+
+  --pill-warn-bg: rgba(245, 158, 11, 0.15);
+  --pill-warn-fg: #fbbf24;
+  --pill-warn-border: rgba(245, 158, 11, 0.3);
+
+  --pill-danger-bg: rgba(239, 68, 68, 0.15);
+  --pill-danger-fg: #f87171;
+  --pill-danger-border: rgba(239, 68, 68, 0.3);
+
+  --pill-info-bg: rgba(59, 130, 246, 0.15);
+  --pill-info-fg: #60a5fa;
+  --pill-info-border: rgba(59, 130, 246, 0.3);
+
+  --pill-neutral-bg: rgba(156, 163, 175, 0.12);
+  --pill-neutral-fg: #d1d5db;
+  --pill-neutral-border: rgba(156, 163, 175, 0.25);
+
+  --pill-brand-bg: rgba(234, 76, 14, 0.15);
+  --pill-brand-fg: #fb923c;
+  --pill-brand-border: rgba(234, 76, 14, 0.35);
+
+  /* Voile et focus en sombre */
+  --scrim: rgba(3, 7, 18, 0.75);
+  --focus-ring: rgba(251, 146, 60, 0.45);
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.6);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.7);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.8);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.9);
+
+  color: var(--ink);
+  background-color: var(--bg);
+}
+
 /* ==========================================================================
    Reset & Base
    ========================================================================== */
@@ -93,10 +206,11 @@ body {
   overflow-x: hidden; /* Filet de sécurité global */
 }
 
-/* Accessible focus ring */
+/* Accessible focus ring conforme WCAG AA en clair et en sombre */
 :focus-visible {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--focus-ring);
 }
 
 /* Respect motion preferences */
@@ -184,11 +298,11 @@ body {
   }
 }
 
-/* Un seul bouton primaire dans toute l'application : Brand Orange */
+/* Bouton primaire : Brand Solid pour contraste WCAG AA ≥ 5:1 avec blanc */
 .btn-primary {
-  background: var(--brand);
-  color: #ffffff;
-  border-color: var(--brand);
+  background: var(--brand-solid);
+  color: var(--text-on-brand);
+  border-color: var(--brand-solid);
 
   &:hover {
     background: var(--brand-hover);
@@ -197,17 +311,18 @@ body {
 
   &:active {
     background: var(--brand-active);
+    border-color: var(--brand-active);
   }
 }
 
 .btn-secondary {
-  background: var(--ink);
-  color: #ffffff;
-  border-color: var(--ink);
+  background: var(--surface-alt);
+  color: var(--ink);
+  border: 1px solid var(--line);
 
   &:hover {
-    background: #27272a;
-    border-color: #27272a;
+    background: var(--bg-hover);
+    border-color: var(--ink-3);
   }
 }
 
@@ -217,7 +332,7 @@ body {
   border-color: var(--line);
 
   &:hover {
-    background: var(--surface-alt);
+    background: var(--bg-hover);
     border-color: var(--ink-3);
   }
 }
@@ -346,7 +461,7 @@ body {
     transition: background-color 0.15s ease;
 
     &:hover {
-      background-color: #fafafa;
+      background-color: var(--bg-hover);
     }
   }
 
@@ -603,4 +718,128 @@ body {
 @keyframes slideUpModal {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
+}
+
+/* ==========================================================================
+   Leaflet Theming, Controls & Markers Globaux (Étape 4, 5 & 8)
+   ========================================================================== */
+body.dark-theme .leaflet-tile-pane {
+  /* Filtre sombre haute lisibilité sur tuiles OSM gratuites sans filigrane ni clé */
+  filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  box-shadow: var(--shadow-lg) !important;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.leaflet-popup-content {
+  margin: 0.75rem 1rem !important;
+  font-family: var(--font-sans) !important;
+  line-height: 1.4 !important;
+
+  .popup-site-title {
+    margin: 0 0 4px 0;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .popup-site-desc {
+    margin: 0 0 6px 0;
+    font-size: 0.75rem;
+    color: var(--ink-2);
+  }
+
+  .popup-site-radius {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--brand);
+  }
+}
+
+/* Contrôles Leaflet tactiles ≥ 44px */
+@media (pointer: coarse) {
+  .leaflet-bar a {
+    width: 44px !important;
+    height: 44px !important;
+    line-height: 44px !important;
+    font-size: 22px !important;
+  }
+}
+
+/* Classes des pins Leaflet sans styles inline en dur */
+.custom-telematics-pin {
+  background: none !important;
+  border: none !important;
+  transform: translate(-50%, -50%);
+}
+
+.pin-vehicle {
+  background: var(--pin, #10b981);
+  color: #ffffff;
+  padding: 3px 8px;
+  border-radius: var(--r-full);
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 2px solid var(--surface);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+
+  .pin-icon {
+    font-size: 14px;
+  }
+
+  .pin-speed {
+    background: rgba(0, 0, 0, 0.25);
+    padding: 1px 4px;
+    border-radius: var(--r-xs);
+    font-size: 9px;
+    font-weight: 600;
+  }
+}
+
+.pin-site {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #ffffff;
+  border: 2px solid var(--surface);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+
+  .site-icon {
+    font-size: 16px;
+  }
+}
+
+.pin-start {
+  background: var(--ok);
+  color: #ffffff;
+  padding: 3px 8px;
+  border-radius: var(--r-full);
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  border: 2px solid var(--surface);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transform: translate(-50%, -50%);
+
+  .flag-icon {
+    font-size: 13px;
+  }
 }

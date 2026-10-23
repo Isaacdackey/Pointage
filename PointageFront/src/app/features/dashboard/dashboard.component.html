@@ -80,7 +80,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let v of vehicles$ | async">
+                <tr *ngFor="let v of paginatedVehicles$ | async">
                   <td data-label="Véhicule">
                     <div class="vehicle-cell">
                       <strong>{{ v.registrationNumber }}</strong>
@@ -116,6 +116,41 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div class="table-pagination" *ngIf="totalPages$ | async as totalPages">
+            <div class="pagination-info" *ngIf="totalVehiclesCount$ | async as totalCount">
+              Affichage de <strong>{{ ((currentPage - 1) * pageSize) + 1 }}</strong> à <strong>{{ currentPage * pageSize > totalCount ? totalCount : currentPage * pageSize }}</strong> sur <strong>{{ totalCount }}</strong> véhicules
+            </div>
+
+            <div class="pagination-actions">
+              <button
+                type="button"
+                class="btn-page-nav"
+                [disabled]="currentPage === 1"
+                (click)="prevPage()"
+                aria-label="Page précédente"
+              >
+                <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+                Précédent
+              </button>
+
+              <div class="page-numbers">
+                <span class="current-page-pill">Page {{ currentPage }} / {{ totalPages }}</span>
+              </div>
+
+              <button
+                type="button"
+                class="btn-page-nav"
+                [disabled]="currentPage >= totalPages"
+                (click)="nextPage(totalPages)"
+                aria-label="Page suivante"
+              >
+                Suivant
+                <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+              </button>
+            </div>
           </div>
         </div>
 

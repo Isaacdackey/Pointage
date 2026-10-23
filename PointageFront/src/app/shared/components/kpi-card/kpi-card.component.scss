@@ -14,19 +14,20 @@
       }
     }
 
-    /* Variante Highlight [highlight]="true" : carte orange de marque sans hack CSS */
+    /* Variante Highlight [highlight]="true" : carte orange de marque avec dégradé d'identité */
     .kpi-card.highlight {
-      background: linear-gradient(135deg, var(--brand) 0%, #c23803 100%);
-      border-color: var(--brand);
+      /* Dégradé identitaire de marque préservé */
+      background: linear-gradient(135deg, var(--brand-solid) 0%, #c23803 100%);
+      border-color: var(--brand-solid);
       box-shadow: var(--shadow-brand);
-      color: #ffffff;
+      color: var(--text-on-brand);
 
       .kpi-icon-box {
         background: rgba(255, 255, 255, 0.2);
         border-color: rgba(255, 255, 255, 0.3);
 
         .material-symbols-outlined {
-          color: #ffffff;
+          color: var(--text-on-brand);
         }
       }
 
@@ -35,7 +36,7 @@
       }
 
       .kpi-value {
-        color: #ffffff;
+        color: var(--text-on-brand);
       }
 
       .kpi-hint {

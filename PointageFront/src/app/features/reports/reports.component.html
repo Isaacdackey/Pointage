@@ -108,7 +108,9 @@
                 <td data-label="Vitesse Moy." class="num-cell">{{ row.avgSpeedKph }} km/h</td>
                 <td data-label="Ponctualité">
                   <div class="progress-wrap" role="progressbar" [attr.aria-valuenow]="row.ontimePercent" aria-valuemin="0" aria-valuemax="100">
-                    <div class="progress-fill" [style.width.%]="row.ontimePercent"></div>
+                    <div class="progress-track">
+                      <div class="progress-fill" [style.width.%]="row.ontimePercent"></div>
+                    </div>
                     <span class="pct">{{ row.ontimePercent }}%</span>
                   </div>
                 </td>

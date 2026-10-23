@@ -1,155 +1,231 @@
-<div class="map-view-container">
-      <!-- Top toolbar styled with brand tokens -->
-      <div class="map-toolbar">
-        <div class="toolbar-title">
-          <h1 class="page-title">Carte Live & Géolocalisation Flotte</h1>
-          <span class="live-indicator">
-            <span class="ping" aria-hidden="true"></span>
-            Supervision active ({{ displayedVehicles.length }} / {{ vehicles.length }} véhicules)
+<div class="map-view-container" [class.wallboard-fullscreen]="isWallboardFullscreen" [class.theme-dark]="themeService.isDark()">
+  <!-- Top toolbar styled for Wallboard / Control Room -->
+  <div class="map-toolbar">
+    <div class="toolbar-title">
+      <div class="title-with-pill">
+        <h1 class="page-title">Cartographie Temps Réel & Mur d'Opérations</h1>
+        <span class="wallboard-tag" *ngIf="isWallboardFullscreen">MODE GRAND ÉCRAN (TV)</span>
+      </div>
+      <span class="live-indicator">
+        <span class="ping" aria-hidden="true"></span>
+        <span>Moteur GPS actif &bull; <strong>{{ movingVehiclesCount }}</strong> en mouvement sur {{ vehicles.length }}</span>
+      </span>
+    </div>
+
+    <!-- Controls for Control Room: Theme, Wallboard, Layers & Filters -->
+    <div class="toolbar-controls">
+      <!-- Filter Group -->
+      <div class="filter-group" role="group" aria-label="Filtrer les véhicules affichés">
+        <button
+          (click)="setFilter('ALL')"
+          [class.active]="filterStatus === 'ALL'"
+          class="filter-btn"
+        >
+          Tous ({{ vehicles.length }})
+        </button>
+        <button
+          (click)="setFilter('EN_MISSION')"
+          [class.active]="filterStatus === 'EN_MISSION'"
+          class="filter-btn"
+        >
+          En mission
+        </button>
+        <button
+          (click)="setFilter('DISPONIBLE')"
+          [class.active]="filterStatus === 'DISPONIBLE'"
+          class="filter-btn"
+        >
+          Disponibles
+        </button>
+        <button
+          (click)="setFilter('MAINTENANCE')"
+          [class.active]="filterStatus === 'MAINTENANCE'"
+          class="filter-btn"
+        >
+          Arrêt
+        </button>
+      </div>
+
+      <!-- Control Room Action Toggles -->
+      <div class="wallboard-actions">
+        <!-- Toggle Couche Sites Favoris -->
+        <button
+          type="button"
+          class="btn-control-toggle"
+          [class.active]="showSitesLayer"
+          (click)="toggleSitesLayer()"
+          title="Afficher/Masquer les Sites Favoris et cercles de géofencing (15-35m)"
+        >
+          <span class="material-symbols-outlined">pin_drop</span>
+          <span class="toggle-text">Sites Favoris ({{ geoSites.length }})</span>
+        </button>
+
+        <!-- Toggle Dark Mode / Mode Sombre -->
+        <button
+          type="button"
+          class="btn-control-toggle"
+          (click)="toggleMapTheme()"
+          [title]="themeService.isDark() ? 'Basculer en mode clair' : 'Basculer en mode sombre (Salle de contrôle)'"
+          [attr.aria-pressed]="themeService.isDark()"
+        >
+          <span class="material-symbols-outlined">{{ themeService.isDark() ? 'light_mode' : 'dark_mode' }}</span>
+          <span class="toggle-text">{{ themeService.isDark() ? 'Mode Clair' : 'Mode Nuit' }}</span>
+        </button>
+
+        <!-- Toggle Mode Plein Écran Wallboard TV -->
+        <button
+          type="button"
+          class="btn-control-toggle btn-fullscreen"
+          (click)="toggleWallboardFullscreen()"
+          [title]="isWallboardFullscreen ? 'Quitter le mode plein écran TV' : 'Activer le mode plein écran pour affichage TV'"
+        >
+          <span class="material-symbols-outlined">{{ isWallboardFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</span>
+          <span class="toggle-text">{{ isWallboardFullscreen ? 'Réduire' : 'Plein Écran TV' }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Map & Side Drawer -->
+  <div class="map-layout">
+    <!-- Interactive Leaflet container -->
+    <div #mapContainer class="leaflet-map-wrapper"></div>
+
+    <!-- Wallboard Live Ticker Bar (au bas de l'écran en mode TV) -->
+    <div class="wallboard-bottom-bar" *ngIf="isWallboardFullscreen">
+      <div class="ticker-label">
+        <span class="material-symbols-outlined">satellite_alt</span>
+        <span>TÉLÉMATIQUE EN DIRECT</span>
+      </div>
+      <div class="ticker-scroll">
+        <div class="ticker-item" *ngFor="let v of displayedVehicles" (click)="selectVehicle(v)">
+          <strong class="item-reg">{{ v.registrationNumber }}</strong>
+          <span class="item-speed" [class.moving]="v.lastPosition && v.lastPosition.speedKph > 0">
+            {{ v.lastPosition?.speedKph || 0 }} km/h
+          </span>
+          <span class="item-driver">{{ v.assignedDriverName || 'Sans chauffeur' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legend Card Overlay -->
+    <div class="map-legend" aria-label="Légende de la carte" *ngIf="!selectedVehicle">
+      <span class="legend-title">Statuts Flotte & Géofencing</span>
+      <div class="legend-item">
+        <span class="legend-color-dot active-dot"></span>
+        <span>En mouvement (&gt; 0 km/h)</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color-dot ready-dot"></span>
+        <span>Immobile / Disponible</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color-dot warning-dot"></span>
+        <span>Maintenance</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color-dot stale-dot"></span>
+        <span class="stale-label">Traceur muet (&gt; 5 min)</span>
+      </div>
+      <div class="legend-item" *ngIf="showSitesLayer">
+        <span class="legend-geofence-dot"></span>
+        <span>Périmètre Site Favori (15–35m)</span>
+      </div>
+      <div class="legend-item" *ngIf="isTripTraceActive">
+        <span class="legend-line-sample"></span>
+        <span>Parcours réel GPS</span>
+      </div>
+    </div>
+
+    <!-- Vehicle Details Side Card -->
+    <aside class="vehicle-sidebar" *ngIf="selectedVehicle" aria-label="Détails du véhicule sélectionné">
+      <div class="sidebar-header">
+        <div>
+          <h2 class="vehicle-title">{{ selectedVehicle.registrationNumber }}</h2>
+          <p class="car-sub">{{ selectedVehicle.make }} {{ selectedVehicle.model }} &bull; {{ selectedVehicle.type }}</p>
+        </div>
+        <button
+          (click)="deselectVehicle()"
+          class="close-btn"
+          aria-label="Fermer la fiche véhicule"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+      </div>
+
+      <div class="sidebar-content">
+        <div class="detail-row">
+          <span class="lbl">Statut :</span>
+          <app-status-badge [status]="selectedVehicle.status"></app-status-badge>
+        </div>
+
+        <div class="detail-row">
+          <span class="lbl">Chauffeur titulaire :</span>
+          <strong>{{ selectedVehicle.assignedDriverName || 'Non affecté' }}</strong>
+        </div>
+
+        <div class="detail-row">
+          <span class="lbl">Téléphone contact :</span>
+          <span>{{ selectedVehicle.assignedDriverPhone || 'Non renseigné' }}</span>
+        </div>
+
+        <div class="detail-row">
+          <span class="lbl">Vitesse instantanée :</span>
+          <span class="speed-box">{{ selectedVehicle.lastPosition?.speedKph || 0 }} km/h</span>
+        </div>
+
+        <div class="detail-row">
+          <span class="lbl">Direction (cap) :</span>
+          <span>{{ selectedVehicle.lastPosition?.heading || 0 }}°</span>
+        </div>
+
+        <div class="detail-row">
+          <span class="lbl">Contact moteur :</span>
+          <span [class.green-text]="selectedVehicle.lastPosition?.ignition" [class.red-text]="!selectedVehicle.lastPosition?.ignition">
+            {{ selectedVehicle.lastPosition?.ignition ? 'Contact allumé' : 'Moteur coupé' }}
           </span>
         </div>
 
-        <div class="filter-group" role="group" aria-label="Filtrer les véhicules affichés">
-          <button
-            (click)="setFilter('ALL')"
-            [class.active]="filterStatus === 'ALL'"
-            class="filter-btn"
+        <div class="detail-row">
+          <span class="lbl">Traceur GPS rattaché :</span>
+          <span class="mono">{{ selectedVehicle.currentTrackerId }}</span>
+        </div>
+
+        <div class="detail-row">
+          <span class="lbl">Fraîcheur télématique :</span>
+          <span
+            class="freshness-badge"
+            [class.stale]="isSignalStale(selectedVehicle.lastPosition?.freshnessSeconds)"
           >
-            Tous ({{ vehicles.length }})
+            {{ formatSeconds(selectedVehicle.lastPosition?.freshnessSeconds) }}
+          </span>
+        </div>
+
+        <div class="detail-row" *ngIf="selectedVehicle.canCutEngineRemotely">
+          <span class="lbl">Coupure moteur à distance :</span>
+          <span class="green-text" style="font-weight: 600;">Disponible (Boîtier relais)</span>
+        </div>
+
+        <hr class="divider"/>
+
+        <div class="sidebar-actions">
+          <button
+            (click)="toggleHistoricTrip()"
+            [class.btn-primary]="!isTripTraceActive"
+            [class.btn-outline]="isTripTraceActive"
+            class="btn btn-block"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">
+              {{ isTripTraceActive ? 'visibility_off' : 'route' }}
+            </span>
+            <span>{{ isTripTraceActive ? 'Masquer le tracé GPS' : 'Afficher le parcours réel GPS' }}</span>
           </button>
-          <button
-            (click)="setFilter('EN_MISSION')"
-            [class.active]="filterStatus === 'EN_MISSION'"
-            class="filter-btn"
-          >
-            En mission
-          </button>
-          <button
-            (click)="setFilter('DISPONIBLE')"
-            [class.active]="filterStatus === 'DISPONIBLE'"
-            class="filter-btn"
-          >
-            Disponibles
-          </button>
-          <button
-            (click)="setFilter('MAINTENANCE')"
-            [class.active]="filterStatus === 'MAINTENANCE'"
-            class="filter-btn"
-          >
-            Maintenance
+          <button (click)="centerOnVehicle(selectedVehicle)" class="btn btn-outline btn-block">
+            <span class="material-symbols-outlined" aria-hidden="true">my_location</span>
+            <span>Recentrer sur la position actuelle</span>
           </button>
         </div>
       </div>
-
-      <!-- Main Map & Side Drawer -->
-      <div class="map-layout">
-        <!-- Interactive Leaflet container -->
-        <div #mapContainer class="leaflet-map-wrapper"></div>
-
-        <!-- Legend Card Overlay -->
-        <div class="map-legend" aria-label="Légende de la carte">
-          <span class="legend-title">Légende Flotte</span>
-          <div class="legend-item">
-            <span class="legend-color-dot active-dot"></span>
-            <span>En mission (&lt; 5 min)</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-color-dot ready-dot"></span>
-            <span>Disponible</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-color-dot warning-dot"></span>
-            <span>Maintenance / Arrêt</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-color-dot stale-dot"></span>
-            <span class="stale-label">Signal muet (&gt; 5 min)</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-line-sample"></span>
-            <span>Parcours réel GPS effectué</span>
-          </div>
-        </div>
-
-        <!-- Vehicle Details Side Card -->
-        <aside class="vehicle-sidebar" *ngIf="selectedVehicle" aria-label="Détails du véhicule sélectionné">
-          <div class="sidebar-header">
-            <div>
-              <h2 class="vehicle-title">{{ selectedVehicle.registrationNumber }}</h2>
-              <p class="car-sub">{{ selectedVehicle.make }} {{ selectedVehicle.model }}</p>
-            </div>
-            <button
-              (click)="deselectVehicle()"
-              class="close-btn"
-              aria-label="Fermer la fiche véhicule"
-            >
-              <span class="material-symbols-outlined" aria-hidden="true">close</span>
-            </button>
-          </div>
-
-          <div class="sidebar-content">
-            <div class="detail-row">
-              <span class="lbl">Statut :</span>
-              <app-status-badge [status]="selectedVehicle.status"></app-status-badge>
-            </div>
-
-            <div class="detail-row">
-              <span class="lbl">Chauffeur titulaire :</span>
-              <strong>{{ selectedVehicle.assignedDriverName || 'Non affecté' }}</strong>
-            </div>
-
-            <div class="detail-row">
-              <span class="lbl">Dernière vitesse :</span>
-              <span class="speed-box">{{ selectedVehicle.lastPosition?.speedKph || 0 }} km/h</span>
-            </div>
-
-            <div class="detail-row">
-              <span class="lbl">Direction (cap) :</span>
-              <span>{{ selectedVehicle.lastPosition?.heading || 0 }}°</span>
-            </div>
-
-            <div class="detail-row">
-              <span class="lbl">Contact moteur :</span>
-              <span [class.green-text]="selectedVehicle.lastPosition?.ignition" [class.red-text]="!selectedVehicle.lastPosition?.ignition">
-                {{ selectedVehicle.lastPosition?.ignition ? 'Contact allumé' : 'Moteur coupé' }}
-              </span>
-            </div>
-
-            <div class="detail-row">
-              <span class="lbl">Traceur GPS :</span>
-              <span class="mono">{{ selectedVehicle.currentTrackerId }}</span>
-            </div>
-
-            <div class="detail-row">
-              <span class="lbl">Fraîcheur GPS :</span>
-              <span
-                class="freshness-badge"
-                [class.stale]="isSignalStale(selectedVehicle.lastPosition?.freshnessSeconds)"
-              >
-                {{ formatSeconds(selectedVehicle.lastPosition?.freshnessSeconds) }}
-              </span>
-            </div>
-
-            <hr class="divider"/>
-
-            <div class="sidebar-actions">
-              <button
-                (click)="toggleHistoricTrip()"
-                [class.btn-primary]="!isTripTraceActive"
-                [class.btn-outline]="isTripTraceActive"
-                class="btn btn-block"
-              >
-                <span class="material-symbols-outlined" aria-hidden="true">
-                  {{ isTripTraceActive ? 'visibility_off' : 'route' }}
-                </span>
-                <span>{{ isTripTraceActive ? 'Masquer le tracé GPS' : 'Afficher le parcours réel GPS' }}</span>
-              </button>
-              <button (click)="centerOnVehicle(selectedVehicle)" class="btn btn-outline btn-block">
-                <span class="material-symbols-outlined" aria-hidden="true">my_location</span>
-                <span>Recentrer sur la position actuelle</span>
-              </button>
-            </div>
-          </div>
-        </aside>
-      </div>
-    </div>
+    </aside>
+  </div>
+</div>
