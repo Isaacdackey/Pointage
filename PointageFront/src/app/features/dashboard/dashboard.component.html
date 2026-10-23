@@ -67,7 +67,7 @@
           </div>
 
           <div class="table-container">
-            <table class="data-table">
+            <table class="data-table data-table--stack">
               <caption class="sr-only">Liste des véhicules avec dernier pointage GPS et chauffeur assigné</caption>
               <thead>
                 <tr>
@@ -81,29 +81,29 @@
               </thead>
               <tbody>
                 <tr *ngFor="let v of vehicles$ | async">
-                  <td>
+                  <td data-label="Véhicule">
                     <div class="vehicle-cell">
                       <strong>{{ v.registrationNumber }}</strong>
                       <span class="subtext">{{ v.make }} {{ v.model }}</span>
                     </div>
                   </td>
-                  <td>{{ v.assignedDriverName || 'Non affecté' }}</td>
-                  <td>
+                  <td data-label="Chauffeur">{{ v.assignedDriverName || 'Non affecté' }}</td>
+                  <td data-label="Statut">
                     <app-status-badge [status]="v.status"></app-status-badge>
                   </td>
-                  <td class="num-cell">
+                  <td data-label="Vitesse" class="num-cell">
                     <span *ngIf="v.lastPosition" class="speed-val">
                       {{ v.lastPosition.speedKph }} km/h
                     </span>
                     <span *ngIf="!v.lastPosition" class="subtext">-</span>
                   </td>
-                  <td>
+                  <td data-label="Fraîcheur GPS">
                     <div class="freshness-tag" [ngClass]="getFreshnessClass(v.lastPosition?.freshnessSeconds)">
                       <span class="freshness-dot"></span>
                       {{ formatFreshness(v.lastPosition?.freshnessSeconds) }}
                     </div>
                   </td>
-                  <td style="text-align: center;">
+                  <td data-label="Action" style="text-align: center;" class="action-cell">
                     <a
                       [routerLink]="['/map']"
                       [queryParams]="{ vehicle: v.id }"
@@ -157,7 +157,7 @@
 
       <!-- Modal de Traitement d'Anomalie -->
       <div *ngIf="selectedAlertToResolve" class="modal-backdrop" (click)="closeResolveModal()" role="dialog" aria-modal="true">
-        <div class="modal-box" (click)="$event.stopPropagation()">
+        <div class="modal-box modal-md" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <div class="modal-header-title">
               <span class="material-symbols-outlined modal-icon" aria-hidden="true">verified_user</span>

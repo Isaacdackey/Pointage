@@ -17,7 +17,7 @@
           <div class="brand-logo" aria-hidden="true">
             <span class="material-symbols-outlined">satellite_alt</span>
           </div>
-          <div class="brand-meta" *ngIf="!isSidebarCollapsed">
+          <div class="brand-meta" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">
             <span class="brand-title">GeoFleet GPS</span>
             <span class="brand-tagline">Suivi & Pointage</span>
           </div>
@@ -36,65 +36,65 @@
         <nav class="sidebar-nav" *ngIf="user$ | async as user">
           <!-- ADMIN & AGENT menus distincts -->
           <ng-container *ngIf="user.role === 'ADMIN'">
-            <div class="nav-group-title" *ngIf="!isSidebarCollapsed">SUPERVISION</div>
+            <div class="nav-group-title" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">SUPERVISION</div>
             <a routerLink="/dashboard" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
               <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
-              <span class="link-text" *ngIf="!isSidebarCollapsed">Tableau de bord</span>
+              <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Tableau de bord</span>
             </a>
             <a routerLink="/map" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
               <span class="material-symbols-outlined" aria-hidden="true">map</span>
-              <span class="link-text" *ngIf="!isSidebarCollapsed">Carte en direct</span>
-              <span class="badge-live" *ngIf="!isSidebarCollapsed">DIRECT</span>
+              <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Carte en direct</span>
+              <span class="badge-live" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">DIRECT</span>
             </a>
             <a routerLink="/control" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
               <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
-              <span class="link-text" *ngIf="!isSidebarCollapsed">Console Contrôle</span>
+              <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Console Contrôle</span>
             </a>
 
-            <div class="nav-group-title" *ngIf="!isSidebarCollapsed">EXPLOITATION</div>
+            <div class="nav-group-title" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">EXPLOITATION</div>
             <a routerLink="/missions" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
               <span class="material-symbols-outlined" aria-hidden="true">assignment</span>
-              <span class="link-text" *ngIf="!isSidebarCollapsed">Missions & Trajets</span>
+              <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Missions & Trajets</span>
             </a>
             <a routerLink="/fleet" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
               <span class="material-symbols-outlined" aria-hidden="true">local_shipping</span>
-              <span class="link-text" *ngIf="!isSidebarCollapsed">Flotte & Traceurs</span>
+              <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Flotte & Traceurs</span>
             </a>
             <a routerLink="/reports" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
               <span class="material-symbols-outlined" aria-hidden="true">bar_chart</span>
-              <span class="link-text" *ngIf="!isSidebarCollapsed">Rapports & Synthèse</span>
+              <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Rapports & Synthèse</span>
             </a>
 
-            <div class="nav-group-title" *ngIf="!isSidebarCollapsed">ADMINISTRATION</div>
+            <div class="nav-group-title" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">ADMINISTRATION</div>
             <a routerLink="/admin" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
               <span class="material-symbols-outlined" aria-hidden="true">tune</span>
-              <span class="link-text" *ngIf="!isSidebarCollapsed">Seuils & Audit</span>
+              <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Seuils & Audit</span>
             </a>
           </ng-container>
 
           <ng-container *ngIf="user.role === 'AGENT'">
-            <div class="nav-group-title" *ngIf="!isSidebarCollapsed">SUPERVISION AGENT</div>
+            <div class="nav-group-title" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">SUPERVISION AGENT</div>
             <a routerLink="/control" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
               <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
-              <span class="link-text" *ngIf="!isSidebarCollapsed">Console Contrôle</span>
+              <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Console Contrôle</span>
             </a>
             <a routerLink="/map" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
               <span class="material-symbols-outlined" aria-hidden="true">map</span>
-              <span class="link-text" *ngIf="!isSidebarCollapsed">Carte en direct</span>
-              <span class="badge-live" *ngIf="!isSidebarCollapsed">DIRECT</span>
+              <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Carte en direct</span>
+              <span class="badge-live" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">DIRECT</span>
             </a>
             <a routerLink="/dashboard" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
               <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
-              <span class="link-text" *ngIf="!isSidebarCollapsed">Tableau de bord</span>
+              <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Tableau de bord</span>
             </a>
             <a routerLink="/missions" routerLinkActive="active" class="nav-link" (click)="closeMobileDrawer()">
               <span class="material-symbols-outlined" aria-hidden="true">assignment</span>
-              <span class="link-text" *ngIf="!isSidebarCollapsed">Missions du Jour</span>
+              <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Missions du Jour</span>
             </a>
           </ng-container>
 
           <!-- Raccourci vers simulation chauffeur si admin -->
-          <div class="nav-group-title" *ngIf="user.role === 'ADMIN' && !isSidebarCollapsed">CHAUFFEUR</div>
+          <div class="nav-group-title" *ngIf="user.role === 'ADMIN' && (!isSidebarCollapsed || isMobileDrawerOpen)">CHAUFFEUR</div>
           <a
             *ngIf="user.role === 'ADMIN'"
             routerLink="/driver"
@@ -102,14 +102,14 @@
             (click)="closeMobileDrawer()"
           >
             <span class="material-symbols-outlined" aria-hidden="true">smartphone</span>
-            <span class="link-text" *ngIf="!isSidebarCollapsed">Vue Chauffeur (Mobile)</span>
+            <span class="link-text" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">Vue Chauffeur (Mobile)</span>
           </a>
         </nav>
 
         <div class="sidebar-footer" *ngIf="user$ | async as user">
           <div class="user-pill" [title]="user.fullName + ' - ' + user.roleLabel">
             <div class="user-avatar" aria-hidden="true">{{ user.avatarText }}</div>
-            <div class="user-info" *ngIf="!isSidebarCollapsed">
+            <div class="user-info" *ngIf="!isSidebarCollapsed || isMobileDrawerOpen">
               <strong class="user-name">{{ user.fullName }}</strong>
               <small class="user-role">{{ user.roleLabel }}</small>
             </div>

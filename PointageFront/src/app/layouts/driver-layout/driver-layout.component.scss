@@ -2,14 +2,16 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg);
 }
 
 .driver-topbar {
-  height: 60px;
+  min-height: 60px;
   background: #09090b;
   color: #ffffff;
   padding: 0 1.25rem;
+  padding-top: env(safe-area-inset-top, 0px);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -41,6 +43,28 @@
   gap: 0.75rem;
 }
 
+.btn-notif {
+  color: var(--brand);
+  background: #18181b;
+  border: 1px solid #27272a;
+  border-radius: var(--r-pill);
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: #27272a;
+  }
+
+  &.active {
+    color: var(--ok);
+  }
+}
+
 .driver-badge {
   font-size: 0.78rem;
   color: #a1a1aa;
@@ -54,8 +78,13 @@
   background: #18181b;
   border: 1px solid #27272a;
   color: #a1a1aa;
-  width: 34px;
-  height: 34px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--r-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 
   &:hover {
     background: #27272a;
@@ -66,7 +95,7 @@
 .driver-main-viewport {
   flex: 1;
   padding: 1.25rem;
-  padding-bottom: 80px; /* Space for bottom nav */
+  padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); /* Space for bottom nav + safe area */
   max-width: 640px;
   width: 100%;
   margin: 0 auto;
@@ -77,7 +106,8 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 64px;
+  min-height: 64px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   background: #ffffff;
   border-top: 1px solid var(--line);
   display: flex;
@@ -98,6 +128,7 @@
   font-size: 0.75rem;
   font-weight: 600;
   min-width: 80px;
+  min-height: 48px;
   padding: 0.4rem 0;
   border-radius: var(--r-sm);
   transition: color 0.15s ease;

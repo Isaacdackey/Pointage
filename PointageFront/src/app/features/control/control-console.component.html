@@ -92,7 +92,7 @@
         <p class="section-desc">Contrôle anti-fraude : vérifiez la cohérence entre l'heure déclarée par le chauffeur et la détection du mouvement GPS.</p>
 
         <div class="table-container">
-          <table class="data-table">
+          <table class="data-table data-table--stack">
             <caption class="sr-only">Tableau de confrontation des déclarations chauffeurs et de la détection GPS</caption>
             <thead>
               <tr>
@@ -107,15 +107,15 @@
             </thead>
             <tbody>
               <tr *ngFor="let m of missions$ | async">
-                <td>
+                <td data-label="Mission">
                   <span class="mission-code">{{ m.code }}</span>
                   <span class="subtext">{{ m.title }}</span>
                 </td>
-                <td>
+                <td data-label="Véhicule & Chauffeur">
                   <span class="mission-code">{{ m.vehicleReg }}</span>
                   <span class="subtext">{{ m.driverName }}</span>
                 </td>
-                <td>
+                <td data-label="Départ Déclaré">
                   <span *ngIf="m.departureDeclared && m.actualStartTime" class="time-check">
                     <span class="material-symbols-outlined" style="font-size: 15px;" aria-hidden="true">check_circle</span>
                     Déclaré à {{ formatTime(m.actualStartTime) }}
@@ -129,7 +129,7 @@
                     Non déclaré
                   </span>
                 </td>
-                <td>
+                <td data-label="Détecté GPS">
                   <span *ngIf="m.gpsDepartureDetected" class="gps-valid">
                     <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">sensors</span>
                     Mouvement confirmé
@@ -139,7 +139,7 @@
                     Immobile
                   </span>
                 </td>
-                <td>
+                <td data-label="Conformité">
                   <div *ngIf="m.departureDeclared && m.gpsDepartureDetected" class="tag-ok">
                     <span class="material-symbols-outlined" style="font-size: 15px;" aria-hidden="true">verified</span>
                     Conforme
@@ -156,10 +156,10 @@
                     Déclaré immobile
                   </div>
                 </td>
-                <td>
+                <td data-label="Statut">
                   <app-status-badge [status]="m.status"></app-status-badge>
                 </td>
-                <td class="action-cell">
+                <td data-label="Action" class="action-cell">
                   <!-- 1. En attente d'acceptation du départ -->
                   <button
                     *ngIf="m.status === 'DEMANDE_DEMARRAGE'"
@@ -219,7 +219,7 @@
 
       <!-- Modal Explicitation Prise en Charge d'Anomalie -->
       <div *ngIf="takeChargeModalOpen && selectedAlertForCharge" class="modal-backdrop" (click)="closeTakeChargeModal()" role="dialog" aria-modal="true">
-        <div class="modal-box" (click)="$event.stopPropagation()">
+        <div class="modal-box modal-md" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <div class="modal-header-title">
               <span class="material-symbols-outlined modal-icon" aria-hidden="true">assignment_ind</span>

@@ -57,7 +57,7 @@
         class="card"
       >
         <div class="table-container">
-          <table class="data-table">
+          <table class="data-table data-table--stack">
             <caption class="sr-only">Inventaire complet des véhicules de la flotte</caption>
             <thead>
               <tr>
@@ -73,19 +73,19 @@
             </thead>
             <tbody>
               <tr *ngFor="let v of vehicles$ | async">
-                <td><strong class="plate-badge">{{ v.registrationNumber }}</strong></td>
-                <td>{{ v.make }} {{ v.model }}</td>
-                <td>{{ v.type }}</td>
-                <td>{{ v.assignedDriverName || 'Non affecté' }}</td>
-                <td><code class="tracker-code">{{ v.currentTrackerId }}</code></td>
-                <td class="num-cell">{{ formatNumber(v.odometerKm) }} km</td>
-                <td>
+                <td data-label="Immatriculation"><strong class="plate-badge">{{ v.registrationNumber }}</strong></td>
+                <td data-label="Marque & Modèle">{{ v.make }} {{ v.model }}</td>
+                <td data-label="Type">{{ v.type }}</td>
+                <td data-label="Chauffeur">{{ v.assignedDriverName || 'Non affecté' }}</td>
+                <td data-label="Traceur"><code class="tracker-code">{{ v.currentTrackerId }}</code></td>
+                <td data-label="Kilométrage" class="num-cell">{{ formatNumber(v.odometerKm) }} km</td>
+                <td data-label="Carburant">
                   <div class="fuel-bar-wrap" role="progressbar" [attr.aria-valuenow]="v.fuelLevelPercent" aria-valuemin="0" aria-valuemax="100">
                     <div class="fuel-bar" [style.width.%]="v.fuelLevelPercent"></div>
                     <span>{{ v.fuelLevelPercent }}%</span>
                   </div>
                 </td>
-                <td style="text-align: right;">
+                <td data-label="Statut" style="text-align: right;">
                   <app-status-badge [status]="v.status"></app-status-badge>
                 </td>
               </tr>
@@ -103,7 +103,7 @@
         class="card"
       >
         <div class="table-container">
-          <table class="data-table">
+          <table class="data-table data-table--stack">
             <caption class="sr-only">Liste des chauffeurs certifiés et leurs assignations</caption>
             <thead>
               <tr>
@@ -118,18 +118,18 @@
             </thead>
             <tbody>
               <tr *ngFor="let d of drivers$ | async">
-                <td><strong>{{ d.fullName }}</strong></td>
-                <td><code>{{ d.licenseNumber }}</code></td>
-                <td>{{ d.phone }}</td>
-                <td>{{ d.assignedVehicleId || 'Non rattaché' }}</td>
-                <td class="num-cell"><strong>{{ d.completedMissions }}</strong></td>
-                <td class="num-cell">
+                <td data-label="Nom Complet"><strong>{{ d.fullName }}</strong></td>
+                <td data-label="Permis"><code>{{ d.licenseNumber }}</code></td>
+                <td data-label="Téléphone">{{ d.phone }}</td>
+                <td data-label="Véhicule">{{ d.assignedVehicleId || 'Non rattaché' }}</td>
+                <td data-label="Missions" class="num-cell"><strong>{{ d.completedMissions }}</strong></td>
+                <td data-label="Score" class="num-cell">
                   <span class="rating-cell">
                     <span class="material-symbols-outlined" style="font-size: 15px; color: #f59e0b;" aria-hidden="true">star</span>
                     {{ d.rating }} / 5
                   </span>
                 </td>
-                <td style="text-align: right;">
+                <td data-label="Statut" style="text-align: right;">
                   <app-status-badge [status]="d.status"></app-status-badge>
                 </td>
               </tr>
@@ -147,7 +147,7 @@
         class="card"
       >
         <div class="table-container">
-          <table class="data-table">
+          <table class="data-table data-table--stack">
             <caption class="sr-only">Parc des traceurs GPS et état de transmission télématique</caption>
             <thead>
               <tr>
@@ -162,13 +162,13 @@
             </thead>
             <tbody>
               <tr *ngFor="let t of trackers$ | async">
-                <td><code class="tracker-code">{{ t.identifier }}</code></td>
-                <td>{{ t.vendor }}</td>
-                <td>{{ t.model }}</td>
-                <td><span class="badge-proto">{{ t.protocol }}</span></td>
-                <td class="num-cell">{{ t.batteryPercent }}%</td>
-                <td>{{ t.lastSeenAt }}</td>
-                <td style="text-align: right;">
+                <td data-label="IMEI"><code class="tracker-code">{{ t.identifier }}</code></td>
+                <td data-label="Fournisseur">{{ t.vendor }}</td>
+                <td data-label="Modèle">{{ t.model }}</td>
+                <td data-label="Protocole"><span class="badge-proto">{{ t.protocol }}</span></td>
+                <td data-label="Batterie" class="num-cell">{{ t.batteryPercent }}%</td>
+                <td data-label="Dernier Signal">{{ t.lastSeenAt }}</td>
+                <td data-label="Statut" style="text-align: right;">
                   <app-status-badge [status]="t.status"></app-status-badge>
                 </td>
               </tr>
@@ -179,7 +179,7 @@
 
       <!-- Modal Enregistrement Véhicule -->
       <div *ngIf="isAddModalOpen" class="modal-backdrop" (click)="closeAddModal()" role="dialog" aria-modal="true">
-        <div class="modal-box" (click)="$event.stopPropagation()">
+        <div class="modal-box modal-lg" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <div class="modal-header-title">
               <span class="material-symbols-outlined modal-icon">directions_car</span>

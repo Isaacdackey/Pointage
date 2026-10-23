@@ -85,7 +85,7 @@
         </div>
 
         <div class="table-container">
-          <table class="data-table">
+          <table class="data-table data-table--stack">
             <caption class="sr-only">Tableau récapitulatif des performances par véhicule et chauffeur</caption>
             <thead>
               <tr>
@@ -101,24 +101,24 @@
             </thead>
             <tbody>
               <tr *ngFor="let row of filteredReports">
-                <td><strong class="plate-code">{{ row.vehicleReg }}</strong></td>
-                <td>{{ row.driverName }}</td>
-                <td class="num-cell"><strong>{{ row.totalMissions }}</strong></td>
-                <td class="num-cell">{{ row.totalKm }} km</td>
-                <td class="num-cell">{{ row.avgSpeedKph }} km/h</td>
-                <td>
+                <td data-label="Immatriculation"><strong class="plate-code">{{ row.vehicleReg }}</strong></td>
+                <td data-label="Chauffeur">{{ row.driverName }}</td>
+                <td data-label="Missions" class="num-cell"><strong>{{ row.totalMissions }}</strong></td>
+                <td data-label="Km Parcourus" class="num-cell">{{ row.totalKm }} km</td>
+                <td data-label="Vitesse Moy." class="num-cell">{{ row.avgSpeedKph }} km/h</td>
+                <td data-label="Ponctualité">
                   <div class="progress-wrap" role="progressbar" [attr.aria-valuenow]="row.ontimePercent" aria-valuemin="0" aria-valuemax="100">
                     <div class="progress-fill" [style.width.%]="row.ontimePercent"></div>
                     <span class="pct">{{ row.ontimePercent }}%</span>
                   </div>
                 </td>
-                <td style="text-align: center;">
+                <td data-label="Anomalies" style="text-align: center;">
                   <span class="alert-count-pill" [class.has-alerts]="row.alertsCount > 0">
                     <span class="material-symbols-outlined" style="font-size: 14px;" aria-hidden="true">warning</span>
                     {{ row.alertsCount }}
                   </span>
                 </td>
-                <td class="num-cell">{{ row.fuelEstimatedLiters }} L</td>
+                <td data-label="Conso Est." class="num-cell">{{ row.fuelEstimatedLiters }} L</td>
               </tr>
               <tr *ngIf="filteredReports.length === 0">
                 <td colspan="8" class="empty-cell">

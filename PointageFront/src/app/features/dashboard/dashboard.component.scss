@@ -34,7 +34,7 @@
 
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
       gap: 1.25rem;
 
       @media (max-width: 640px) {
@@ -252,6 +252,7 @@
       width: 100%;
       max-width: 520px;
       max-height: calc(100vh - 2rem);
+      max-height: calc(100dvh - 2rem);
       overflow-y: auto;
       box-shadow: var(--shadow-lg);
       animation: scaleUp 0.15s ease-out;

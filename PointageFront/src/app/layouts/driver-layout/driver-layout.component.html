@@ -8,12 +8,12 @@
     <div class="driver-topbar-actions" *ngIf="user$ | async as user">
       <button
         type="button"
-        class="btn-icon"
-        style="color: var(--brand); background: var(--surface-alt); border: 1px solid var(--line); border-radius: var(--r-pill); width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; cursor: pointer;"
+        class="btn-icon btn-notif"
+        [class.active]="notificationService.isPermissionGranted()"
         (click)="enablePushNotifications()"
         [title]="notificationService.isPermissionGranted() ? 'Notifications Push Actives' : 'Activer Notifications Push'"
       >
-        <span class="material-symbols-outlined" style="font-size: 18px;" [style.color]="notificationService.isPermissionGranted() ? '#16a34a' : 'inherit'" aria-hidden="true">
+        <span class="material-symbols-outlined" style="font-size: 18px;" aria-hidden="true">
           {{ notificationService.isPermissionGranted() ? 'notifications_active' : 'notification_add' }}
         </span>
       </button>

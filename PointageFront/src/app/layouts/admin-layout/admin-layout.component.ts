@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, RouterOutlet, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -38,16 +38,37 @@ export class AdminLayoutComponent {
     map(alerts => alerts.length)
   );
 
+  @HostListener('window:resize', ['$event'])
+  onResize(event: any) {
+    if (typeof window !== 'undefined' && window.innerWidth > 1024) {
+      if (this.isMobileDrawerOpen) {
+        this.closeMobileDrawer();
+      }
+    }
+  }
+
   toggleSidebar() {
     this.isSidebarCollapsed = !this.isSidebarCollapsed;
   }
 
   toggleMobileDrawer() {
     this.isMobileDrawerOpen = !this.isMobileDrawerOpen;
+    this.updateBodyScrollLock();
   }
 
   closeMobileDrawer() {
     this.isMobileDrawerOpen = false;
+    this.updateBodyScrollLock();
+  }
+
+  private updateBodyScrollLock() {
+    if (typeof document !== 'undefined') {
+      if (this.isMobileDrawerOpen) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    }
   }
 
   toggleNotificationPopover() {

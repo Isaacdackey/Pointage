@@ -11,7 +11,7 @@
 
       <div class="card">
         <div class="table-container">
-          <table class="data-table">
+          <table class="data-table data-table--stack">
             <caption class="sr-only">Liste des missions de transport avec suivi des départs et arrivées</caption>
             <thead>
               <tr>
@@ -27,9 +27,9 @@
             </thead>
             <tbody>
               <tr *ngFor="let m of missions$ | async">
-                <td><code class="code-badge">{{ m.code }}</code></td>
-                <td><strong>{{ m.title }}</strong></td>
-                <td>
+                <td data-label="Code"><code class="code-badge">{{ m.code }}</code></td>
+                <td data-label="Intitulé"><strong>{{ m.title }}</strong></td>
+                <td data-label="Trajet">
                   <div class="route-cell">
                     <span class="route-point">
                       <span class="material-symbols-outlined origin-icon" aria-hidden="true">radio_button_checked</span>
@@ -41,11 +41,11 @@
                     </span>
                   </div>
                 </td>
-                <td><strong>{{ m.vehicleReg }}</strong></td>
-                <td>{{ m.driverName }}</td>
-                <td class="num-cell">{{ m.distanceKm }} km</td>
-                <td>{{ formatDateTime(m.plannedStartTime) }}</td>
-                <td style="text-align: right;">
+                <td data-label="Véhicule"><strong>{{ m.vehicleReg }}</strong></td>
+                <td data-label="Chauffeur">{{ m.driverName }}</td>
+                <td data-label="Distance Est." class="num-cell">{{ m.distanceKm }} km</td>
+                <td data-label="Départ Prévu">{{ formatDateTime(m.plannedStartTime) }}</td>
+                <td data-label="Statut" style="text-align: right;">
                   <app-status-badge [status]="m.status"></app-status-badge>
                 </td>
               </tr>
@@ -56,7 +56,7 @@
 
       <!-- Modal Planifier une Mission -->
       <div *ngIf="isModalOpen" class="modal-backdrop" (click)="closeModal()" role="dialog" aria-modal="true">
-        <div class="modal-box" (click)="$event.stopPropagation()">
+        <div class="modal-box modal-lg" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <div class="modal-header-title">
               <span class="material-symbols-outlined modal-icon">assignment_add</span>
