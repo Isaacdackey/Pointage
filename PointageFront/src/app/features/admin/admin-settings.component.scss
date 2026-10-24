@@ -179,9 +179,67 @@
     .role-badge.driver { background: var(--pill-brand-bg); color: var(--pill-brand-fg); border-color: var(--pill-brand-border); }
 
     .badge-active {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
       font-size: var(--text-xs);
       color: var(--ok);
       font-weight: 600;
+    }
+
+    .badge-user-rights {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: var(--text-xs);
+      color: var(--info);
+      font-weight: 600;
+    }
+
+    /* Formulaire de création d'utilisateur dans la modale */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+
+      @media (max-width: 600px) {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+
+      label {
+        font-size: var(--text-xs);
+        font-weight: 600;
+        color: var(--ink-2);
+      }
+    }
+
+    .role-hint-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      background: var(--pill-info-bg);
+      border: 1px solid var(--pill-info-border);
+      border-radius: var(--r-md);
+      padding: 0.75rem 0.85rem;
+      font-size: var(--text-xs);
+      color: var(--pill-info-fg);
+      line-height: 1.4;
+
+      .material-symbols-outlined {
+        font-size: 18px;
+        flex-shrink: 0;
+        color: var(--info);
+      }
+
+      strong {
+        font-weight: 700;
+      }
     }
 
     /* Media queries admin-settings */

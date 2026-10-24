@@ -231,38 +231,181 @@
         aria-labelledby="tab-users"
         class="card"
       >
-        <h2 class="section-title">Comptes & Habilitations Utilisateurs</h2>
-        <p class="sub-text">Gestion des accès et rôles autorisés sur la plateforme de pointage.</p>
+        <div class="card-head">
+          <div>
+            <h2 class="section-title">Comptes & Habilitations Utilisateurs</h2>
+            <p class="sub-text">Gestion des accès et rôles autorisés sur la plateforme de pointage (Conformité Mentor : Super Admin & Users logistiques).</p>
+          </div>
+          <button type="button" class="btn btn-primary" (click)="openUserModal()">
+            <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
+            <span>Nouvel Utilisateur</span>
+          </button>
+        </div>
 
         <div class="table-container">
           <table class="data-table data-table--stack">
             <caption class="sr-only">Liste des utilisateurs du système avec leur rôle et statut</caption>
             <thead>
               <tr>
-                <th scope="col">Nom d'Utilisateur</th>
+                <th scope="col">Nom Complet</th>
                 <th scope="col">E-mail</th>
+                <th scope="col">Téléphone / Localisation</th>
                 <th scope="col">Rôle Habilité</th>
                 <th scope="col">Dernière Connexion</th>
-                <th scope="col" style="text-align: right;">Statut</th>
+                <th scope="col" style="text-align: right;">Droits d'Accès</th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td data-label="Nom d'Utilisateur"><strong>Amadou Diallo</strong></td>
-                <td data-label="E-mail">admin&#64;geofleet.sn</td>
-                <td data-label="Rôle Habilité"><span class="role-badge admin">SUPER_ADMIN</span></td>
-                <td data-label="Dernière Connexion">Aujourd'hui 12:45</td>
-                <td data-label="Statut" style="text-align: right;"><span class="badge-active">Actif (Tous droits)</span></td>
-              </tr>
-              <tr>
-                <td data-label="Nom d'Utilisateur"><strong>Samba Kane</strong></td>
-                <td data-label="E-mail">logistique&#64;geofleet.sn</td>
-                <td data-label="Rôle Habilité"><span class="role-badge agent">USER</span></td>
-                <td data-label="Dernière Connexion">Aujourd'hui 13:10</td>
-                <td data-label="Statut" style="text-align: right;"><span class="badge-active">Actif (Sans suppression)</span></td>
+              <tr *ngFor="let u of users">
+                <td data-label="Nom Complet">
+                  <strong>{{ u.fullName }}</strong>
+                </td>
+                <td data-label="E-mail">{{ u.email }}</td>
+                <td data-label="Téléphone">
+                  <div>{{ u.phone || '-' }}</div>
+                  <small style="color: var(--ink-3);">{{ u.location }}</small>
+                </td>
+                <td data-label="Rôle Habilité">
+                  <span
+                    class="role-badge"
+                    [ngClass]="u.role === 'SUPER_ADMIN' ? 'admin' : 'agent'"
+                  >
+                    {{ u.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : 'USER (Exploitant)' }}
+                  </span>
+                </td>
+                <td data-label="Dernière Connexion">{{ u.lastLogin }}</td>
+                <td data-label="Droits d'Accès" style="text-align: right;">
+                  <span class="badge-active" *ngIf="u.role === 'SUPER_ADMIN'">
+                    <span class="material-symbols-outlined" style="font-size: 15px; vertical-align: -2px;" aria-hidden="true">security</span>
+                    Tous droits (y compris suppression)
+                  </span>
+                  <span class="badge-user-rights" *ngIf="u.role === 'USER'">
+                    <span class="material-symbols-outlined" style="font-size: 15px; vertical-align: -2px;" aria-hidden="true">edit_note</span>
+                    Ajout & Modification (Sans suppression)
+                  </span>
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
       </section>
+    </div>
+
+    <!-- Modal : Création d'un Nouveau Compte Utilisateur -->
+    <div class="modal-backdrop" *ngIf="isUserModalOpen" (click)="closeUserModal()">
+      <div
+        class="modal-box modal-md"
+        appModalA11y
+        (modalClose)="closeUserModal()"
+        (click)="$event.stopPropagation()"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-user-title"
+      >
+        <header class="modal-header">
+          <h2 id="modal-user-title">
+            <span class="material-symbols-outlined" style="vertical-align: middle; margin-right: 0.5rem; color: var(--brand);" aria-hidden="true">person_add</span>
+            Créer un Compte Utilisateur
+          </h2>
+          <button type="button" class="btn-close" (click)="closeUserModal()" aria-label="Fermer la boîte de dialogue">&times;</button>
+        </header>
+
+        <form (ngSubmit)="saveUser()">
+          <div class="modal-body">
+            <div class="form-grid">
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="usr-name">Nom et Prénom *</label>
+                <input
+                  id="usr-name"
+                  type="text"
+                  [(ngModel)]="newUser.fullName"
+                  name="fullName"
+                  required
+                  placeholder="ex: Fatou Diagne"
+                  class="form-input"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="usr-email">Adresse e-mail professionnelle *</label>
+                <input
+                  id="usr-email"
+                  type="email"
+                  [(ngModel)]="newUser.email"
+                  name="email"
+                  required
+                  placeholder="f.diagne@geofleet.sn"
+                  autocomplete="username"
+                  class="form-input"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="usr-role">Rôle Habilité *</label>
+                <select id="usr-role" [(ngModel)]="newUser.role" name="role" class="form-input">
+                  <option value="USER">USER (Responsable Logistique / Parc)</option>
+                  <option value="SUPER_ADMIN">SUPER_ADMIN (Accès Total & Suppression)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="usr-phone">Téléphone</label>
+                <input
+                  id="usr-phone"
+                  type="tel"
+                  [(ngModel)]="newUser.phone"
+                  name="phone"
+                  placeholder="+221 77 000 00 00"
+                  class="form-input"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="usr-loc">Lieu d'affectation / Base</label>
+                <input
+                  id="usr-loc"
+                  type="text"
+                  [(ngModel)]="newUser.location"
+                  name="location"
+                  placeholder="ex: Entrepôt Diamniadio"
+                  class="form-input"
+                />
+              </div>
+
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="usr-pwd">Mot de passe temporaire *</label>
+                <input
+                  id="usr-pwd"
+                  type="password"
+                  [(ngModel)]="newUser.password"
+                  name="password"
+                  required
+                  placeholder="••••••••••••"
+                  autocomplete="new-password"
+                  class="form-input"
+                />
+                <small style="color: var(--ink-3); font-size: var(--text-xs);">
+                  L'utilisateur sera invité à personnaliser son mot de passe dès sa première connexion.
+                </small>
+              </div>
+
+              <!-- Rappel des règles métier du mentor -->
+              <div class="role-hint-banner" style="grid-column: 1 / -1;">
+                <span class="material-symbols-outlined" aria-hidden="true">info</span>
+                <span *ngIf="newUser.role === 'USER'">
+                  <strong>Rôle USER (Recommandé) :</strong> Peut planifier les tournées, réassigner des véhicules en cas d'absence et paramétrer les sites favoris. Ne peut pas supprimer de données.
+                </span>
+                <span *ngIf="newUser.role === 'SUPER_ADMIN'">
+                  <strong>Rôle SUPER_ADMIN :</strong> Droit absolu de création, modification et suppression définitive sur l'ensemble de la plateforme.
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <footer class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeUserModal()">Annuler</button>
+            <button type="submit" class="btn btn-primary">Créer le Compte</button>
+          </footer>
+        </form>
+      </div>
     </div>

@@ -9,10 +9,12 @@ import { NotificationService } from '../../core/services/notification.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { map } from 'rxjs/operators';
 
+import { ModalA11yDirective } from '../../shared/directives/modal-a11y.directive';
+
 @Component({
   selector: 'app-admin-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule, RouterOutlet, FormsModule],
+  imports: [CommonModule, RouterModule, RouterOutlet, FormsModule, ModalA11yDirective],
   templateUrl: './admin-layout.component.html',
   styleUrl: './admin-layout.component.scss'
 })
@@ -23,6 +25,14 @@ export class AdminLayoutComponent {
   private router = inject(Router);
   notificationService = inject(NotificationService);
   themeService = inject(ThemeService);
+
+  // Modal changement de mot de passe utilisateur
+  isPasswordModalOpen = false;
+  passwordForm = {
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  };
 
   user$ = this.authService.currentUser$;
   isSidebarCollapsed = false;
@@ -112,5 +122,39 @@ export class AdminLayoutComponent {
     this.authService.logout();
     this.toastService.info('Session clôturée avec succès.');
     this.router.navigate(['/login']);
+  }
+
+  openPasswordModal() {
+    this.passwordForm = {
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    };
+    this.isPasswordModalOpen = true;
+  }
+
+  closePasswordModal() {
+    this.isPasswordModalOpen = false;
+  }
+
+  savePassword() {
+    if (!this.passwordForm.currentPassword) {
+      this.toastService.error('Veuillez saisir votre mot de passe actuel.');
+      return;
+    }
+
+    if (!this.passwordForm.newPassword || this.passwordForm.newPassword.length < 6) {
+      this.toastService.error('Le nouveau mot de passe doit comporter au moins 6 caractères.');
+      return;
+    }
+
+    if (this.passwordForm.newPassword !== this.passwordForm.confirmPassword) {
+      this.toastService.error('La confirmation ne correspond pas au nouveau mot de passe.');
+      return;
+    }
+
+    // Succès
+    this.toastService.success('Votre mot de passe a été modifié avec succès.');
+    this.closePasswordModal();
   }
 }

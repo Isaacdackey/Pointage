@@ -4,6 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { ToastService } from '../../shared/services/toast.service';
 
+import { ModalA11yDirective } from '../../shared/directives/modal-a11y.directive';
+import { UserRole } from '../../core/services/auth.service';
+
 interface AuditEntry {
   id: string;
   timestamp: string;
@@ -15,10 +18,21 @@ interface AuditEntry {
   ipAddress: string;
 }
 
+export interface ManagedUser {
+  id: string;
+  fullName: string;
+  email: string;
+  role: UserRole;
+  phone?: string;
+  location?: string;
+  lastLogin: string;
+  status: 'ACTIF' | 'SUSPENDU';
+}
+
 @Component({
   selector: 'app-admin-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, ModalA11yDirective],
   templateUrl: './admin-settings.component.html',
   styleUrl: './admin-settings.component.scss'
 })
@@ -114,5 +128,93 @@ export class AdminSettingsComponent {
     this.initialThresholds = { ...this.thresholds };
     this.isDirty = false;
     this.toast.success('Seuils et règles de détection enregistrés avec succès.');
+  }
+
+  // Gestion des Utilisateurs (Conformité Retranscription 23 Octobre)
+  users: ManagedUser[] = [
+    {
+      id: 'usr-1',
+      fullName: 'Amadou Diallo',
+      email: 'admin@geofleet.sn',
+      role: 'SUPER_ADMIN',
+      phone: '+221 77 100 20 30',
+      location: 'Direction Générale - Dakar',
+      lastLogin: 'Aujourd\'hui 12:45',
+      status: 'ACTIF'
+    },
+    {
+      id: 'usr-2',
+      fullName: 'Samba Kane',
+      email: 'logistique@geofleet.sn',
+      role: 'USER',
+      phone: '+221 78 200 40 50',
+      location: 'Poste Exploitation - Diamniadio',
+      lastLogin: 'Aujourd\'hui 13:10',
+      status: 'ACTIF'
+    }
+  ];
+
+  isUserModalOpen = false;
+  newUser = {
+    fullName: '',
+    email: '',
+    role: 'USER' as UserRole,
+    phone: '',
+    location: '',
+    password: ''
+  };
+
+  openUserModal(): void {
+    this.newUser = {
+      fullName: '',
+      email: '',
+      role: 'USER',
+      phone: '',
+      location: 'Dakar Siège',
+      password: ''
+    };
+    this.isUserModalOpen = true;
+  }
+
+  closeUserModal(): void {
+    this.isUserModalOpen = false;
+  }
+
+  saveUser(): void {
+    if (!this.newUser.fullName.trim() || !this.newUser.email.trim()) {
+      this.toast.error('Veuillez renseigner le nom complet et l\'adresse e-mail.');
+      return;
+    }
+
+    const created: ManagedUser = {
+      id: 'usr-' + (this.users.length + 1),
+      fullName: this.newUser.fullName.trim(),
+      email: this.newUser.email.trim().toLowerCase(),
+      role: this.newUser.role,
+      phone: this.newUser.phone.trim() || undefined,
+      location: this.newUser.location.trim() || 'Exploitation',
+      lastLogin: 'Jamais connecté',
+      status: 'ACTIF'
+    };
+
+    this.users = [created, ...this.users];
+
+    // Ajouter une entrée d'audit immédiate
+    this.auditLogs = [
+      {
+        id: 'aud-' + Date.now(),
+        timestamp: new Date().toISOString(),
+        actor: 'Amadou Diallo',
+        role: 'SUPER_ADMIN',
+        action: 'USER_CREATED',
+        targetEntity: `Utilisateur ${created.fullName} (${created.role})`,
+        details: `Création du compte utilisateur avec habilitation ${created.role === 'SUPER_ADMIN' ? 'Super Administrateur (tous droits)' : 'Responsable Logistique (sans suppression)'}.`,
+        ipAddress: '196.12.100.10'
+      },
+      ...this.auditLogs
+    ];
+
+    this.toast.success(`Compte ${created.fullName} créé avec succès en rôle ${created.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Responsable Logistique'}.`);
+    this.closeUserModal();
   }
 }

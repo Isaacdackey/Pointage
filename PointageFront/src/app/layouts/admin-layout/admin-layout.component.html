@@ -86,15 +86,26 @@
               <small class="user-role">{{ user.roleLabel }}</small>
             </div>
           </div>
-          <button
-            type="button"
-            class="btn-logout"
-            (click)="onLogout()"
-            aria-label="Se déconnecter de l'application"
-            title="Se déconnecter"
-          >
-            <span class="material-symbols-outlined" aria-hidden="true">logout</span>
-          </button>
+          <div class="footer-actions">
+            <button
+              type="button"
+              class="btn-logout btn-key"
+              (click)="openPasswordModal()"
+              aria-label="Modifier mon mot de passe"
+              title="Modifier mon mot de passe"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">key</span>
+            </button>
+            <button
+              type="button"
+              class="btn-logout"
+              (click)="onLogout()"
+              aria-label="Se déconnecter de l'application"
+              title="Se déconnecter"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -222,5 +233,83 @@
         <main class="admin-content-area" id="main-content">
           <router-outlet></router-outlet>
         </main>
+      </div>
+    </div>
+
+    <!-- Modal : Modifier Mon Mot de Passe Utilisateur -->
+    <div class="modal-backdrop" *ngIf="isPasswordModalOpen" (click)="closePasswordModal()">
+      <div
+        class="modal-box modal-sm"
+        appModalA11y
+        (modalClose)="closePasswordModal()"
+        (click)="$event.stopPropagation()"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-pwd-title"
+      >
+        <header class="modal-header">
+          <h2 id="modal-pwd-title">
+            <span class="material-symbols-outlined" style="vertical-align: middle; margin-right: 0.5rem; color: var(--brand);" aria-hidden="true">lock_reset</span>
+            Changer de Mot de Passe
+          </h2>
+          <button type="button" class="btn-close" (click)="closePasswordModal()" aria-label="Fermer la boîte de dialogue">&times;</button>
+        </header>
+
+        <form (ngSubmit)="savePassword()">
+          <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
+            <p style="font-size: var(--text-xs); color: var(--ink-2); line-height: 1.45; margin: 0;">
+              Modifiez vos identifiants d'accès. Pour votre sécurité, choisissez un mot de passe robuste d'au moins 6 caractères.
+            </p>
+
+            <div class="form-group">
+              <label for="current-pwd">Mot de passe actuel *</label>
+              <input
+                id="current-pwd"
+                type="password"
+                [(ngModel)]="passwordForm.currentPassword"
+                name="currentPassword"
+                required
+                placeholder="••••••••••••"
+                autocomplete="current-password"
+                class="form-input"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="new-pwd">Nouveau mot de passe *</label>
+              <input
+                id="new-pwd"
+                type="password"
+                [(ngModel)]="passwordForm.newPassword"
+                name="newPassword"
+                minlength="6"
+                required
+                placeholder="Au moins 6 caractères"
+                autocomplete="new-password"
+                class="form-input"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="confirm-pwd">Confirmer le nouveau mot de passe *</label>
+              <input
+                id="confirm-pwd"
+                type="password"
+                [(ngModel)]="passwordForm.confirmPassword"
+                name="confirmPassword"
+                minlength="6"
+                required
+                placeholder="Ressaisissez le mot de passe"
+                autocomplete="new-password"
+                class="form-input"
+              />
+            </div>
+          </div>
+
+          <footer class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closePasswordModal()">Annuler</button>
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+          </footer>
+        </form>
       </div>
     </div>
