@@ -155,7 +155,7 @@
             <!-- Server Ingestion Status indicator -->
             <div class="system-status-pill" title="Moteur d'ingestion des traceurs GPS actif">
               <span class="pulse-indicator" aria-hidden="true"></span>
-              <span>Serveur GPS : <strong>Opérationnel</strong></span>
+              <span class="status-text">Serveur GPS : <strong>Opérationnel</strong></span>
             </div>
 
             <!-- Bouton Activation Notifications Push / PWA -->
@@ -164,6 +164,7 @@
               class="btn-push-toggle"
               (click)="enablePushNotifications()"
               [title]="notificationService.isPermissionGranted() ? 'Notifications Push Actives' : 'Activer les notifications Push'"
+              aria-label="Activer les notifications Push"
             >
               <span class="material-symbols-outlined" [style.color]="notificationService.isPermissionGranted() ? 'var(--ok)' : 'inherit'" aria-hidden="true">
                 {{ notificationService.isPermissionGranted() ? 'notifications_active' : 'notification_add' }}

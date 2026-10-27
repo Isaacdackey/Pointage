@@ -92,8 +92,10 @@
               <tr *ngFor="let a of auditLogs">
                 <td data-label="Horodatage"><code class="time-code">{{ formatTimestamp(a.timestamp) }}</code></td>
                 <td data-label="Utilisateur">
-                  <strong>{{ a.actor }}</strong><br/>
-                  <small class="role-tag">{{ a.role }}</small>
+                  <div class="user-val-box">
+                    <strong class="user-actor-name">{{ a.actor }}</strong>
+                    <span class="role-tag">{{ a.role }}</span>
+                  </div>
                 </td>
                 <td data-label="Action"><span class="action-badge">{{ a.action }}</span></td>
                 <td data-label="Cible"><strong>{{ a.targetEntity }}</strong></td>
@@ -262,8 +264,10 @@
                 </td>
                 <td data-label="E-mail">{{ u.email }}</td>
                 <td data-label="Téléphone">
-                  <div>{{ u.phone || '-' }}</div>
-                  <small style="color: var(--ink-3);">{{ u.location }}</small>
+                  <div class="user-val-box">
+                    <span>{{ u.phone || '-' }}</span>
+                    <small style="color: var(--ink-3);">{{ u.location }}</small>
+                  </div>
                 </td>
                 <td data-label="Rôle Habilité">
                   <span

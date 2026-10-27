@@ -230,6 +230,52 @@
   }
 }
 
+.driver-val-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+
+  .driver-name-txt {
+    color: var(--ink);
+    font-weight: 600;
+    line-height: 1.25;
+  }
+
+  .driver-phone-txt {
+    color: var(--ink-3);
+    font-size: 0.74rem;
+  }
+
+  @media (max-width: 640px) {
+    align-items: flex-end;
+    text-align: right;
+  }
+}
+
+.maintenance-details-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+
+  .maint-title-txt {
+    color: var(--ink);
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .maint-desc-txt {
+    font-size: 0.8rem;
+    color: var(--ink-2);
+    line-height: 1.35;
+  }
+
+  @media (max-width: 640px) {
+    align-items: flex-end;
+    text-align: right;
+    max-width: 70%;
+  }
+}
+
 /* Pagination Bar Styling */
 .table-pagination {
   display: flex;
@@ -255,12 +301,13 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    flex-wrap: wrap;
 
     .btn-page-nav {
       display: inline-flex;
       align-items: center;
       gap: 0.25rem;
-      padding: 0.4rem 0.75rem;
+      padding: 0.45rem 0.85rem;
       border: 1px solid var(--line);
       background: var(--surface);
       border-radius: var(--r-md);
@@ -268,6 +315,7 @@
       font-weight: 600;
       color: var(--ink-2);
       cursor: pointer;
+      white-space: nowrap;
       transition: all 0.15s ease;
 
       .material-symbols-outlined {
@@ -286,13 +334,36 @@
       }
     }
 
+    .page-numbers {
+      display: flex;
+      align-items: center;
+    }
+
     .current-page-pill {
       font-size: var(--text-xs);
       font-weight: 700;
-      padding: 0.4rem 0.75rem;
+      padding: 0.45rem 0.85rem;
       background: var(--pill-brand-bg);
       color: var(--pill-brand-fg);
+      border: 1px solid var(--pill-brand-border);
       border-radius: var(--r-md);
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 0.85rem 1rem;
+
+    .pagination-actions {
+      width: 100%;
+      justify-content: center;
+      gap: 0.4rem;
     }
   }
 }

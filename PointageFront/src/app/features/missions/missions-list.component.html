@@ -442,7 +442,7 @@
         </div>
 
         <!-- Actions Mobile : Bouton principal pleine largeur (≥ 44px) + Boutons secondaires (≥ 44x44px) -->
-        <div class="m-card-actions">
+        <div class="m-card-actions" [class.actions-center]="m.status === 'TERMINEE'">
           <!-- Forcer Départ -->
           <button
             *ngIf="m.status === 'PLANIFIEE'"

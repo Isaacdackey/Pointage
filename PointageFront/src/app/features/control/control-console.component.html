@@ -110,8 +110,9 @@
         <h2 id="comparator-heading" class="section-title">Contrôle des Trajets & Détection des Déviations GPS</h2>
         <p class="section-desc">Surveillance passive 100% télématique : vérification du respect du corridor, des délais et confirmation des franchissements de sites.</p>
 
-        <div class="table-container">
-          <table class="data-table data-table--stack">
+        <!-- Vue Desktop (>= 768px) -->
+        <div class="table-container control-desktop-table">
+          <table class="data-table">
             <caption class="sr-only">Tableau de confrontation télématique GPS et respect des corridors de livraison</caption>
             <thead>
               <tr>
@@ -126,16 +127,16 @@
             </thead>
             <tbody>
               <tr *ngFor="let m of missions$ | async">
-                <td data-label="Mission">
+                <td>
                   <span class="mission-code">{{ m.code }}</span>
                   <span class="subtext">{{ m.title }}</span>
                   <small style="color: var(--ink-3); display: block; margin-top: 2px;">{{ m.originName }} &rarr; {{ m.destinationName }}</small>
                 </td>
-                <td data-label="Véhicule & Chauffeur">
+                <td>
                   <span class="mission-code">{{ m.vehicleReg }}</span>
                   <span class="subtext">{{ m.driverName }}</span>
                 </td>
-                <td data-label="Mouvement GPS">
+                <td>
                   <span *ngIf="m.gpsDepartureDetected" class="gps-valid">
                     <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">sensors</span>
                     Départ détecté
@@ -145,7 +146,7 @@
                     Immobile / En attente
                   </span>
                 </td>
-                <td data-label="Corridor">
+                <td>
                   <div *ngIf="m.hasDeviation" class="tag-audit" title="{{ m.deviationDetails }}">
                     <span class="material-symbols-outlined" style="font-size: 15px;" aria-hidden="true">wrong_location</span>
                     Déviation détectée
@@ -158,7 +159,7 @@
                     Non démarré
                   </div>
                 </td>
-                <td data-label="Ponctualité">
+                <td>
                   <span *ngIf="m.isDelayed" class="tag-warning delay-text">
                     +{{ m.delayMinutes }} min retard
                   </span>
@@ -172,10 +173,10 @@
                     Prévue
                   </span>
                 </td>
-                <td data-label="Statut">
+                <td>
                   <app-status-badge [status]="m.status"></app-status-badge>
                 </td>
-                <td data-label="Contrôle" class="action-cell">
+                <td class="action-cell">
                   <!-- Mission en anomalie : résolution -->
                   <button
                     *ngIf="m.status === 'EN_ANOMALIE'"
@@ -208,6 +209,132 @@
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- Vue Cartes Mobile (< 768px) -->
+        <div class="control-mobile-cards">
+          <div
+            *ngFor="let m of missions$ | async"
+            class="control-m-card"
+            [class.card-anomaly]="m.status === 'EN_ANOMALIE' || m.hasDeviation"
+          >
+            <!-- Card Header: Code & Status -->
+            <div class="m-card-header">
+              <div class="m-code-group">
+                <span class="m-code-badge">{{ m.code }}</span>
+                <span class="m-sub-title">{{ m.title }}</span>
+              </div>
+              <app-status-badge [status]="m.status"></app-status-badge>
+            </div>
+
+            <!-- Route Step Flow -->
+            <div class="m-route-box">
+              <div class="m-route-step origin">
+                <span class="material-symbols-outlined m-step-icon origin-icon" aria-hidden="true">radio_button_checked</span>
+                <div class="m-step-text">
+                  <span class="m-step-label">Départ</span>
+                  <strong class="m-step-val">{{ m.originName }}</strong>
+                </div>
+              </div>
+              <div class="m-route-divider">
+                <span class="material-symbols-outlined divider-arrow" aria-hidden="true">arrow_downward</span>
+              </div>
+              <div class="m-route-step dest">
+                <span class="material-symbols-outlined m-step-icon dest-icon" aria-hidden="true">flag</span>
+                <div class="m-step-text">
+                  <span class="m-step-label">Arrivée</span>
+                  <strong class="m-step-val">{{ m.destinationName }}</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Telemetry & GPS Info Box -->
+            <div class="m-telemetry-box">
+              <div class="m-telemetry-row">
+                <span class="m-tel-label">Véhicule & Chauffeur</span>
+                <div class="m-tel-val">
+                  <strong class="vehicle-plate">{{ m.vehicleReg }}</strong>
+                  <span class="driver-name">&bull; {{ m.driverName }}</span>
+                </div>
+              </div>
+
+              <div class="m-telemetry-row">
+                <span class="m-tel-label">Mouvement GPS</span>
+                <div class="m-tel-val">
+                  <span *ngIf="m.gpsDepartureDetected" class="gps-valid">
+                    <span class="material-symbols-outlined" style="font-size: 15px;" aria-hidden="true">sensors</span>
+                    Départ détecté
+                  </span>
+                  <span *ngIf="!m.gpsDepartureDetected" class="gps-idle">
+                    <span class="material-symbols-outlined" style="font-size: 15px;" aria-hidden="true">stop_circle</span>
+                    Immobile
+                  </span>
+                </div>
+              </div>
+
+              <div class="m-telemetry-row">
+                <span class="m-tel-label">Corridor</span>
+                <div class="m-tel-val">
+                  <div *ngIf="m.hasDeviation" class="tag-audit" [title]="m.deviationDetails">
+                    <span class="material-symbols-outlined" style="font-size: 15px;" aria-hidden="true">wrong_location</span>
+                    Déviation détectée
+                  </div>
+                  <div *ngIf="!m.hasDeviation && m.gpsDepartureDetected" class="tag-ok">
+                    <span class="material-symbols-outlined" style="font-size: 15px;" aria-hidden="true">verified</span>
+                    Corridor conforme
+                  </div>
+                  <div *ngIf="!m.gpsDepartureDetected" class="tag-neutral">
+                    Non démarré
+                  </div>
+                </div>
+              </div>
+
+              <div class="m-telemetry-row">
+                <span class="m-tel-label">Ponctualité (ETA)</span>
+                <div class="m-tel-val">
+                  <span *ngIf="m.isDelayed" class="tag-warning delay-text">
+                    +{{ m.delayMinutes }} min retard
+                  </span>
+                  <span *ngIf="!m.isDelayed && m.status === 'EN_COURS'" class="ontime-text">
+                    À l'heure (ETA OK)
+                  </span>
+                  <span *ngIf="m.status === 'TERMINEE'" class="text-secondary-sub">
+                    Clôturée
+                  </span>
+                  <span *ngIf="m.status === 'PLANIFIEE'" class="text-secondary-sub">
+                    Prévue
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card Bottom Action -->
+            <div class="m-card-footer">
+              <button
+                *ngIf="m.status === 'EN_ANOMALIE'"
+                class="btn btn-action btn-anomaly-resolve m-action-btn"
+                (click)="validateAndClose(m)"
+              >
+                <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+                <span>Traiter l'écart télématique</span>
+              </button>
+
+              <div *ngIf="m.status === 'EN_COURS'" class="state-pill state-tracking m-state-full">
+                <span class="material-symbols-outlined" aria-hidden="true">sensors</span>
+                <span>Télématique Active</span>
+              </div>
+
+              <div *ngIf="m.status === 'TERMINEE'" class="state-pill state-done m-state-full">
+                <span class="material-symbols-outlined" aria-hidden="true">verified</span>
+                <span>Arrivée Certifiée</span>
+              </div>
+
+              <div *ngIf="m.status === 'PLANIFIEE'" class="state-pill state-waiting m-state-full">
+                <span class="material-symbols-outlined" aria-hidden="true">hourglass_empty</span>
+                <span>En attente départ</span>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

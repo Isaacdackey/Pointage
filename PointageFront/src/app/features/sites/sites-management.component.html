@@ -89,9 +89,15 @@
             <span class="lbl">Seuil arrêt :</span>
             <strong class="val">{{ site.minStopDurationMinutes }} min requises</strong>
           </div>
-          <div class="detail-row" *ngIf="site.contactName">
+          <div class="detail-row detail-row-contact" *ngIf="site.contactName">
             <span class="lbl">Contact :</span>
-            <span class="val">{{ site.contactName }} ({{ site.contactPhone }})</span>
+            <div class="val-contact">
+              <span class="contact-name">{{ site.contactName }}</span>
+              <a *ngIf="site.contactPhone" [href]="'tel:' + site.contactPhone" class="contact-phone">
+                <span class="material-symbols-outlined" style="font-size: 13px;" aria-hidden="true">call</span>
+                {{ site.contactPhone }}
+              </a>
+            </div>
           </div>
           <div class="detail-notes" *ngIf="site.notes">
             <span class="material-symbols-outlined">info</span>

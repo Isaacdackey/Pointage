@@ -1011,6 +1011,14 @@
     align-items: center;
     margin-top: 0.2rem;
 
+    &.actions-center {
+      justify-content: center;
+
+      .m-btn-secondary-group {
+        justify-content: center;
+      }
+    }
+
     .m-btn-main {
       flex: 1;
       min-height: 44px;

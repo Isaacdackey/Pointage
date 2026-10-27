@@ -127,8 +127,10 @@
             <span class="type-pill">{{ v.type }}</span>
           </td>
           <td data-label="Chauffeur">
-            <div>{{ v.assignedDriverName || 'Non affecté' }}</div>
-            <small *ngIf="v.assignedDriverPhone" style="color: var(--ink-3);">{{ v.assignedDriverPhone }}</small>
+            <div class="driver-val-box">
+              <strong class="driver-name-txt">{{ v.assignedDriverName || 'Non affecté' }}</strong>
+              <small *ngIf="v.assignedDriverPhone" class="driver-phone-txt">{{ v.assignedDriverPhone }}</small>
+            </div>
           </td>
           <td data-label="Traceur"><code class="tracker-code">{{ v.currentTrackerId }}</code></td>
           <td data-label="Kilométrage" class="num-cell">{{ formatNumber(v.odometerKm) }} km</td>
@@ -233,8 +235,10 @@
             }">{{ m.type }}</span>
           </td>
           <td data-label="Détails">
-            <strong>{{ m.title }}</strong>
-            <div style="font-size: 0.8rem; color: var(--ink-2);">{{ m.description }}</div>
+            <div class="maintenance-details-box">
+              <strong class="maint-title-txt">{{ m.title }}</strong>
+              <div class="maint-desc-txt">{{ m.description }}</div>
+            </div>
           </td>
           <td data-label="Prestataire">{{ m.provider }}</td>
           <td data-label="Kilométrage" class="num-cell">{{ formatNumber(m.odometerKm) }} km</td>

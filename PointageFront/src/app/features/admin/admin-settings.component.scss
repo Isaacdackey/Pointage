@@ -167,12 +167,36 @@
       margin-top: 0.2rem;
     }
 
+    .user-val-box {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+
+      .user-actor-name {
+        color: var(--ink);
+        font-weight: 700;
+        line-height: 1.25;
+      }
+
+      .role-tag {
+        font-size: 0.72rem;
+        color: var(--ink-3);
+        font-weight: 600;
+      }
+
+      @media (max-width: 640px) {
+        align-items: flex-end;
+        text-align: right;
+      }
+    }
+
     .role-badge {
       font-size: var(--text-xs);
       font-weight: 700;
       padding: 0.2rem 0.55rem;
       border-radius: var(--r-full);
       border: 1px solid transparent;
+      white-space: nowrap;
     }
     .role-badge.admin { background: var(--pill-info-bg); color: var(--pill-info-fg); border-color: var(--pill-info-border); }
     .role-badge.agent { background: var(--pill-ok-bg); color: var(--pill-ok-fg); border-color: var(--pill-ok-border); }

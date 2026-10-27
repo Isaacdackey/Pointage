@@ -99,8 +99,9 @@
       <span class="badge-count">{{ filteredRecords(maintenanceRecords$ | async).length }} intervention(s)</span>
     </div>
 
-    <div class="table-container">
-      <table class="data-table data-table--stack">
+    <!-- Vue Desktop (>= 768px) -->
+    <div class="table-container maintenance-desktop-table">
+      <table class="data-table">
         <thead>
           <tr>
             <th scope="col">Date</th>
@@ -115,9 +116,9 @@
         </thead>
         <tbody>
           <tr *ngFor="let m of filteredRecords(maintenanceRecords$ | async)">
-            <td data-label="Date">{{ m.serviceDate }}</td>
-            <td data-label="Véhicule"><strong class="plate-code">{{ m.vehicleReg }}</strong></td>
-            <td data-label="Type">
+            <td>{{ m.serviceDate }}</td>
+            <td><strong class="plate-code">{{ m.vehicleReg }}</strong></td>
+            <td>
               <span class="maint-type-pill" [ngClass]="{
                 'type-vidange': m.type === 'VIDANGE',
                 'type-vt': m.type === 'VISITE_TECHNIQUE',
@@ -127,14 +128,14 @@
                 {{ m.type }}
               </span>
             </td>
-            <td data-label="Détails">
-              <strong>{{ m.title }}</strong>
-              <div style="font-size: 0.8rem; color: var(--ink-3);">{{ m.description }}</div>
+            <td>
+              <strong class="maint-title-txt">{{ m.title }}</strong>
+              <div class="maint-desc-txt">{{ m.description }}</div>
             </td>
-            <td data-label="Prestataire">{{ m.provider }}</td>
-            <td data-label="Kilométrage" class="num-cell">{{ formatNumber(m.odometerKm) }} km</td>
-            <td data-label="Montant" class="num-cell"><strong>{{ formatNumber(m.costCfa) }} FCFA</strong></td>
-            <td data-label="Statut" style="text-align: right;">
+            <td>{{ m.provider }}</td>
+            <td class="num-cell">{{ formatNumber(m.odometerKm) }} km</td>
+            <td class="num-cell"><strong>{{ formatNumber(m.costCfa) }} FCFA</strong></td>
+            <td style="text-align: right;">
               <span class="status-maint-pill" [class.done]="m.status === 'TERMINEE'" [class.planned]="m.status === 'PLANIFIEE'">
                 {{ m.status }}
               </span>
@@ -148,6 +149,64 @@
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- Vue Cartes Mobile (< 768px) : aérée, moderne et lisible -->
+    <div class="maintenance-mobile-cards">
+      <div
+        *ngFor="let m of filteredRecords(maintenanceRecords$ | async)"
+        class="maint-card-mobile"
+        [class.card-planned]="m.status === 'PLANIFIEE'"
+      >
+        <!-- En-tête : Véhicule + Type à gauche, Statut à droite -->
+        <div class="m-card-top-bar">
+          <div class="m-veh-group">
+            <span class="plate-code">{{ m.vehicleReg }}</span>
+            <span class="maint-type-pill" [ngClass]="{
+              'type-vidange': m.type === 'VIDANGE',
+              'type-vt': m.type === 'VISITE_TECHNIQUE',
+              'type-reparation': m.type === 'REPARATION' || m.type === 'ACCIDENT',
+              'type-autre': m.type === 'FREINAGE' || m.type === 'PNEUMATIQUE'
+            }">
+              {{ m.type }}
+            </span>
+          </div>
+          <span class="status-maint-pill" [class.done]="m.status === 'TERMINEE'" [class.planned]="m.status === 'PLANIFIEE'">
+            {{ m.status }}
+          </span>
+        </div>
+
+        <!-- Titre et Détails des Travaux -->
+        <div class="m-card-body">
+          <h3 class="maint-mobile-title">{{ m.title }}</h3>
+          <p class="maint-mobile-desc" *ngIf="m.description">{{ m.description }}</p>
+        </div>
+
+        <!-- Métriques et Prestataire en grille claire -->
+        <div class="m-card-meta-grid">
+          <div class="meta-item">
+            <span class="meta-lbl">Date</span>
+            <strong class="meta-val">{{ m.serviceDate }}</strong>
+          </div>
+          <div class="meta-item">
+            <span class="meta-lbl">Prestataire</span>
+            <span class="meta-val">{{ m.provider }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-lbl">Compteur</span>
+            <span class="meta-val">{{ formatNumber(m.odometerKm) }} km</span>
+          </div>
+          <div class="meta-item meta-item-cost">
+            <span class="meta-lbl">Montant</span>
+            <strong class="meta-val cost-val">{{ formatNumber(m.costCfa) }} FCFA</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- État vide mobile -->
+      <div *ngIf="filteredRecords(maintenanceRecords$ | async).length === 0" class="empty-cell">
+        Aucune intervention ne correspond à votre filtre ou recherche.
+      </div>
     </div>
   </section>
 
