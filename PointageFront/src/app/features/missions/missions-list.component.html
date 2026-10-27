@@ -9,112 +9,539 @@
     </button>
   </app-page-header>
 
-  <!-- Note méthodologique conforme aux consignes mentor -->
-  <div class="telemetry-banner">
+  <!-- En-tête avec indicateur Live et rafraîchissement -->
+  <div class="header-extra-row">
+    <div class="live-indicator-wrapper">
+      <span class="live-pulse-dot" aria-hidden="true"></span>
+      <span class="live-text">Mis à jour il y a {{ secondsSinceLastUpdate }}s</span>
+      <button
+        type="button"
+        class="btn-refresh"
+        (click)="refreshData()"
+        [class.spinning]="isRefreshing"
+        title="Actualiser les données télématiques maintenant"
+        aria-label="Actualiser les données"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
+      </button>
+    </div>
+
+    <!-- Sélecteur de tri rapide (Accessible desktop et mobile) -->
+    <div class="sort-selector-wrapper">
+      <label for="sortSelect" class="sort-label">Trier par :</label>
+      <select
+        id="sortSelect"
+        [ngModel]="sortBy"
+        (ngModelChange)="toggleSort($event)"
+        class="sort-select"
+        aria-label="Trier les missions"
+      >
+        <option value="anomalies">Anomalies d'abord</option>
+        <option value="plannedStartTime">Heure prévue</option>
+        <option value="code">Code mission</option>
+        <option value="status">Statut opérationnel</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Note méthodologique avec bouton de fermeture et sauvegarde localStorage -->
+  <div *ngIf="isBannerVisible" class="telemetry-banner" role="region" aria-label="Information télématique">
     <div class="banner-icon">
-      <span class="material-symbols-outlined">satellite_alt</span>
+      <span class="material-symbols-outlined" aria-hidden="true">satellite_alt</span>
     </div>
     <div class="banner-text">
       <strong>Fonctionnement Logistique Télématique :</strong>
       <span>
-        Les chauffeurs ne disposent d'aucune application mobile à manipuler en conduisant.
-        GeoFleet détecte automatiquement les départs dès la première trame de mouvement, confronte le trajet au corridor autorisé, certifie les arrivées dans les <strong>Sites Favoris</strong> (15–30m) et signale tout retard ou arrêt anormal.
+        Les chauffeurs ne manipulent aucune application mobile. GeoFleet détecte automatiquement les départs dès la première trame GPS, contrôle la conformité du couloir, certifie les arrivées sur les <strong>Sites Favoris</strong> et remonte immédiatement tout écart ou arrêt imprévu.
       </span>
     </div>
+    <button
+      type="button"
+      class="banner-close-btn"
+      (click)="closeBanner()"
+      aria-label="Masquer ce bandeau d'information"
+      title="Masquer définitivement"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true">close</span>
+    </button>
   </div>
 
-  <div class="card">
-    <div class="table-container">
-      <table class="data-table data-table--stack">
-        <caption class="sr-only">Liste des tournées et suivi télématique des véhicules</caption>
-        <thead>
-          <tr>
-            <th scope="col" class="th-code">Code</th>
-            <th scope="col">Tournée / Mission</th>
-            <th scope="col">Origine &rarr; Destination</th>
-            <th scope="col">Véhicule & Chauffeur</th>
-            <th scope="col">Progression Trajet</th>
-            <th scope="col">Surveillance Corridor & Retard</th>
-            <th scope="col" style="text-align: right;">Statut</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let m of missions$ | async">
-            <td data-label="Code" class="cell-code">
-              <code class="code-badge">{{ m.code }}</code>
-            </td>
-            <td data-label="Tournée">
-              <strong>{{ m.title }}</strong>
-              <div class="sub-date" *ngIf="m.plannedStartTime">
-                Prévu : {{ formatDateTime(m.plannedStartTime) }}
-              </div>
-            </td>
-            <td data-label="Trajet">
-              <div class="route-cell">
-                <span class="route-point">
-                  <span class="material-symbols-outlined origin-icon" aria-hidden="true">radio_button_checked</span>
-                  {{ m.originName }}
-                </span>
-                <span class="route-point">
-                  <span class="material-symbols-outlined dest-icon" aria-hidden="true">flag</span>
-                  {{ m.destinationName }}
-                </span>
-              </div>
-              <small class="route-dist">{{ m.distanceKm }} km estimés</small>
-            </td>
-            <td data-label="Affectation">
-              <strong>{{ m.vehicleReg }}</strong>
-              <div class="sub-driver">{{ m.driverName }}</div>
-            </td>
-            <td data-label="Progression">
-              <div class="progress-wrapper" *ngIf="m.status === 'EN_COURS' || m.status === 'EN_ANOMALIE'">
-                <div class="progress-bar-bg">
-                  <div class="progress-bar-fill" [style.width.%]="m.currentProgressPercent"></div>
-                </div>
-                <div class="progress-label">
-                  <span>{{ m.currentProgressPercent }}%</span>
-                  <small *ngIf="m.lastCheckpointPassed">{{ m.lastCheckpointPassed }}</small>
-                </div>
-              </div>
-              <span *ngIf="m.status === 'PLANIFIEE'" class="pill-inactive">
-                <span class="material-symbols-outlined">schedule</span>
-                En attente départ
-              </span>
-              <span *ngIf="m.status === 'TERMINEE'" class="pill-completed">
-                <span class="material-symbols-outlined">check_circle</span>
-                Trajet 100% achevé
-              </span>
-            </td>
-            <td data-label="Surveillance">
-              <div *ngIf="m.hasDeviation" class="badge-alert-deviation" title="{{ m.deviationDetails }}">
-                <span class="material-symbols-outlined">wrong_location</span>
-                <span>Déviation Détectée</span>
-              </div>
-              <div *ngIf="m.isDelayed" class="badge-alert-delay">
-                <span class="material-symbols-outlined">timelapse</span>
-                <span>Retard +{{ m.delayMinutes }} min</span>
-              </div>
-              <div *ngIf="!m.hasDeviation && !m.isDelayed && m.status === 'EN_COURS'" class="badge-telemetry-ok">
-                <span class="material-symbols-outlined">verified</span>
-                <span>Corridor Respecté</span>
-              </div>
-              <span *ngIf="m.status === 'PLANIFIEE' || m.status === 'TERMINEE'" class="text-neutral">-</span>
-            </td>
-            <td data-label="Statut" style="text-align: right;">
-              <app-status-badge [status]="m.status"></app-status-badge>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+  <!-- Barre de recherche et filtres de statuts avec compteurs dynamiques -->
+  <ng-container *ngIf="missions$ | async as allMissions">
+    <div class="filters-search-bar card">
+      <div class="search-input-wrapper">
+        <span class="material-symbols-outlined search-icon" aria-hidden="true">search</span>
+        <input
+          type="text"
+          [(ngModel)]="searchQuery"
+          placeholder="Rechercher…"
+          class="search-input"
+          aria-label="Rechercher une mission"
+        />
+        <button
+          *ngIf="searchQuery"
+          type="button"
+          class="btn-clear"
+          (click)="searchQuery = ''"
+          aria-label="Effacer la recherche"
+          title="Effacer la recherche"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+      </div>
+
+      <!-- Filtres en onglets / chips horizontaux (role tablist) -->
+      <div class="status-filters" role="tablist" aria-label="Filtrer les missions par statut">
+        <button
+          type="button"
+          role="tab"
+          class="filter-tab"
+          [attr.aria-selected]="statusFilter === 'TOUTES'"
+          [class.active]="statusFilter === 'TOUTES'"
+          (click)="statusFilter = 'TOUTES'; currentPage = 1"
+        >
+          Toutes ({{ getStatusCounts(allMissions).toutes }})
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="filter-tab"
+          [attr.aria-selected]="statusFilter === 'PLANIFIEE'"
+          [class.active]="statusFilter === 'PLANIFIEE'"
+          (click)="statusFilter = 'PLANIFIEE'; currentPage = 1"
+        >
+          Planifiées ({{ getStatusCounts(allMissions).planifiees }})
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="filter-tab"
+          [attr.aria-selected]="statusFilter === 'EN_COURS'"
+          [class.active]="statusFilter === 'EN_COURS'"
+          (click)="statusFilter = 'EN_COURS'; currentPage = 1"
+        >
+          En cours ({{ getStatusCounts(allMissions).enCours }})
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="filter-tab filter-tab-anomaly"
+          [attr.aria-selected]="statusFilter === 'EN_ANOMALIE'"
+          [class.active]="statusFilter === 'EN_ANOMALIE'"
+          (click)="statusFilter = 'EN_ANOMALIE'; currentPage = 1"
+        >
+          Anomalies ({{ getStatusCounts(allMissions).anomalies }})
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="filter-tab"
+          [attr.aria-selected]="statusFilter === 'TERMINEE'"
+          [class.active]="statusFilter === 'TERMINEE'"
+          (click)="statusFilter = 'TERMINEE'; currentPage = 1"
+        >
+          Terminées ({{ getStatusCounts(allMissions).terminees }})
+        </button>
+      </div>
     </div>
-  </div>
 
-  <!-- Modal Planifier une Tournée / Mission -->
+    <!-- 1. VUE TABLEAU DESKTOP (≥ 768px) -->
+    <div class="card desktop-table-card">
+      <div class="table-container">
+        <table class="data-table">
+          <caption class="sr-only">Liste des missions logistiques et suivi de télématique passive</caption>
+          <thead>
+            <tr>
+              <th scope="col" class="th-code col-code" (click)="toggleSort('code')" role="button" tabindex="0" title="Trier par code">
+                <span>Code</span>
+                <span class="material-symbols-outlined sort-icon" *ngIf="sortBy === 'code'" aria-hidden="true">
+                  {{ sortAscending ? 'arrow_upward' : 'arrow_downward' }}
+                </span>
+              </th>
+              <th scope="col" class="col-route">Mission & Trajet</th>
+              <th scope="col" class="col-driver">Véhicule & Chauffeur</th>
+              <th scope="col" class="col-telemetry">Suivi Télématique</th>
+              <th scope="col" class="col-status" (click)="toggleSort('status')" role="button" tabindex="0" title="Trier par statut" style="text-align: center;">
+                <span>Statut</span>
+                <span class="material-symbols-outlined sort-icon" *ngIf="sortBy === 'status'" aria-hidden="true">
+                  {{ sortAscending ? 'arrow_upward' : 'arrow_downward' }}
+                </span>
+              </th>
+              <th scope="col" class="col-actions" style="text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let m of getPaginatedMissions(allMissions)"
+              [class.row-anomaly]="m.status === 'EN_ANOMALIE'"
+            >
+              <!-- Code Mission -->
+              <td class="cell-code">
+                <code class="code-badge">{{ m.code }}</code>
+              </td>
+
+              <!-- Mission & Trajet -->
+              <td class="cell-mission-route">
+                <strong class="mission-title">{{ m.title }}</strong>
+                <div class="route-flow">
+                  <div class="route-line">
+                    <span class="step-origin">
+                      <span class="material-symbols-outlined origin-icon" aria-hidden="true">radio_button_checked</span>
+                      {{ m.originName }}
+                    </span>
+                    <span class="route-arrow" aria-hidden="true">&rarr;</span>
+                    <span class="step-dest">
+                      <span class="material-symbols-outlined dest-icon" aria-hidden="true">flag</span>
+                      {{ m.destinationName }}
+                    </span>
+                  </div>
+                  <div class="route-meta">
+                    <span class="dist-badge">
+                      <span class="material-symbols-outlined" style="font-size: 13px;" aria-hidden="true">straighten</span>
+                      {{ m.distanceKm }} km
+                    </span>
+                    <span class="sub-date" *ngIf="m.status === 'TERMINEE' && m.actualEndTime">
+                      <span class="material-symbols-outlined" style="font-size: 13px;" aria-hidden="true">event_available</span>
+                      {{ m.actualEndTime | relativeTime:'Arrivée' }}
+                    </span>
+                    <span class="sub-date" *ngIf="m.status !== 'TERMINEE' && m.plannedStartTime">
+                      <span class="material-symbols-outlined" style="font-size: 13px;" aria-hidden="true">schedule</span>
+                      {{ m.plannedStartTime | relativeTime:'Prévu' }}
+                    </span>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Véhicule & Chauffeur -->
+              <td class="cell-driver">
+                <strong class="vehicle-reg">{{ m.vehicleReg }}</strong>
+                <div class="sub-driver">
+                  <span class="material-symbols-outlined driver-icon" aria-hidden="true">person</span>
+                  <span>{{ m.driverName }}</span>
+                </div>
+              </td>
+
+              <!-- Suivi Télématique (Barre unie + Badges flexibles anti-collision) -->
+              <td class="cell-telemetry">
+                <div class="telemetry-col" *ngIf="m.status === 'EN_COURS' || m.status === 'EN_ANOMALIE'">
+                  <div class="progress-bar-bg" role="progressbar" [attr.aria-valuenow]="m.currentProgressPercent" aria-valuemin="0" aria-valuemax="100">
+                    <div
+                      class="progress-bar-fill"
+                      [class.fill-alert]="m.status === 'EN_ANOMALIE'"
+                      [class.fill-running]="m.status === 'EN_COURS'"
+                      [style.width.%]="m.currentProgressPercent"
+                    ></div>
+                  </div>
+                  <div class="progress-info-line">
+                    <span class="prog-pct">{{ m.currentProgressPercent }}%</span>
+                    <div class="badges-sub-row">
+                      <div *ngIf="m.hasDeviation" class="badge-alert-deviation" [title]="m.deviationDetails || 'Déviation détectée'">
+                        <span class="material-symbols-outlined" aria-hidden="true">wrong_location</span>
+                        <span>Déviation</span>
+                      </div>
+                      <div *ngIf="m.isDelayed" class="badge-alert-delay" [title]="'Retard constaté: +' + m.delayMinutes + ' min'">
+                        <span class="material-symbols-outlined" aria-hidden="true">history_toggle_off</span>
+                        <span>+{{ m.delayMinutes }}m</span>
+                      </div>
+                      <div *ngIf="!m.hasDeviation && !m.isDelayed" class="badge-telemetry-ok">
+                        <span class="material-symbols-outlined" aria-hidden="true">check</span>
+                        <span>Trajet conforme</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Ligne secondaire épurée (pas de doublon de badge) -->
+                <span *ngIf="m.status === 'PLANIFIEE'" class="sub-text-telemetry">
+                  <span class="material-symbols-outlined" aria-hidden="true">sensors</span>
+                  En attente détection premier mouvement GPS
+                </span>
+                <span *ngIf="m.status === 'TERMINEE'" class="sub-text-telemetry ok">
+                  <span class="material-symbols-outlined" aria-hidden="true">verified</span>
+                  Arrivée certifiée dans le géofence
+                </span>
+              </td>
+
+              <!-- Statut Unique et Harmonisé -->
+              <td class="cell-status" style="text-align: center;">
+                <app-status-badge [status]="m.status"></app-status-badge>
+              </td>
+
+              <!-- Actions Sécurisées & Icon-Buttons avec Tooltips / Accessible -->
+              <td class="cell-actions" style="text-align: right;">
+                <div class="actions-group">
+                  <!-- Forcer le départ avec confirmation -->
+                  <button
+                    *ngIf="m.status === 'PLANIFIEE'"
+                    type="button"
+                    class="btn-action-start"
+                    (click)="promptForceStart(m)"
+                    title="Forcer le départ manuellement (outrepasser la détection automatique GPS)"
+                    aria-label="Forcer le départ"
+                  >
+                    <span class="material-symbols-outlined" aria-hidden="true">play_arrow</span>
+                    <span>Forcer départ</span>
+                  </button>
+
+                  <!-- Terminer manuellement avec confirmation -->
+                  <button
+                    *ngIf="m.status === 'EN_COURS' || m.status === 'EN_ANOMALIE'"
+                    type="button"
+                    class="btn-action-finish"
+                    (click)="promptForceFinish(m)"
+                    title="Clôturer manuellement la tournée et balayer le tracé de la carte"
+                    aria-label="Clôturer la mission"
+                  >
+                    <span class="material-symbols-outlined" aria-hidden="true">task_alt</span>
+                    <span>Terminer</span>
+                  </button>
+
+                  <!-- Appeler le chauffeur en cas d'anomalie -->
+                  <a
+                    *ngIf="m.status === 'EN_ANOMALIE' && m.driverPhone"
+                    [href]="'tel:' + m.driverPhone"
+                    class="btn-action-call"
+                    [title]="'Appeler le chauffeur ' + m.driverName + ' (' + m.driverPhone + ')'"
+                    [attr.aria-label]="'Appeler le chauffeur ' + m.driverName"
+                  >
+                    <span class="material-symbols-outlined" aria-hidden="true">call</span>
+                  </a>
+
+                  <!-- Localiser sur la carte Live Map -->
+                  <a
+                    [routerLink]="['/map']"
+                    [queryParams]="{ vehicle: m.vehicleId }"
+                    class="btn-action-map"
+                    title="Voir et suivre le véhicule sur la carte interactive"
+                    aria-label="Voir sur la carte"
+                  >
+                    <span class="material-symbols-outlined" aria-hidden="true">near_me</span>
+                  </a>
+                </div>
+              </td>
+            </tr>
+
+            <!-- État vide avec bouton de réinitialisation -->
+            <tr *ngIf="getPaginatedMissions(allMissions).length === 0">
+              <td colspan="6" class="empty-search-cell">
+                <span class="material-symbols-outlined empty-icon" aria-hidden="true">search_off</span>
+                <p>Aucune mission ne correspond à votre filtre ou critère de recherche.</p>
+                <button type="button" class="btn btn-outline btn-sm mt-3" (click)="resetFilters()">
+                  <span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>
+                  Réinitialiser les filtres
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Desktop -->
+      <div class="pagination-bar" *ngIf="filterAndSortMissions(allMissions).length > pageSize">
+        <span class="pagination-info">
+          Affichage de {{ ((currentPage - 1) * pageSize) + 1 }} à {{ ((currentPage * pageSize) > filterAndSortMissions(allMissions).length ? filterAndSortMissions(allMissions).length : (currentPage * pageSize)) }} sur {{ filterAndSortMissions(allMissions).length }} missions
+        </span>
+        <div class="pagination-controls">
+          <button
+            type="button"
+            class="btn-page"
+            [disabled]="currentPage === 1"
+            (click)="setPage(currentPage - 1, allMissions)"
+            aria-label="Page précédente"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+          </button>
+          <span class="page-current">{{ currentPage }} / {{ getTotalPages(allMissions) }}</span>
+          <button
+            type="button"
+            class="btn-page"
+            [disabled]="currentPage === getTotalPages(allMissions)"
+            (click)="setPage(currentPage + 1, allMissions)"
+            aria-label="Page suivante"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. VUE CARTES MOBILE & TABLETTE (< 768px) -->
+    <div class="mobile-cards-list">
+      <div
+        *ngFor="let m of getPaginatedMissions(allMissions)"
+        class="mission-card-mobile"
+        [class.card-anomaly]="m.status === 'EN_ANOMALIE'"
+      >
+        <!-- En-tête : Code à gauche, Badge Statut à droite -->
+        <div class="m-card-header">
+          <code class="code-badge">{{ m.code }}</code>
+          <app-status-badge [status]="m.status"></app-status-badge>
+        </div>
+
+        <!-- Titre -->
+        <h3 class="m-card-title">{{ m.title }}</h3>
+
+        <!-- Trajet Vertical : Origine -> Destination -->
+        <div class="m-card-route">
+          <div class="route-step origin">
+            <span class="material-symbols-outlined origin-icon" aria-hidden="true">radio_button_checked</span>
+            <span class="step-name">{{ m.originName }}</span>
+          </div>
+          <div class="route-connector-line"></div>
+          <div class="route-step dest">
+            <span class="material-symbols-outlined dest-icon" aria-hidden="true">flag</span>
+            <span class="step-name">{{ m.destinationName }}</span>
+          </div>
+        </div>
+
+        <!-- Encart Télématique & Progression -->
+        <div
+          class="m-card-telemetry"
+          *ngIf="m.status === 'EN_COURS' || m.status === 'EN_ANOMALIE'"
+          [class.anomaly-box]="m.status === 'EN_ANOMALIE'"
+        >
+          <div class="m-progress-header">
+            <span class="prog-label">Progression du trajet</span>
+            <span class="prog-pct">{{ m.currentProgressPercent }}%</span>
+          </div>
+          <div class="progress-bar-bg" role="progressbar" [attr.aria-valuenow]="m.currentProgressPercent" aria-valuemin="0" aria-valuemax="100">
+            <div
+              class="progress-bar-fill"
+              [class.fill-alert]="m.status === 'EN_ANOMALIE'"
+              [class.fill-running]="m.status === 'EN_COURS'"
+              [style.width.%]="m.currentProgressPercent"
+            ></div>
+          </div>
+          <div class="m-alerts-row" *ngIf="m.hasDeviation || m.isDelayed">
+            <span *ngIf="m.hasDeviation" class="badge-alert-deviation">
+              <span class="material-symbols-outlined" aria-hidden="true">wrong_location</span>
+              Déviation de couloir
+            </span>
+            <span *ngIf="m.isDelayed" class="badge-alert-delay">
+              <span class="material-symbols-outlined" aria-hidden="true">history_toggle_off</span>
+              +{{ m.delayMinutes }}m de retard
+            </span>
+          </div>
+        </div>
+
+        <!-- Ligne Véhicule, Chauffeur et Heure -->
+        <div class="m-card-info-row">
+          <div class="info-block">
+            <span class="info-lbl">Véhicule & Chauffeur</span>
+            <div class="info-val">
+              <strong>{{ m.vehicleReg }}</strong> · {{ m.driverName }}
+            </div>
+          </div>
+          <div class="info-block">
+            <span class="info-lbl">{{ m.status === 'TERMINEE' ? 'Arrivée' : 'Heure prévue' }}</span>
+            <div class="info-val">
+              <span *ngIf="m.status === 'TERMINEE' && m.actualEndTime">{{ m.actualEndTime | relativeTime }}</span>
+              <span *ngIf="m.status !== 'TERMINEE'">{{ m.plannedStartTime | relativeTime }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions Mobile : Bouton principal pleine largeur (≥ 44px) + Boutons secondaires (≥ 44x44px) -->
+        <div class="m-card-actions">
+          <!-- Forcer Départ -->
+          <button
+            *ngIf="m.status === 'PLANIFIEE'"
+            type="button"
+            class="m-btn-main m-btn-start"
+            (click)="promptForceStart(m)"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">play_arrow</span>
+            <span>Forcer le départ</span>
+          </button>
+
+          <!-- Clôturer Mission -->
+          <button
+            *ngIf="m.status === 'EN_COURS' || m.status === 'EN_ANOMALIE'"
+            type="button"
+            class="m-btn-main m-btn-finish"
+            (click)="promptForceFinish(m)"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">task_alt</span>
+            <span>Clôturer la tournée</span>
+          </button>
+
+          <div class="m-btn-secondary-group">
+            <!-- Appeler le chauffeur -->
+            <a
+              *ngIf="m.status === 'EN_ANOMALIE' && m.driverPhone"
+              [href]="'tel:' + m.driverPhone"
+              class="m-btn-icon m-btn-call"
+              [title]="'Appeler le chauffeur ' + m.driverName"
+              [attr.aria-label]="'Appeler ' + m.driverName"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">call</span>
+            </a>
+
+            <!-- Voir sur la carte -->
+            <a
+              [routerLink]="['/map']"
+              [queryParams]="{ vehicle: m.vehicleId }"
+              class="m-btn-icon m-btn-map"
+              title="Voir sur la carte"
+              aria-label="Voir sur la carte"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true">near_me</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- État vide mobile -->
+      <div *ngIf="getPaginatedMissions(allMissions).length === 0" class="empty-search-cell mobile-empty">
+        <span class="material-symbols-outlined empty-icon" aria-hidden="true">search_off</span>
+        <p>Aucune mission ne correspond à votre filtre ou recherche.</p>
+        <button type="button" class="btn btn-outline btn-sm mt-3" (click)="resetFilters()">
+          Réinitialiser les filtres
+        </button>
+      </div>
+
+      <!-- Pagination Mobile -->
+      <div class="pagination-bar mobile-pagination" *ngIf="filterAndSortMissions(allMissions).length > pageSize">
+        <button
+          type="button"
+          class="btn-page"
+          [disabled]="currentPage === 1"
+          (click)="setPage(currentPage - 1, allMissions)"
+          aria-label="Page précédente"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+        </button>
+        <span class="page-current">{{ currentPage }} / {{ getTotalPages(allMissions) }}</span>
+        <button
+          type="button"
+          class="btn-page"
+          [disabled]="currentPage === getTotalPages(allMissions)"
+          (click)="setPage(currentPage + 1, allMissions)"
+          aria-label="Page suivante"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+        </button>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Modale de Confirmation Accessible (app-confirm-dialog) -->
+  <app-confirm-dialog
+    [isOpen]="confirmModalOpen"
+    [title]="confirmModalTitle"
+    [message]="confirmModalMessage"
+    [type]="confirmModalType"
+    [confirmText]="confirmModalBtnLabel"
+    (confirm)="onConfirmModalConfirm()"
+    (cancel)="onConfirmModalCancel()"
+  ></app-confirm-dialog>
+
+  <!-- Modal Planifier une Tournée / Mission (Grande modale 2 colonnes avec carte interactive) -->
   <div *ngIf="isModalOpen" class="modal-backdrop" (click)="closeModal()" role="dialog" aria-modal="true">
-    <div class="modal-box modal-lg" (click)="$event.stopPropagation()">
+    <div class="modal-box mission-modal-wide" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <div class="modal-header-title">
-          <span class="material-symbols-outlined modal-icon">assignment_add</span>
+          <span class="material-symbols-outlined modal-icon">add_task</span>
           <h2>Planifier une Nouvelle Tournée / Mission</h2>
         </div>
         <button class="btn-icon" (click)="closeModal()" aria-label="Fermer">
@@ -122,132 +549,180 @@
         </button>
       </div>
 
-      <form (ngSubmit)="saveMission()" class="modal-form">
-        <div class="form-group">
-          <label for="m-title">Intitulé de la tournée / Objet *</label>
-          <input
-            id="m-title"
-            type="text"
-            [(ngModel)]="newMission.title"
-            name="title"
-            required
-            placeholder="ex: Tournée Livraison Conteneurs Port &rarr; Diamniadio"
-            class="form-input"
-          />
-        </div>
+      <form (ngSubmit)="saveMission()" class="modal-form-compact">
+        <div class="mission-modal-grid">
+          <!-- Colonne Gauche : Mini-Carte Interactive de Trajet (Départ -> Arrivée) -->
+          <div class="map-column">
+            <div class="mission-map-header">
+              <label>
+                <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: -3px; color: var(--brand-solid);">map</span>
+                Aperçu & Pointage du Trajet :
+              </label>
+              <!-- Switch de pointage : Pointer Départ ou Pointer Arrivée -->
+              <div class="picker-mode-switch" role="group">
+                <button
+                  type="button"
+                  class="btn-pick-toggle btn-pick-origin"
+                  [class.active]="activePickingMode === 'ORIGIN'"
+                  (click)="setPickingMode('ORIGIN')"
+                  title="Cliquer sur la carte pour déplacer le point de départ"
+                >
+                  <span class="material-symbols-outlined">radio_button_checked</span>
+                  Départ
+                </button>
+                <button
+                  type="button"
+                  class="btn-pick-toggle btn-pick-dest"
+                  [class.active]="activePickingMode === 'DEST'"
+                  (click)="setPickingMode('DEST')"
+                  title="Cliquer sur la carte pour déplacer la destination"
+                >
+                  <span class="material-symbols-outlined">flag</span>
+                  Arrivée
+                </button>
+              </div>
+            </div>
 
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="m-vehicle">Véhicule assigné *</label>
-            <select id="m-vehicle" [(ngModel)]="newMission.vehicleId" name="vehicleId" required class="form-input">
-              <option value="">-- Choisir un véhicule disponible --</option>
-              <option *ngFor="let v of vehicles$ | async" [value]="v.id">
-                {{ v.registrationNumber }} ({{ v.type }} - {{ v.make }} {{ v.model }})
-              </option>
-            </select>
+            <div id="mission-route-map" class="mission-route-map-box"></div>
+
+            <div class="route-metrics-bar">
+              <div class="metric-pill">
+                <span class="lbl">DISTANCE :</span>
+                <code>{{ newMission.distanceKm }} km</code>
+              </div>
+              <div class="metric-pill">
+                <span class="lbl">DÉPART :</span>
+                <span class="val-txt">{{ newMission.originName || 'Dakar' }}</span>
+              </div>
+              <div class="metric-pill">
+                <span class="lbl">DESTINATION :</span>
+                <span class="val-txt">{{ newMission.destinationName || 'Diamniadio' }}</span>
+              </div>
+            </div>
           </div>
 
-          <div class="form-group">
-            <label for="m-driver">Chauffeur responsable *</label>
-            <select id="m-driver" [(ngModel)]="newMission.driverId" name="driverId" required class="form-input">
-              <option value="">-- Choisir un chauffeur --</option>
-              <option *ngFor="let d of drivers$ | async" [value]="d.id">
-                {{ d.fullName }} (Permis {{ d.licenseNumber }})
-              </option>
-            </select>
-          </div>
+          <!-- Colonne Droite : Formulaire compact -->
+          <div class="form-column">
+            <div class="form-group">
+              <label for="m-title">Intitulé de la tournée / Objet *</label>
+              <input
+                id="m-title"
+                type="text"
+                [(ngModel)]="newMission.title"
+                name="title"
+                required
+                placeholder="ex: Tournée Livraison Conteneurs Port &rarr; Diamniadio"
+                class="form-input"
+              />
+            </div>
 
-          <div class="form-group" *ngIf="geoSites$ | async as sites">
-            <label for="m-origin-site">Point de départ (Site Favori ou Libre) *</label>
-            <select
-              id="m-origin-site"
-              [(ngModel)]="newMission.originSiteId"
-              name="originSiteId"
-              (ngModelChange)="onOriginSiteChange($event, sites)"
-              class="form-input"
-            >
-              <option value="">-- Saisie libre ou sélectionner un site --</option>
-              <option *ngFor="let s of sites" [value]="s.id">
-                📍 {{ s.name }} ({{ s.address }})
-              </option>
-            </select>
-            <input
-              type="text"
-              [(ngModel)]="newMission.originName"
-              name="originName"
-              placeholder="Adresse ou nom de l'origine"
-              class="form-input"
-              style="margin-top: 0.35rem;"
-              required
-            />
-          </div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="m-vehicle">Véhicule assigné *</label>
+                <select id="m-vehicle" [(ngModel)]="newMission.vehicleId" name="vehicleId" required class="form-input">
+                  <option value="">-- Choisir véhicule --</option>
+                  <option *ngFor="let v of vehicles$ | async" [value]="v.id">
+                    {{ v.registrationNumber }} ({{ v.make }} {{ v.model }})
+                  </option>
+                </select>
+              </div>
 
-          <div class="form-group" *ngIf="geoSites$ | async as sites">
-            <label for="m-dest-site">Destination (Site Favori ou Libre) *</label>
-            <select
-              id="m-dest-site"
-              [(ngModel)]="newMission.destinationSiteId"
-              name="destinationSiteId"
-              (ngModelChange)="onDestinationSiteChange($event, sites)"
-              class="form-input"
-            >
-              <option value="">-- Saisie libre ou sélectionner un site --</option>
-              <option *ngFor="let s of sites" [value]="s.id">
-                🏁 {{ s.name }} ({{ s.address }})
-              </option>
-            </select>
-            <input
-              type="text"
-              [(ngModel)]="newMission.destinationName"
-              name="destinationName"
-              placeholder="Adresse ou nom de la destination"
-              class="form-input"
-              style="margin-top: 0.35rem;"
-              required
-            />
-          </div>
+              <div class="form-group">
+                <label for="m-driver">Chauffeur responsable *</label>
+                <select id="m-driver" [(ngModel)]="newMission.driverId" name="driverId" required class="form-input">
+                  <option value="">-- Choisir chauffeur --</option>
+                  <option *ngFor="let d of drivers$ | async" [value]="d.id">
+                    {{ d.fullName }}
+                  </option>
+                </select>
+              </div>
+            </div>
 
-          <div class="form-group">
-            <label for="m-dist">Distance estimée (km)</label>
-            <input
-              id="m-dist"
-              type="number"
-              [(ngModel)]="newMission.distanceKm"
-              name="distanceKm"
-              min="1"
-              class="form-input"
-            />
-          </div>
+            <!-- Départ & Arrivée synchronisés avec la carte -->
+            <div class="form-row-2" *ngIf="geoSites$ | async as sites">
+              <div class="form-group">
+                <label for="m-origin-site">Départ (Site ou pointer sur la carte) *</label>
+                <select
+                  id="m-origin-site"
+                  [(ngModel)]="newMission.originSiteId"
+                  name="originSiteId"
+                  (ngModelChange)="onOriginSiteChange($event, sites)"
+                  class="form-input"
+                >
+                  <option value="">-- Site favori ou carte --</option>
+                  <option *ngFor="let s of sites" [value]="s.id">
+                    {{ s.name }}
+                  </option>
+                </select>
+                <input
+                  type="text"
+                  [(ngModel)]="newMission.originName"
+                  name="originName"
+                  placeholder="Adresse d'origine"
+                  class="form-input"
+                  style="margin-top: 0.35rem;"
+                  required
+                />
+              </div>
 
-          <div class="form-group">
-            <label for="m-time">Date & Heure de départ planifiée</label>
-            <input
-              id="m-time"
-              type="datetime-local"
-              [(ngModel)]="newMission.plannedStartTime"
-              name="plannedStartTime"
-              class="form-input"
-            />
-          </div>
-        </div>
+              <div class="form-group">
+                <label for="m-dest-site">Destination (Site ou pointer sur la carte) *</label>
+                <select
+                  id="m-dest-site"
+                  [(ngModel)]="newMission.destinationSiteId"
+                  name="destinationSiteId"
+                  (ngModelChange)="onDestinationSiteChange($event, sites)"
+                  class="form-input"
+                >
+                  <option value="">-- Site favori ou carte --</option>
+                  <option *ngFor="let s of sites" [value]="s.id">
+                    {{ s.name }}
+                  </option>
+                </select>
+                <input
+                  type="text"
+                  [(ngModel)]="newMission.destinationName"
+                  name="destinationName"
+                  placeholder="Adresse destination"
+                  class="form-input"
+                  style="margin-top: 0.35rem;"
+                  required
+                />
+              </div>
+            </div>
 
-        <div class="form-group">
-          <label for="m-notes">Consignes de transport & Corridor imposé</label>
-          <textarea
-            id="m-notes"
-            [(ngModel)]="newMission.notes"
-            name="notes"
-            rows="2"
-            placeholder="ex: Emprunter obligatoirement la VDN ou la RN1. Vitesse limitée à 70 km/h."
-            class="form-input"
-          ></textarea>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="m-time">Date & Heure départ</label>
+                <input
+                  id="m-time"
+                  type="datetime-local"
+                  [(ngModel)]="newMission.plannedStartTime"
+                  name="plannedStartTime"
+                  class="form-input"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="m-notes">Consignes / Corridor</label>
+                <input
+                  id="m-notes"
+                  type="text"
+                  [(ngModel)]="newMission.notes"
+                  name="notes"
+                  placeholder="ex: Emprunter la VDN ou la RN1..."
+                  class="form-input"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" (click)="closeModal()">Annuler</button>
           <button type="submit" class="btn btn-primary">
-            <span class="material-symbols-outlined">satellite_alt</span>
-            <span>Enregistrer et Activer la Surveillance Télématique</span>
+            <span class="material-symbols-outlined">check</span>
+            <span>Enregistrer la Mission</span>
           </button>
         </div>
       </form>

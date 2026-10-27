@@ -102,6 +102,7 @@ export interface Mission {
   vehicleReg: string;
   driverId: string;
   driverName: string;
+  driverPhone?: string;
   originName: string;
   destinationName: string;
   originSiteId?: string;       // Raccordement aux Sites Favoris (Phase 3)
@@ -140,6 +141,10 @@ export interface Alert {
   vehicleReg: string;
   driverName?: string;
   missionId?: string;
+  routeInfo?: string;          // ex: "Point E -> Almadies"
+  detectedLocation?: string;   // ex: "Zone Aéroport Léopold Sédar Senghor (hors trajet)"
+  currentSpeedKph?: number;    // ex: 98
+  maxSpeedAllowed?: number;    // ex: 80
   occurredAt: string;
   status: AlertStatus;
   description: string;
@@ -163,7 +168,7 @@ export interface TripEvent {
   comment?: string;
 }
 
-export type SiteCategory = 'DEPOT_CLIENT' | 'STATION_SERVICE' | 'PORT_LOGISTIQUE' | 'USINE_CHANTIER' | 'SIEGE_ENTREPRISE';
+export type SiteCategory = 'DEPOT' | 'CLIENT' | 'AUTRE' | 'DEPOT_CLIENT' | 'STATION_SERVICE' | 'PORT_LOGISTIQUE' | 'USINE_CHANTIER' | 'SIEGE_ENTREPRISE';
 
 export interface GeoSite {
   id: string;

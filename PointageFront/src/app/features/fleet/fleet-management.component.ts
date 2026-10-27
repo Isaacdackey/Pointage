@@ -26,6 +26,34 @@ export class FleetManagementComponent {
   trackers$ = this.mockService.getTrackers();
   maintenanceRecords$ = this.mockService.getMaintenanceRecords();
 
+  // Alertes 30 jours et expirations
+  get vehiclesExpiringSoon$() {
+    return this.vehicles$.pipe(
+      map(list => list.filter(v => this.isExpiringSoon(v.technicalInspectionExpiry) || this.isExpiringSoon(v.insuranceExpiry)))
+    );
+  }
+
+  get vehiclesExpired$() {
+    return this.vehicles$.pipe(
+      map(list => list.filter(v => this.isExpired(v.technicalInspectionExpiry) || this.isExpired(v.insuranceExpiry)))
+    );
+  }
+
+  isExpiringSoon(dateStr: string | undefined): boolean {
+    if (!dateStr) return false;
+    const expiry = new Date(dateStr).getTime();
+    const now = new Date().getTime();
+    const diffDays = (expiry - now) / (1000 * 3600 * 24);
+    return diffDays > 0 && diffDays <= 30;
+  }
+
+  isExpired(dateStr: string | undefined): boolean {
+    if (!dateStr) return false;
+    const expiry = new Date(dateStr).getTime();
+    const now = new Date().getTime();
+    return expiry < now;
+  }
+
   // Pagination Véhicules
   currentPageVehicles = 1;
   pageSizeVehicles = 6;
@@ -136,6 +164,23 @@ export class FleetManagementComponent {
       costCfa: 45000,
       status: 'TERMINEE'
     };
+    this.isAddMaintenanceOpen = true;
+  }
+
+  reportBreakdown(vehicle: any) {
+    this.newMaintenance = {
+      vehicleId: vehicle.id,
+      vehicleReg: vehicle.registrationNumber,
+      type: 'REPARATION',
+      title: `Signalement Panne Mécanique - ${vehicle.registrationNumber}`,
+      description: `Panne signalée le ${new Date().toLocaleDateString('fr-FR')}. Immobilisation et diagnostic garage requis.`,
+      serviceDate: new Date().toISOString().substring(0, 10),
+      odometerKm: vehicle.odometerKm || 50000,
+      provider: 'Garage Central Dakar',
+      costCfa: 0,
+      status: 'PLANIFIEE'
+    };
+    this.activeTab = 'MAINTENANCE';
     this.isAddMaintenanceOpen = true;
   }
 

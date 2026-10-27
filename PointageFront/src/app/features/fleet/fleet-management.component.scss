@@ -103,6 +103,111 @@
   font-weight: 600;
 }
 
+// Bannières alertes échéances
+.expiration-alerts-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.alert-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.85rem 1.25rem;
+  border-radius: var(--r-md);
+  font-size: var(--text-sm);
+
+  .alert-box-icon {
+    font-size: 22px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .alert-box-content {
+    line-height: 1.45;
+
+    strong {
+      margin-right: 0.35rem;
+    }
+
+    .plate-mini {
+      background: var(--surface);
+      padding: 0.1rem 0.35rem;
+      border-radius: var(--r-xs);
+      font-family: monospace;
+      font-size: 0.85em;
+      border: 1px solid var(--line);
+    }
+  }
+
+  &.alert-warning-box {
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #f59e0b;
+
+    .alert-box-content {
+      color: var(--ink);
+    }
+  }
+
+  &.alert-critical-box {
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+
+    .alert-box-content {
+      color: var(--ink);
+    }
+  }
+}
+
+.docs-status-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.75rem;
+
+  .badge-exp-warn {
+    color: #f59e0b;
+    font-weight: 700;
+  }
+
+  .badge-exp-crit {
+    color: #ef4444;
+    font-weight: 700;
+    background: rgba(239, 68, 68, 0.12);
+    padding: 0.1rem 0.35rem;
+    border-radius: var(--r-xs);
+  }
+}
+
+.btn-report-breakdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--r-md);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  .material-symbols-outlined {
+    font-size: 15px;
+    color: #f59e0b;
+  }
+
+  &:hover {
+    background: rgba(245, 158, 11, 0.1);
+    border-color: #f59e0b;
+    color: #f59e0b;
+  }
+}
+
 .badge-proto {
   background: var(--surface-alt);
   color: var(--ink-2);

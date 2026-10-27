@@ -223,6 +223,45 @@
   }
 }
 
+.layer-switcher-group {
+  display: flex;
+  gap: 0.25rem;
+  background: var(--surface-alt);
+  padding: 0.25rem;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+
+  .layer-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: transparent;
+    border: none;
+    color: var(--ink-2);
+    padding: 0.35rem 0.65rem;
+    border-radius: var(--r-sm);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    .material-symbols-outlined {
+      font-size: 16px;
+    }
+
+    &:hover {
+      color: var(--ink);
+      background: var(--surface-hover);
+    }
+
+    &.active {
+      background: var(--brand-solid);
+      color: var(--text-on-brand);
+      box-shadow: var(--shadow-sm);
+    }
+  }
+}
+
 .wallboard-actions {
   display: flex;
   gap: 0.4rem;

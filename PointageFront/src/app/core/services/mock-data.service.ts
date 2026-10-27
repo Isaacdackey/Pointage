@@ -335,6 +335,7 @@ export class MockDataService {
       vehicleReg: 'DK-4920-BA',
       driverId: 'd1',
       driverName: 'Mamadou Diallo',
+      driverPhone: '+221 77 123 45 67',
       originName: 'Port Autonome de Dakar (Quai 4)',
       destinationName: 'Plateforme Industrielle Diamniadio',
       originSiteId: 'site-3',
@@ -361,6 +362,7 @@ export class MockDataService {
       vehicleReg: 'DK-8112-BB',
       driverId: 'd2',
       driverName: 'Abdoulaye Ndiaye',
+      driverPhone: '+221 78 456 78 90',
       originName: 'Siège GeoFleet & Dépôt Central',
       destinationName: 'Dakar Plateau Commercial',
       originSiteId: 'site-5',
@@ -387,6 +389,7 @@ export class MockDataService {
       vehicleReg: 'TH-3310-A',
       driverId: 'd3',
       driverName: 'Ousmane Sow',
+      driverPhone: '+221 70 889 01 23',
       originName: 'DP World - Terminal à Conteneurs',
       destinationName: 'Plateforme Industrielle Diamniadio',
       originSiteId: 'site-3',
@@ -411,6 +414,7 @@ export class MockDataService {
       vehicleReg: 'DK-4920-BA',
       driverId: 'd1',
       driverName: 'Mamadou Diallo',
+      driverPhone: '+221 77 123 45 67',
       originName: 'Siège GeoFleet & Dépôt Central',
       destinationName: 'Rufisque Centre',
       originSiteId: 'site-5',
@@ -439,32 +443,55 @@ export class MockDataService {
       vehicleReg: 'DK-8112-BB',
       driverName: 'Abdoulaye Ndiaye',
       missionId: 'm2',
-      occurredAt: 'Il y a 12 min',
+      routeInfo: 'Point E ➔ Almadies (Livraison)',
+      detectedLocation: 'Axe Aéroport Léopold Sédar Senghor (Yoff)',
+      occurredAt: 'Il y a 6 min',
       status: 'NOUVELLE',
-      description: 'Véhicule en dehors du corridor de livraison convenu (Zone Corniche Ouest).'
+      description: 'DÉVIATION CRITIQUE : Le véhicule devait effectuer la liaison Point E ➔ Almadies mais a été localisé à l\'Aéroport (hors zone et à l\'opposé du corridor autorisé).'
     },
     {
       id: 'alt-2',
       type: 'PERTE_SIGNAL',
-      severity: 'MAJEURE',
+      severity: 'CRITIQUE',
       vehicleId: 'v4',
       vehicleReg: 'DK-1092-BC',
-      occurredAt: 'Il y a 2 h',
+      driverName: 'Ibrahima Ba',
+      detectedLocation: 'Dernière trame : Grand Yoff (Immobile)',
+      occurredAt: 'Il y a 2 h 15',
       status: 'PRISE_EN_CHARGE',
-      assignedTo: 'Agent Samba Kane',
-      description: 'Aucune trame GPS reçue depuis 120 minutes (seuil max : 15 min).'
+      assignedTo: 'Superviseur Logistique (Amadou)',
+      actionType: 'Appel Chauffeur',
+      description: 'PERTE DE SIGNAL GPS : Aucune trame reçue depuis 135 minutes (seuil d\'alerte : 15 min). Traceur potentiellement déconnecté ou zone blanche prolongée.'
     },
     {
       id: 'alt-3',
       type: 'EXCES_VITESSE',
-      severity: 'MINEURE',
+      severity: 'MAJEURE',
       vehicleId: 'v1',
       vehicleReg: 'DK-4920-BA',
       driverName: 'Mamadou Diallo',
       missionId: 'm1',
-      occurredAt: 'Il y a 35 min',
-      status: 'CLOTUREE',
-      description: 'Vitesse de 96 km/h constatée sur la voie rapide limitée à 90 km/h.'
+      routeInfo: 'Dépôt Hann Bel-Air ➔ Diamniadio',
+      detectedLocation: 'Autoroute à Péage (Tronçon Rufisque Est)',
+      currentSpeedKph: 108,
+      maxSpeedAllowed: 80,
+      occurredAt: 'Il y a 14 min',
+      status: 'NOUVELLE',
+      description: 'EXCÈS DE VITESSE : Vitesse instantanée de 108 km/h transmise par le traceur GPS (vitesse maximale autorisée pour ce type de véhicule : 80 km/h).'
+    },
+    {
+      id: 'alt-4',
+      type: 'RETARD',
+      severity: 'MINEURE',
+      vehicleId: 'v6',
+      vehicleReg: 'DK-7788-BE',
+      driverName: 'Ousmane Sow',
+      missionId: 'm3',
+      routeInfo: 'Port Autonome ➔ Entrepôt Thiaroye',
+      detectedLocation: 'Embouteillage Route de Rufisque',
+      occurredAt: 'Il y a 25 min',
+      status: 'NOUVELLE',
+      description: 'RETARD DE LIVRAISON : Pointage destination dépassé de +30 min par rapport à l\'ETA estimé en raison de ralentissements signalés.'
     }
   ]);
 
@@ -861,6 +888,10 @@ export class MockDataService {
 
   getMaintenanceRecords(): Observable<MaintenanceRecord[]> {
     return this.maintenanceRecords$.asObservable();
+  }
+
+  getMaintenanceRecordsDirect(): MaintenanceRecord[] {
+    return this.maintenanceRecords$.getValue();
   }
 
   addMaintenanceRecord(record: Omit<MaintenanceRecord, 'id'>): MaintenanceRecord {

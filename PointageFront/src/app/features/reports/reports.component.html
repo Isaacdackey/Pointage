@@ -1,134 +1,276 @@
-<div class="reports-container">
-      <app-page-header
-        title="Rapports & Synthèse d'Activité de Flotte"
-        subtitle="Analyse consolidée des trajets, ponctualité des pointages et consommation estimée."
-      >
-        <div class="export-actions">
-          <button (click)="exportData('CSV')" class="btn btn-outline">
-            <span class="material-symbols-outlined" aria-hidden="true">description</span>
-            Export CSV
-          </button>
-          <button (click)="exportData('EXCEL')" class="btn btn-outline">
-            <span class="material-symbols-outlined" aria-hidden="true">table_view</span>
-            Export XLSX
-          </button>
-          <button (click)="exportData('PDF')" class="btn btn-primary">
-            <span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>
-            Rapport PDF
-          </button>
-        </div>
-      </app-page-header>
-
-      <!-- Filter Controls Bar -->
-      <section class="card filters-panel" aria-label="Filtres de rapport">
-        <div class="filter-item">
-          <label for="periodSelect">Période d'analyse :</label>
-          <select id="periodSelect" [(ngModel)]="selectedPeriod" class="form-input">
-            <option value="TODAY">Aujourd'hui</option>
-            <option value="THIS_WEEK">7 derniers jours</option>
-            <option value="THIS_MONTH">Ce mois (Octobre 2026)</option>
-            <option value="CUSTOM">Période personnalisée</option>
-          </select>
-        </div>
-
-        <div class="filter-item">
-          <label for="vehicleScopeSelect">Périmètre Véhicules :</label>
-          <select id="vehicleScopeSelect" [(ngModel)]="vehicleFilter" class="form-input">
-            <option value="ALL">Tous les véhicules ({{ rawData.length }})</option>
-            <option value="ACTIVE">Véhicules en circulation ({{ countByCategory('ACTIVE') }})</option>
-            <option value="AVAILABLE">Disponibles ({{ countByCategory('AVAILABLE') }})</option>
-          </select>
-        </div>
-
-        <div class="filter-item">
-          <label for="statusFilterSelect">Conformité Pointage :</label>
-          <select id="statusFilterSelect" [(ngModel)]="statusFilter" class="form-input">
-            <option value="ALL">Tous les trajets</option>
-            <option value="ONTIME">Trajets à l'heure (&ge; 90%)</option>
-            <option value="DELAY">Avec retards déclarés (< 90%)</option>
-          </select>
-        </div>
-      </section>
-
-      <!-- KPI Summary Cards - Calculated Dynamically -->
-      <section class="kpi-row" aria-label="Statistiques agrégées">
-        <div class="kpi-mini-card">
-          <span class="kpi-lbl">Distance Totale Parcourue</span>
-          <div class="kpi-val">{{ totalKmCalculated }} km</div>
-          <span class="kpi-trend positive">&uarr; +14% vs semaine précédente</span>
-        </div>
-
-        <div class="kpi-mini-card">
-          <span class="kpi-lbl">Taux de Ponctualité Moyen</span>
-          <div class="kpi-val green-text">{{ avgOntimeCalculated }}%</div>
-          <span class="kpi-trend">Départs et arrivées validés</span>
-        </div>
-
-        <div class="kpi-mini-card">
-          <span class="kpi-lbl">Total Missions Traitées</span>
-          <div class="kpi-val">{{ totalMissionsCalculated }}</div>
-          <span class="kpi-trend">Sur le périmètre filtré</span>
-        </div>
-
-        <div class="kpi-mini-card">
-          <span class="kpi-lbl">Carburant Estimé</span>
-          <div class="kpi-val">{{ totalFuelCalculated }} Litres</div>
-          <span class="kpi-trend">Conso moyenne flotte</span>
-        </div>
-      </section>
-
-      <!-- Detailed Report Table -->
-      <section class="card" aria-labelledby="report-table-title">
-        <div class="card-top">
-          <h2 id="report-table-title" class="section-title">Bilan Détaillé par Véhicule & Chauffeur</h2>
-          <span class="badge-count">{{ filteredReports.length }} véhicule(s) affiché(s)</span>
-        </div>
-
-        <div class="table-container">
-          <table class="data-table data-table--stack">
-            <caption class="sr-only">Tableau récapitulatif des performances par véhicule et chauffeur</caption>
-            <thead>
-              <tr>
-                <th scope="col">Immatriculation</th>
-                <th scope="col">Chauffeur Titulaire</th>
-                <th scope="col" class="num-cell">Missions</th>
-                <th scope="col" class="num-cell">Km Parcourus</th>
-                <th scope="col" class="num-cell">Vitesse Moy.</th>
-                <th scope="col">Taux Ponctualité</th>
-                <th scope="col" style="text-align: center;">Anomalies</th>
-                <th scope="col" class="num-cell">Conso Est.</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let row of filteredReports">
-                <td data-label="Immatriculation"><strong class="plate-code">{{ row.vehicleReg }}</strong></td>
-                <td data-label="Chauffeur">{{ row.driverName }}</td>
-                <td data-label="Missions" class="num-cell"><strong>{{ row.totalMissions }}</strong></td>
-                <td data-label="Km Parcourus" class="num-cell">{{ row.totalKm }} km</td>
-                <td data-label="Vitesse Moy." class="num-cell">{{ row.avgSpeedKph }} km/h</td>
-                <td data-label="Ponctualité">
-                  <div class="progress-wrap" role="progressbar" [attr.aria-valuenow]="row.ontimePercent" aria-valuemin="0" aria-valuemax="100">
-                    <div class="progress-track">
-                      <div class="progress-fill" [style.width.%]="row.ontimePercent"></div>
-                    </div>
-                    <span class="pct">{{ row.ontimePercent }}%</span>
-                  </div>
-                </td>
-                <td data-label="Anomalies" style="text-align: center;">
-                  <span class="alert-count-pill" [class.has-alerts]="row.alertsCount > 0">
-                    <span class="material-symbols-outlined" style="font-size: 14px;" aria-hidden="true">warning</span>
-                    {{ row.alertsCount }}
-                  </span>
-                </td>
-                <td data-label="Conso Est." class="num-cell">{{ row.fuelEstimatedLiters }} L</td>
-              </tr>
-              <tr *ngIf="filteredReports.length === 0">
-                <td colspan="8" class="empty-cell">
-                  Aucun résultat ne correspond aux filtres appliqués.
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+<div class="maintenance-page-container">
+  <app-page-header
+    title="Carnet d'Entretien & Gestion des Pannes"
+    subtitle="Remplacement télématique du suivi carburant : carnet d'entretien numérique par véhicule, suivi des vidanges, visites techniques, réparations et déclaration immédiate de pannes."
+  >
+    <div class="header-actions">
+      <button (click)="openAddMaintenance()" class="btn btn-primary">
+        <span class="material-symbols-outlined" aria-hidden="true">build</span>
+        Signaler Panne / Nouvelle Intervention
+      </button>
     </div>
+  </app-page-header>
+
+  <!-- Note méthodologique conforme mentor & retranscription -->
+  <div class="maintenance-banner">
+    <div class="banner-icon">
+      <span class="material-symbols-outlined">car_repair</span>
+    </div>
+    <div class="banner-text">
+      <strong>Carnet Numérique & Maintenance Flotte (Directives Mentor) :</strong>
+      <span>
+        Le suivi carburant par capteur a été supprimé au profit de la maintenance préventive et curative. Chaque véhicule dispose de son carnet numérique horodaté (vidanges périodiques, visites techniques, pneumatiques, réparations mécaniques et signalements de pannes).
+      </span>
+    </div>
+  </div>
+
+  <!-- KPI Cards Maintenance -->
+  <section class="kpi-row" aria-label="Indicateurs de maintenance">
+    <div class="kpi-mini-card">
+      <span class="kpi-lbl">Total Interventions</span>
+      <div class="kpi-val">{{ totalInterventions }}</div>
+      <span class="kpi-trend">Opérations enregistrées</span>
+    </div>
+
+    <div class="kpi-mini-card">
+      <span class="kpi-lbl">Véhicules Immobilisés / Atelier</span>
+      <div class="kpi-val" [class.warn-text]="vehiclesUnderMaintenanceCount > 0">{{ vehiclesUnderMaintenanceCount }}</div>
+      <span class="kpi-trend">En cours de réparation</span>
+    </div>
+
+    <div class="kpi-mini-card">
+      <span class="kpi-lbl">Interventions Planifiées</span>
+      <div class="kpi-val">{{ pendingRepairsCount }}</div>
+      <span class="kpi-trend">En attente garage</span>
+    </div>
+
+    <div class="kpi-mini-card">
+      <span class="kpi-lbl">Budget Entretien Cumulé</span>
+      <div class="kpi-val">{{ formatNumber(totalCostCfa) }} <small style="font-size: 0.9rem;">FCFA</small></div>
+      <span class="kpi-trend">Factures prestataires</span>
+    </div>
+  </section>
+
+  <!-- Filtres et Recherche de Maintenance -->
+  <div class="filters-search-bar card">
+    <div class="search-input-wrapper">
+      <span class="material-symbols-outlined search-icon" aria-hidden="true">search</span>
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        placeholder="Rechercher par véhicule (DK-...), travaux, panne, garage..."
+        class="search-input"
+        aria-label="Rechercher une intervention"
+      />
+      <button
+        *ngIf="searchQuery"
+        type="button"
+        class="btn-clear"
+        (click)="searchQuery = ''"
+        aria-label="Effacer la recherche"
+      >
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <div class="filter-controls">
+      <select [(ngModel)]="filterType" class="form-input filter-select" aria-label="Filtrer par type">
+        <option value="ALL">Tous les types d'interventions</option>
+        <option value="REPARATION">Réparations mécaniques & Pannes</option>
+        <option value="VIDANGE">Vidanges moteur & filtres</option>
+        <option value="VISITE_TECHNIQUE">Visites techniques</option>
+        <option value="FREINAGE">Freinage (plaquettes, disques)</option>
+        <option value="PNEUMATIQUE">Pneumatiques / Parallélisme</option>
+        <option value="ACCIDENT">Sinistres / Accidents</option>
+      </select>
+
+      <select [(ngModel)]="filterStatus" class="form-input filter-select" aria-label="Filtrer par statut">
+        <option value="ALL">Tous les statuts</option>
+        <option value="PLANIFIEE">Planifiées / En attente</option>
+        <option value="TERMINEE">Terminées / Réalisées</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Table Historique & Carnet d'Entretien -->
+  <section class="card" aria-label="Historique maintenance">
+    <div class="card-top">
+      <h2 class="section-title">Carnet d'Entretien Numérique & Historique des Travaux</h2>
+      <span class="badge-count">{{ filteredRecords(maintenanceRecords$ | async).length }} intervention(s)</span>
+    </div>
+
+    <div class="table-container">
+      <table class="data-table data-table--stack">
+        <thead>
+          <tr>
+            <th scope="col">Date</th>
+            <th scope="col">Véhicule</th>
+            <th scope="col">Type d'Intervention</th>
+            <th scope="col">Détails des Travaux</th>
+            <th scope="col">Prestataire / Garage</th>
+            <th scope="col" class="num-cell">Kilométrage</th>
+            <th scope="col" class="num-cell">Montant (FCFA)</th>
+            <th scope="col" style="text-align: right;">Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let m of filteredRecords(maintenanceRecords$ | async)">
+            <td data-label="Date">{{ m.serviceDate }}</td>
+            <td data-label="Véhicule"><strong class="plate-code">{{ m.vehicleReg }}</strong></td>
+            <td data-label="Type">
+              <span class="maint-type-pill" [ngClass]="{
+                'type-vidange': m.type === 'VIDANGE',
+                'type-vt': m.type === 'VISITE_TECHNIQUE',
+                'type-reparation': m.type === 'REPARATION' || m.type === 'ACCIDENT',
+                'type-autre': m.type === 'FREINAGE' || m.type === 'PNEUMATIQUE'
+              }">
+                {{ m.type }}
+              </span>
+            </td>
+            <td data-label="Détails">
+              <strong>{{ m.title }}</strong>
+              <div style="font-size: 0.8rem; color: var(--ink-3);">{{ m.description }}</div>
+            </td>
+            <td data-label="Prestataire">{{ m.provider }}</td>
+            <td data-label="Kilométrage" class="num-cell">{{ formatNumber(m.odometerKm) }} km</td>
+            <td data-label="Montant" class="num-cell"><strong>{{ formatNumber(m.costCfa) }} FCFA</strong></td>
+            <td data-label="Statut" style="text-align: right;">
+              <span class="status-maint-pill" [class.done]="m.status === 'TERMINEE'" [class.planned]="m.status === 'PLANIFIEE'">
+                {{ m.status }}
+              </span>
+            </td>
+          </tr>
+
+          <tr *ngIf="filteredRecords(maintenanceRecords$ | async).length === 0">
+            <td colspan="8" class="empty-cell">
+              Aucune intervention ne correspond à votre filtre ou recherche.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Modal Signaler une Panne / Planifier une Maintenance -->
+  <div *ngIf="isAddMaintenanceOpen" class="modal-backdrop" (click)="closeAddMaintenance()" role="dialog" aria-modal="true">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-header-title">
+          <span class="material-symbols-outlined modal-icon">build</span>
+          <h2>Signaler une Panne / Planifier Maintenance</h2>
+        </div>
+        <button class="btn-icon" (click)="closeAddMaintenance()" aria-label="Fermer">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <form (ngSubmit)="saveMaintenance()" class="modal-form">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="rep-m-veh">Véhicule concerné *</label>
+            <select id="rep-m-veh" [(ngModel)]="newMaintenance.vehicleId" name="vehicleId" required class="form-input">
+              <option *ngFor="let v of vehicles$ | async" [value]="v.id">
+                {{ v.registrationNumber }} - {{ v.make }} {{ v.model }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="rep-m-type">Type d'intervention *</label>
+            <select id="rep-m-type" [(ngModel)]="newMaintenance.type" name="type" required class="form-input">
+              <option value="REPARATION">Réparation mécanique / Panne</option>
+              <option value="VIDANGE">Vidange moteur & filtres</option>
+              <option value="VISITE_TECHNIQUE">Visite technique périodique</option>
+              <option value="FREINAGE">Freinage (plaquettes, disques)</option>
+              <option value="PNEUMATIQUE">Pneumatiques / Parallélisme</option>
+              <option value="ACCIDENT">Constat accident / Sinistre</option>
+              <option value="AUTRE">Autre entretien</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="rep-m-title">Intitulé de la panne ou intervention *</label>
+            <input
+              id="rep-m-title"
+              type="text"
+              [(ngModel)]="newMaintenance.title"
+              name="title"
+              required
+              placeholder="ex: Panne alternateur ou Remplacement courroie distribution"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="rep-m-desc">Description & pièces remplacées</label>
+            <textarea
+              id="rep-m-desc"
+              [(ngModel)]="newMaintenance.description"
+              name="description"
+              rows="2"
+              placeholder="Constat du dysfonctionnement ou détails des opérations garage..."
+              class="form-input"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="rep-m-date">Date de l'intervention *</label>
+            <input
+              id="rep-m-date"
+              type="date"
+              [(ngModel)]="newMaintenance.serviceDate"
+              name="serviceDate"
+              required
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="rep-m-cost">Coût estimé ou facture (FCFA)</label>
+            <input
+              id="rep-m-cost"
+              type="number"
+              [(ngModel)]="newMaintenance.costCfa"
+              name="costCfa"
+              min="0"
+              step="1000"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="rep-m-prov">Garage / Prestataire</label>
+            <input
+              id="rep-m-prov"
+              type="text"
+              [(ngModel)]="newMaintenance.provider"
+              name="provider"
+              placeholder="ex: Garage Central Dakar"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="rep-m-km">Kilométrage compteur</label>
+            <input
+              id="rep-m-km"
+              type="number"
+              [(ngModel)]="newMaintenance.odometerKm"
+              name="odometerKm"
+              min="0"
+              class="form-input"
+            />
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" (click)="closeAddMaintenance()">Annuler</button>
+          <button type="submit" class="btn btn-primary">
+            <span class="material-symbols-outlined">save</span>
+            <span>Enregistrer dans le carnet</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -37,18 +37,44 @@ export class LiveMapComponent implements AfterViewInit, OnDestroy {
   // Mode Salle d'Opérations & Grand Écran TV
   isWallboardFullscreen = false;
   showSitesLayer = true;
+  activeMapLayer: 'osm' | 'satellite' | 'dark' = 'osm';
 
   private tileLayer!: L.TileLayer;
   private sub?: Subscription;
   private sitesSub?: Subscription;
 
-  // Tuiles OpenStreetMap 100% gratuites sans clé API requise
-  private readonly osmTilesUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  // Couches cartographiques 100% gratuites sans clé API ni carte bancaire
+  private readonly mapLayers = {
+    osm: {
+      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributeurs',
+      maxZoom: 19,
+      className: ''
+    },
+    satellite: {
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+      maxZoom: 18,
+      className: ''
+    },
+    dark: {
+      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributeurs',
+      maxZoom: 19,
+      className: 'leaflet-dark-tiles'
+    }
+  };
 
   constructor() {
     // Réaction au changement de thème pour rafraîchir les pins
     effect(() => {
-      this.themeService.isDark();
+      const isDark = this.themeService.isDark();
+      // Si le mode sombre est activé et qu'on est en vue OSM standard, basculer automatiquement sur CartoDB Dark
+      if (isDark && this.activeMapLayer === 'osm') {
+        this.setMapLayer('dark');
+      } else if (!isDark && this.activeMapLayer === 'dark') {
+        this.setMapLayer('osm');
+      }
       this.renderVehicleMarkers();
       if (this.showSitesLayer) {
         this.renderGeofenceSites();
@@ -70,10 +96,29 @@ export class LiveMapComponent implements AfterViewInit, OnDestroy {
     // Contrôles de zoom repositionnés en haut à droite
     L.control.zoom({ position: 'topright' }).addTo(this.map);
 
-    this.tileLayer = L.tileLayer(this.osmTilesUrl, {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributeurs',
-      maxZoom: 19
+    const initialLayer = this.themeService.isDark() ? 'dark' : 'osm';
+    this.activeMapLayer = initialLayer;
+    const cfg = this.mapLayers[initialLayer];
+    this.tileLayer = L.tileLayer(cfg.url, {
+      attribution: cfg.attribution,
+      maxZoom: cfg.maxZoom,
+      className: cfg.className
     }).addTo(this.map);
+  }
+
+  setMapLayer(layer: 'osm' | 'satellite' | 'dark'): void {
+    this.activeMapLayer = layer;
+    if (this.tileLayer && this.map) {
+      this.map.removeLayer(this.tileLayer);
+      const cfg = this.mapLayers[layer];
+      this.tileLayer = L.tileLayer(cfg.url, {
+        attribution: cfg.attribution,
+        maxZoom: cfg.maxZoom,
+        className: cfg.className
+      }).addTo(this.map);
+      // Remettre la couche sous les marqueurs et polylignes
+      this.tileLayer.bringToBack();
+    }
   }
 
 
@@ -112,15 +157,34 @@ export class LiveMapComponent implements AfterViewInit, OnDestroy {
     this.sub = this.mockService.getVehicles().subscribe(data => {
       this.vehicles = data;
       this.renderVehicleMarkers();
+    });
 
-      const targetVehicleId = this.route.snapshot.queryParams['vehicle'];
-      if (targetVehicleId) {
+    // 3. Détecter le véhicule passé dans l'URL (bouton Action) et tracer immédiatement son itinéraire
+    const querySub = this.route.queryParams.subscribe(params => {
+      const targetVehicleId = params['vehicle'];
+      if (targetVehicleId && this.vehicles.length > 0) {
         const v = this.vehicles.find(item => item.id === targetVehicleId);
         if (v) {
           this.selectVehicle(v);
+          setTimeout(() => {
+            this.traceHistoricTrip();
+          }, 300);
         }
       }
     });
+    this.sub?.add(querySub);
+
+    // 4. Balayer automatiquement le tracé dès qu'une mission est marquée terminée (Directive Mentor Audio)
+    const missionSub = this.mockService.getMissions().subscribe(missions => {
+      if (this.selectedVehicle && this.isTripTraceActive) {
+        const activeMission = missions.find(m => m.vehicleId === this.selectedVehicle?.id && (m.status === 'EN_COURS' || m.status === 'EN_ANOMALIE'));
+        // Si aucune mission active n'existe pour ce véhicule (ex: mission terminée ou clôturée)
+        if (!activeMission) {
+          this.clearHistoricTrip();
+        }
+      }
+    });
+    this.sub?.add(missionSub);
   }
 
   get displayedVehicles(): Vehicle[] {
@@ -170,7 +234,7 @@ export class LiveMapComponent implements AfterViewInit, OnDestroy {
       }).addTo(this.map);
 
       circle.bindTooltip(
-        `<strong>📍 ${site.name}</strong><br/>Rayon télématique : ${site.radiusMeters}m<br/>Arrêt min. : ${site.minStopDurationMinutes} min`,
+        `<div style="display:flex;align-items:center;gap:4px;"><span class="material-symbols-outlined" style="font-size:16px;color:#3b82f6;">pin_drop</span><strong>${site.name}</strong></div>Rayon télématique : ${site.radiusMeters}m<br/>Arrêt min. : ${site.minStopDurationMinutes} min`,
         { direction: 'top' }
       );
       this.siteCircles.push(circle);
@@ -301,6 +365,8 @@ export class LiveMapComponent implements AfterViewInit, OnDestroy {
     }
   }
 
+  private tripWaypointMarkers: L.Marker[] = [];
+
   clearHistoricTrip(): void {
     if (this.polyline && this.map) {
       this.map.removeLayer(this.polyline);
@@ -309,6 +375,11 @@ export class LiveMapComponent implements AfterViewInit, OnDestroy {
     if (this.tripStartMarker && this.map) {
       this.map.removeLayer(this.tripStartMarker);
       this.tripStartMarker = undefined;
+    }
+    // Nettoyer les jalons numérotés
+    if (this.tripWaypointMarkers.length > 0 && this.map) {
+      this.tripWaypointMarkers.forEach(m => this.map.removeLayer(m));
+      this.tripWaypointMarkers = [];
     }
     this.isTripTraceActive = false;
 
@@ -371,6 +442,24 @@ export class LiveMapComponent implements AfterViewInit, OnDestroy {
     });
 
     this.tripStartMarker = L.marker(startPos, { icon: startIcon }).addTo(this.map);
+
+    // Jalons intermédiaires numérotés conformément aux audios (« points numérotés 1, 2, 3 avec l'heure »)
+    tripCoords.slice(1, -1).forEach((coord, idx) => {
+      const pointNum = idx + 1;
+      const ptIcon = L.divIcon({
+        className: 'custom-telematics-pin',
+        html: `
+          <div style="background: var(--surface); color: var(--brand-solid); border: 2px solid var(--brand-solid); width: 22px; height: 22px; border-radius: 50%; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.25);">
+            ${pointNum}
+          </div>
+        `,
+        iconSize: [22, 22],
+        iconAnchor: [11, 11]
+      });
+      const wpMarker = L.marker(coord as [number, number], { icon: ptIcon }).addTo(this.map);
+      wpMarker.bindTooltip(`Point de passage n°${pointNum}`, { direction: 'top' });
+      this.tripWaypointMarkers.push(wpMarker);
+    });
 
     this.polyline = L.polyline(tripCoords, {
       color: '#ea4c0e',

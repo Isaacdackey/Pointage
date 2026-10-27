@@ -99,7 +99,7 @@
   --shadow-2: var(--shadow-md);
 
   /* Typographie */
-  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   --text-xs: 0.75rem;
   --text-sm: 0.82rem;
@@ -193,6 +193,7 @@ body.dark-theme {
 
 html, body {
   height: 100%;
+  overflow: hidden;
 }
 
 body {
@@ -203,7 +204,6 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden; /* Filet de sécurité global */
 }
 
 /* Accessible focus ring conforme WCAG AA en clair et en sombre */
@@ -775,9 +775,13 @@ body {
 /* ==========================================================================
    Leaflet Theming, Controls & Markers Globaux (Étape 4, 5 & 8)
    ========================================================================== */
+.leaflet-dark-tiles {
+  /* Filtre sombre haute lisibilité (mode nuit pour carte routière) */
+  filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7) !important;
+}
+
 body.dark-theme .leaflet-tile-pane {
-  /* Filtre sombre haute lisibilité sur tuiles OSM gratuites sans filigrane ni clé */
-  filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+  /* Pas de filtre forcé sur les autres tuiles (ex: satellite) */
 }
 
 .leaflet-popup-content-wrapper,

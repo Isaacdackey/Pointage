@@ -42,11 +42,11 @@ yarn-error.log*
 Thumbs.db
 desktop.ini
 
-# Audio intermediate files
-audio/*.mp3
+# Audio & Session notes
+audio/
+*.ogg
+*.mp3
+retranscription*.md
 
 .vercel
 .env*
-
-# Retranscriptions audio et notes de session
-retranscription*.md

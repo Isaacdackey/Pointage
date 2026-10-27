@@ -39,6 +39,14 @@ public class Alert {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
 
+    private String routeInfo;
+
+    private String detectedLocation;
+
+    private Double currentSpeedKph;
+
+    private Double maxSpeedAllowed;
+
     private String assignedTo;
 
     private String actionType;
@@ -128,6 +136,38 @@ public class Alert {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getRouteInfo() {
+        return routeInfo;
+    }
+
+    public void setRouteInfo(String routeInfo) {
+        this.routeInfo = routeInfo;
+    }
+
+    public String getDetectedLocation() {
+        return detectedLocation;
+    }
+
+    public void setDetectedLocation(String detectedLocation) {
+        this.detectedLocation = detectedLocation;
+    }
+
+    public Double getCurrentSpeedKph() {
+        return currentSpeedKph;
+    }
+
+    public void setCurrentSpeedKph(Double currentSpeedKph) {
+        this.currentSpeedKph = currentSpeedKph;
+    }
+
+    public Double getMaxSpeedAllowed() {
+        return maxSpeedAllowed;
+    }
+
+    public void setMaxSpeedAllowed(Double maxSpeedAllowed) {
+        this.maxSpeedAllowed = maxSpeedAllowed;
     }
 
     public String getAssignedTo() {

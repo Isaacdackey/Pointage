@@ -66,6 +66,35 @@
   </button>
 </div>
 
+<!-- Bannière Rapports Visites Techniques & Assurances (Point 5 Retranscription) -->
+<div class="expiration-alerts-container" *ngIf="((vehiclesExpiringSoon$ | async)?.length || 0) > 0 || ((vehiclesExpired$ | async)?.length || 0) > 0">
+  <div class="alert-box alert-warning-box" *ngIf="((vehiclesExpiringSoon$ | async)?.length || 0) > 0">
+    <span class="material-symbols-outlined alert-box-icon">notifications_active</span>
+    <div class="alert-box-content">
+      <strong>Rappel de Visite Technique / Assurance (&lt; 30 jours) :</strong>
+      <span>
+        {{ (vehiclesExpiringSoon$ | async)?.length }} véhicule(s) nécessitent un renouvellement imminent sous 1 mois :
+        <ng-container *ngFor="let v of vehiclesExpiringSoon$ | async; let last = last">
+          <strong class="plate-mini">{{ v.registrationNumber }}</strong> (Visite: {{ v.technicalInspectionExpiry }}){{ !last ? ', ' : '' }}
+        </ng-container>
+      </span>
+    </div>
+  </div>
+
+  <div class="alert-box alert-critical-box" *ngIf="((vehiclesExpired$ | async)?.length || 0) > 0">
+    <span class="material-symbols-outlined alert-box-icon">error</span>
+    <div class="alert-box-content">
+      <strong>Alerte Critique - Documents Expirés :</strong>
+      <span>
+        {{ (vehiclesExpired$ | async)?.length }} véhicule(s) ont leur visite technique ou assurance échue !
+        <ng-container *ngFor="let v of vehiclesExpired$ | async; let last = last">
+          <strong class="plate-mini">{{ v.registrationNumber }}</strong> (Échéance dépassée){{ !last ? ', ' : '' }}
+        </ng-container>
+      </span>
+    </div>
+  </div>
+</div>
+
 <!-- Tab 1: Véhicules -->
 <section
   *ngIf="activeTab === 'VEHICULES'"
@@ -85,8 +114,9 @@
           <th scope="col">Chauffeur Assigné</th>
           <th scope="col">Traceur Rattaché</th>
           <th scope="col" class="num-cell">Kilométrage</th>
-          <th scope="col">Validité Visite Tech</th>
-          <th scope="col" style="text-align: right;">Statut</th>
+          <th scope="col">Échéances Docs</th>
+          <th scope="col" style="text-align: center;">Statut</th>
+          <th scope="col" style="text-align: right;">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -102,13 +132,29 @@
           </td>
           <td data-label="Traceur"><code class="tracker-code">{{ v.currentTrackerId }}</code></td>
           <td data-label="Kilométrage" class="num-cell">{{ formatNumber(v.odometerKm) }} km</td>
-          <td data-label="Visite Tech">
-            <span [class.text-warn]="v.technicalInspectionExpiry?.startsWith('2026')">
-              {{ v.technicalInspectionExpiry || 'Non renseigné' }}
-            </span>
+          <td data-label="Échéances Docs">
+            <div class="docs-status-cell">
+              <span [class.badge-exp-warn]="isExpiringSoon(v.technicalInspectionExpiry)" [class.badge-exp-crit]="isExpired(v.technicalInspectionExpiry)">
+                VT: {{ v.technicalInspectionExpiry || 'N/A' }}
+              </span>
+              <span [class.badge-exp-warn]="isExpiringSoon(v.insuranceExpiry)" [class.badge-exp-crit]="isExpired(v.insuranceExpiry)" style="margin-top: 2px;">
+                Assur: {{ v.insuranceExpiry || 'N/A' }}
+              </span>
+            </div>
           </td>
-          <td data-label="Statut" style="text-align: right;">
+          <td data-label="Statut" style="text-align: center;">
             <app-status-badge [status]="v.status"></app-status-badge>
+          </td>
+          <td data-label="Actions" style="text-align: right;">
+            <button
+              type="button"
+              class="btn-report-breakdown"
+              (click)="reportBreakdown(v)"
+              title="Signaler une panne et planifier la maintenance pour ce véhicule"
+            >
+              <span class="material-symbols-outlined">build</span>
+              <span>Signaler Panne</span>
+            </button>
           </td>
         </tr>
       </tbody>

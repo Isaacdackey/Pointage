@@ -74,10 +74,14 @@ export const routes: Routes = [
         title: 'Gestion de Flotte • GeoFleet'
       },
       {
-        path: 'reports',
+        path: 'maintenance',
         loadComponent: () => import('./features/reports/reports.component').then(m => m.ReportsComponent),
         canActivate: [roleGuard(['SUPER_ADMIN', 'USER'])],
-        title: 'Rapports & Synthèse • GeoFleet'
+        title: 'Carnet d\'Entretien & Maintenance • GeoFleet'
+      },
+      {
+        path: 'reports',
+        redirectTo: 'maintenance'
       },
       {
         path: 'admin',

@@ -1,21 +1,34 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MockDataService } from '../../core/services/mock-data.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { RelativeTimePipe } from '../../shared/pipes/relative-time.pipe';
 import { ToastService } from '../../shared/services/toast.service';
 import { Mission, GeoSite } from '../../core/models/fleet.models';
+import * as L from 'leaflet';
+
+export type MissionSortField = 'anomalies' | 'code' | 'plannedStartTime' | 'status';
 
 @Component({
   selector: 'app-missions-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent, StatusBadgeComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    PageHeaderComponent,
+    StatusBadgeComponent,
+    ConfirmDialogComponent,
+    RelativeTimePipe
+  ],
   templateUrl: './missions-list.component.html',
   styleUrl: './missions-list.component.scss'
 })
-export class MissionsListComponent {
+export class MissionsListComponent implements OnInit, OnDestroy {
   private mockService = inject(MockDataService);
   private toast = inject(ToastService);
 
@@ -24,9 +37,40 @@ export class MissionsListComponent {
   drivers$ = this.mockService.getDrivers();
   geoSites$ = this.mockService.getGeoSites();
 
-  // Filtre d'affichage
-  statusFilter: string = 'TOUTES';
+  // Indicateur Live "Mis à jour il y a Xs"
+  secondsSinceLastUpdate = 0;
+  private updateTimer: any;
+  isRefreshing = false;
 
+  // Bandeau télématique fermable avec mémorisation dans localStorage
+  isBannerVisible = true;
+
+  // Filtres, recherche et tri
+  statusFilter: 'TOUTES' | 'PLANIFIEE' | 'EN_COURS' | 'EN_ANOMALIE' | 'TERMINEE' = 'TOUTES';
+  searchQuery: string = '';
+  sortBy: MissionSortField = 'anomalies';
+  sortAscending = true;
+
+  // Pagination
+  currentPage = 1;
+  pageSize = 6;
+
+  // Modale de confirmation manuelle (Forcer départ / Terminer)
+  confirmModalOpen = false;
+  confirmModalTitle = '';
+  confirmModalMessage = '';
+  confirmModalType: 'ok' | 'warn' | 'danger' | 'info' = 'warn';
+  confirmModalAction: (() => void) | null = null;
+  confirmModalBtnLabel = 'Confirmer';
+
+  // Carte interactive d'aperçu et pointage dans la modale
+  private missionMap?: L.Map;
+  private originMarker?: L.Marker;
+  private destMarker?: L.Marker;
+  private routeLine?: L.Polyline;
+  activePickingMode: 'ORIGIN' | 'DEST' = 'ORIGIN';
+  originCoords: { lat: number; lng: number } = { lat: 14.7167, lng: -17.4677 };
+  destCoords: { lat: number; lng: number } = { lat: 14.7410, lng: -17.3240 };
   // Modal Planifier une Tournée / Mission
   isModalOpen = false;
   newMission = {
@@ -37,29 +81,412 @@ export class MissionsListComponent {
     originName: '',
     destinationSiteId: '',
     destinationName: '',
-    distanceKm: 35,
+    distanceKm: 0,
     plannedStartTime: '',
     notes: ''
   };
+  isGeocodingLoading = false;
 
-  formatDateTime(iso: string | undefined): string {
-    if (!iso) return '-';
-    const d = new Date(iso);
-    return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + ' à ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  ngOnInit(): void {
+    // Lecture de la préférence du bandeau
+    try {
+      const bannerPref = localStorage.getItem('geofleet_missions_banner_hidden');
+      if (bannerPref === 'true') {
+        this.isBannerVisible = false;
+      }
+    } catch {
+      // Fallback si localStorage désactivé ou privé
+      this.isBannerVisible = true;
+    }
+
+    // Timer d'indicateur live (mis à jour chaque seconde)
+    this.updateTimer = setInterval(() => {
+      this.secondsSinceLastUpdate++;
+    }, 1000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.updateTimer) {
+      clearInterval(this.updateTimer);
+    }
+  }
+
+  // Fermeture du bandeau avec persistance
+  closeBanner(): void {
+    this.isBannerVisible = false;
+    try {
+      localStorage.setItem('geofleet_missions_banner_hidden', 'true');
+    } catch {
+      // Ignore
+    }
+  }
+
+  // Actualisation manuelle / Pull-to-refresh
+  refreshData(): void {
+    this.isRefreshing = true;
+    setTimeout(() => {
+      this.secondsSinceLastUpdate = 0;
+      this.isRefreshing = false;
+      this.toast.info('Données télématiques actualisées en temps réel.');
+    }, 500);
+  }
+
+  // Calcul dynamique des compteurs de statuts
+  getStatusCounts(missions: Mission[] | null): { toutes: number; planifiees: number; enCours: number; anomalies: number; terminees: number } {
+    if (!missions) return { toutes: 0, planifiees: 0, enCours: 0, anomalies: 0, terminees: 0 };
+    return {
+      toutes: missions.length,
+      planifiees: missions.filter(m => m.status === 'PLANIFIEE').length,
+      enCours: missions.filter(m => m.status === 'EN_COURS').length,
+      anomalies: missions.filter(m => m.status === 'EN_ANOMALIE').length,
+      terminees: missions.filter(m => m.status === 'TERMINEE').length
+    };
+  }
+
+  // Filtrage et Tri
+  filterAndSortMissions(missions: Mission[] | null): Mission[] {
+    if (!missions) return [];
+
+    let result = missions.filter(m => {
+      // 1. Filtre statut
+      if (this.statusFilter === 'EN_COURS') {
+        // Le filtre "En cours" inclut aussi les anomalies opérationnelles en mission
+        if (m.status !== 'EN_COURS' && m.status !== 'EN_ANOMALIE') return false;
+      } else if (this.statusFilter !== 'TOUTES') {
+        if (m.status !== this.statusFilter) return false;
+      }
+
+      // 2. Recherche textuelle
+      if (!this.searchQuery.trim()) return true;
+      const q = this.searchQuery.toLowerCase().trim();
+      return (
+        m.code.toLowerCase().includes(q) ||
+        m.title.toLowerCase().includes(q) ||
+        m.vehicleReg.toLowerCase().includes(q) ||
+        m.driverName.toLowerCase().includes(q) ||
+        m.originName.toLowerCase().includes(q) ||
+        m.destinationName.toLowerCase().includes(q)
+      );
+    });
+
+    // 3. Tri
+    result = [...result].sort((a, b) => {
+      if (this.sortBy === 'anomalies') {
+        // Priorité absolue aux missions en anomalie
+        const aIsAnomaly = a.status === 'EN_ANOMALIE' ? 1 : 0;
+        const bIsAnomaly = b.status === 'EN_ANOMALIE' ? 1 : 0;
+        if (aIsAnomaly !== bIsAnomaly) return bIsAnomaly - aIsAnomaly;
+        // Puis statut En cours
+        const aRunning = a.status === 'EN_COURS' ? 1 : 0;
+        const bRunning = b.status === 'EN_COURS' ? 1 : 0;
+        if (aRunning !== bRunning) return bRunning - aRunning;
+        return (b.plannedStartTime || '').localeCompare(a.plannedStartTime || '');
+      }
+
+      let cmp = 0;
+      if (this.sortBy === 'code') {
+        cmp = a.code.localeCompare(b.code);
+      } else if (this.sortBy === 'plannedStartTime') {
+        cmp = (a.plannedStartTime || '').localeCompare(b.plannedStartTime || '');
+      } else if (this.sortBy === 'status') {
+        cmp = a.status.localeCompare(b.status);
+      }
+      return this.sortAscending ? cmp : -cmp;
+    });
+
+    return result;
+  }
+
+  // Pagination sur la liste filtrée
+  getPaginatedMissions(missions: Mission[] | null): Mission[] {
+    const list = this.filterAndSortMissions(missions);
+    const start = (this.currentPage - 1) * this.pageSize;
+    return list.slice(start, start + this.pageSize);
+  }
+
+  getTotalPages(missions: Mission[] | null): number {
+    const total = this.filterAndSortMissions(missions).length;
+    return Math.max(1, Math.ceil(total / this.pageSize));
+  }
+
+  setPage(page: number, missions: Mission[] | null): void {
+    const maxPage = this.getTotalPages(missions);
+    if (page >= 1 && page <= maxPage) {
+      this.currentPage = page;
+    }
+  }
+
+  toggleSort(field: MissionSortField): void {
+    if (this.sortBy === field) {
+      this.sortAscending = !this.sortAscending;
+    } else {
+      this.sortBy = field;
+      this.sortAscending = true;
+    }
+    this.currentPage = 1;
+  }
+
+  resetFilters(): void {
+    this.statusFilter = 'TOUTES';
+    this.searchQuery = '';
+    this.sortBy = 'anomalies';
+    this.currentPage = 1;
+  }
+
+  // Actions sécurisées avec modale de confirmation
+  promptForceStart(mission: Mission): void {
+    this.confirmModalTitle = 'Forcer le départ de la mission';
+    this.confirmModalMessage = `Voulez-vous forcer manuellement le départ de la tournée ${mission.code} (${mission.vehicleReg}) ? Normalement, GeoFleet détecte automatiquement le départ dès le premier déplacement GPS.`;
+    this.confirmModalType = 'warn';
+    this.confirmModalBtnLabel = 'Forcer le départ';
+    this.confirmModalAction = () => {
+      this.mockService.acceptDeparture(mission.id);
+      this.secondsSinceLastUpdate = 0;
+      this.toast.success(`Mission ${mission.code} démarrée manuellement. Surveillance active.`);
+    };
+    this.confirmModalOpen = true;
+  }
+
+  promptForceFinish(mission: Mission): void {
+    this.confirmModalTitle = 'Clôturer la mission';
+    this.confirmModalMessage = `Êtes-vous certain de vouloir clôturer définitivement la tournée ${mission.code} ? Cette action enregistrera l'arrivée finale et balayera le tracé actif de la carte.`;
+    this.confirmModalType = 'ok';
+    this.confirmModalBtnLabel = 'Clôturer la tournée';
+    this.confirmModalAction = () => {
+      this.mockService.validateAndCloseMission(mission.id);
+      this.secondsSinceLastUpdate = 0;
+      this.toast.success(`Mission ${mission.code} terminée avec succès. Tracé archivé.`);
+    };
+    this.confirmModalOpen = true;
+  }
+
+  onConfirmModalConfirm(): void {
+    if (this.confirmModalAction) {
+      this.confirmModalAction();
+    }
+    this.confirmModalOpen = false;
+    this.confirmModalAction = null;
+  }
+
+  onConfirmModalCancel(): void {
+    this.confirmModalOpen = false;
+    this.confirmModalAction = null;
+  }
+
+  // Calcul automatique de la distance entre deux sites (Formule Haversine)
+  calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371; // Rayon de la Terre en km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    // Coefficient de détour routier réel d'environ 1.25x la distance à vol d'oiseau
+    return parseFloat((R * c * 1.25).toFixed(1));
+  }
+
+  autoComputeDistance(sites: GeoSite[]): void {
+    if (!this.newMission.originSiteId || !this.newMission.destinationSiteId) return;
+    const origin = sites.find(s => s.id === this.newMission.originSiteId);
+    const dest = sites.find(s => s.id === this.newMission.destinationSiteId);
+    if (origin && dest) {
+      this.newMission.distanceKm = this.calculateDistance(
+        origin.latitude,
+        origin.longitude,
+        dest.latitude,
+        dest.longitude
+      );
+    }
   }
 
   onOriginSiteChange(siteId: string, sites: GeoSite[]) {
     const site = sites.find(s => s.id === siteId);
     if (site) {
       this.newMission.originName = site.name;
+      this.originCoords = { lat: site.latitude, lng: site.longitude };
+      this.updateMapRoute();
     }
+    this.autoComputeDistance(sites);
   }
 
   onDestinationSiteChange(siteId: string, sites: GeoSite[]) {
     const site = sites.find(s => s.id === siteId);
     if (site) {
       this.newMission.destinationName = site.name;
+      this.destCoords = { lat: site.latitude, lng: site.longitude };
+      this.updateMapRoute();
     }
+    this.autoComputeDistance(sites);
+  }
+
+  setPickingMode(mode: 'ORIGIN' | 'DEST') {
+    this.activePickingMode = mode;
+  }
+
+  private initMissionMap(): void {
+    const container = document.getElementById('mission-route-map');
+    if (!container) return;
+
+    if (this.missionMap) {
+      this.missionMap.remove();
+    }
+
+    this.missionMap = L.map('mission-route-map', {
+      zoomControl: true
+    }).setView([this.originCoords.lat, this.originCoords.lng], 12);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap',
+      maxZoom: 19
+    }).addTo(this.missionMap);
+
+    // Icône Départ (Vert)
+    const originIcon = L.divIcon({
+      className: 'picker-pin-wrapper',
+      html: `
+        <div style="background: #10b981; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(0,0,0,0.3); border: 2px solid white;">
+          <span class="material-symbols-outlined" style="font-size: 18px;">radio_button_checked</span>
+        </div>
+      `,
+      iconSize: [30, 30],
+      iconAnchor: [15, 30]
+    });
+
+    // Icône Arrivée (Orange)
+    const destIcon = L.divIcon({
+      className: 'picker-pin-wrapper',
+      html: `
+        <div style="background: #ea4c0e; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(0,0,0,0.3); border: 2px solid white;">
+          <span class="material-symbols-outlined" style="font-size: 18px;">flag</span>
+        </div>
+      `,
+      iconSize: [30, 30],
+      iconAnchor: [15, 30]
+    });
+
+    this.originMarker = L.marker([this.originCoords.lat, this.originCoords.lng], { icon: originIcon, draggable: true }).addTo(this.missionMap);
+    this.destMarker = L.marker([this.destCoords.lat, this.destCoords.lng], { icon: destIcon, draggable: true }).addTo(this.missionMap);
+
+    this.originMarker.bindTooltip('Départ (Déplacement possible)', { direction: 'top' });
+    this.destMarker.bindTooltip('Destination (Déplacement possible)', { direction: 'top' });
+
+    // Clic sur la carte : assigne soit l'origine soit la destination selon le mode actif
+    this.missionMap.on('click', (e: L.LeafletMouseEvent) => {
+      this.handleMapClick(e.latlng.lat, e.latlng.lng);
+    });
+
+    // Glisser le pin départ
+    this.originMarker.on('dragend', () => {
+      const pos = this.originMarker?.getLatLng();
+      if (pos) {
+        this.originCoords = { lat: pos.lat, lng: pos.lng };
+        this.reverseGeocodePoint(pos.lat, pos.lng, 'ORIGIN');
+        this.updateMapRoute();
+      }
+    });
+
+    // Glisser le pin arrivée
+    this.destMarker.on('dragend', () => {
+      const pos = this.destMarker?.getLatLng();
+      if (pos) {
+        this.destCoords = { lat: pos.lat, lng: pos.lng };
+        this.reverseGeocodePoint(pos.lat, pos.lng, 'DEST');
+        this.updateMapRoute();
+      }
+    });
+
+    this.updateMapRoute();
+
+    setTimeout(() => {
+      this.missionMap?.invalidateSize();
+    }, 250);
+  }
+
+  private handleMapClick(lat: number, lng: number): void {
+    if (this.activePickingMode === 'ORIGIN') {
+      this.originCoords = { lat, lng };
+      this.originMarker?.setLatLng([lat, lng]);
+      this.reverseGeocodePoint(lat, lng, 'ORIGIN');
+    } else {
+      this.destCoords = { lat, lng };
+      this.destMarker?.setLatLng([lat, lng]);
+      this.reverseGeocodePoint(lat, lng, 'DEST');
+    }
+    this.updateMapRoute();
+  }
+
+  private reverseGeocodePoint(lat: number, lng: number, target: 'ORIGIN' | 'DEST'): void {
+    this.isGeocodingLoading = true;
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        this.isGeocodingLoading = false;
+        if (data && data.display_name) {
+          const road = data.address?.road || data.address?.suburb || data.address?.city || data.display_name;
+          if (target === 'ORIGIN') {
+            this.newMission.originName = road;
+            this.newMission.originSiteId = '';
+          } else {
+            this.newMission.destinationName = road;
+            this.newMission.destinationSiteId = '';
+          }
+        }
+      })
+      .catch(() => {
+        this.isGeocodingLoading = false;
+      });
+  }
+
+  private updateMapRoute(): void {
+    if (!this.missionMap) return;
+
+    if (this.originMarker) {
+      this.originMarker.setLatLng([this.originCoords.lat, this.originCoords.lng]);
+    }
+    if (this.destMarker) {
+      this.destMarker.setLatLng([this.destCoords.lat, this.destCoords.lng]);
+    }
+
+    if (this.routeLine) {
+      this.missionMap.removeLayer(this.routeLine);
+      this.routeLine = undefined;
+    }
+
+    const coords: [number, number][] = [
+      [this.originCoords.lat, this.originCoords.lng],
+      [this.destCoords.lat, this.destCoords.lng]
+    ];
+
+    this.routeLine = L.polyline(coords, {
+      color: '#3b82f6',
+      weight: 3,
+      dashArray: '6, 6',
+      opacity: 0.9
+    }).addTo(this.missionMap);
+
+    // Calcul automatique de la distance
+    this.newMission.distanceKm = this.calculateDistance(
+      this.originCoords.lat,
+      this.originCoords.lng,
+      this.destCoords.lat,
+      this.destCoords.lng
+    );
+
+    // Recadrer la carte
+    this.missionMap.fitBounds(this.routeLine.getBounds(), { padding: [40, 40], maxZoom: 14 });
+  }
+
+  startMission(mission: Mission): void {
+    this.mockService.acceptDeparture(mission.id);
+    this.toast.success(`Mission ${mission.code} démarrée avec succès. Surveillance télématique active.`);
+  }
+
+  finishMission(mission: Mission): void {
+    this.mockService.validateAndCloseMission(mission.id);
+    this.toast.success(`Mission ${mission.code} terminée. Le tracé actif a été balayé de la carte.`);
   }
 
   openNewMissionModal() {
@@ -71,18 +498,32 @@ export class MissionsListComponent {
       vehicleId: '',
       driverId: '',
       originSiteId: '',
-      originName: 'Siège GeoFleet & Dépôt Central',
+      originName: 'Dépôt Central Hann Bel-Air',
       destinationSiteId: '',
       destinationName: 'Plateforme Industrielle Diamniadio',
-      distanceKm: 35,
+      distanceKm: 0,
       plannedStartTime: dateFormatted,
       notes: ''
     };
+    this.originCoords = { lat: 14.7167, lng: -17.4677 };
+    this.destCoords = { lat: 14.7410, lng: -17.3240 };
+    this.activePickingMode = 'ORIGIN';
     this.isModalOpen = true;
+
+    setTimeout(() => {
+      this.initMissionMap();
+    }, 200);
   }
 
   closeModal() {
     this.isModalOpen = false;
+    if (this.missionMap) {
+      this.missionMap.remove();
+      this.missionMap = undefined;
+      this.originMarker = undefined;
+      this.destMarker = undefined;
+      this.routeLine = undefined;
+    }
   }
 
   saveMission() {

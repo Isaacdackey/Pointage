@@ -46,6 +46,40 @@
         </button>
       </div>
 
+      <!-- Map Layer Switcher (Plan OSM, Satellite HD, Dark Mode) -->
+      <div class="layer-switcher-group" role="group" aria-label="Type de carte">
+        <button
+          type="button"
+          class="layer-btn"
+          [class.active]="activeMapLayer === 'osm'"
+          (click)="setMapLayer('osm')"
+          title="Affichage routier classique (OpenStreetMap)"
+        >
+          <span class="material-symbols-outlined">map</span>
+          <span>Plan</span>
+        </button>
+        <button
+          type="button"
+          class="layer-btn"
+          [class.active]="activeMapLayer === 'satellite'"
+          (click)="setMapLayer('satellite')"
+          title="Vue satellite haute définition (ESRI World Imagery)"
+        >
+          <span class="material-symbols-outlined">satellite_alt</span>
+          <span>Satellite</span>
+        </button>
+        <button
+          type="button"
+          class="layer-btn"
+          [class.active]="activeMapLayer === 'dark'"
+          (click)="setMapLayer('dark')"
+          title="Mode sombre salle d'opérations (CartoDB Dark)"
+        >
+          <span class="material-symbols-outlined">dark_mode</span>
+          <span>Sombre</span>
+        </button>
+      </div>
+
       <!-- Control Room Action Toggles -->
       <div class="wallboard-actions">
         <!-- Toggle Couche Sites Favoris -->

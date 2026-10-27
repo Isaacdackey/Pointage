@@ -46,6 +46,25 @@
               <span class="time-lbl">{{ alt.occurredAt }}</span>
             </div>
             <h3 class="alert-title">{{ alt.vehicleReg }} &bull; {{ alt.type }}</h3>
+
+            <!-- Trajet concerné & Position anormale constatée (Lignes 122-128 mentor) -->
+            <div class="alert-telemetry-context">
+              <div *ngIf="alt.routeInfo" class="context-item route-context">
+                <span class="material-symbols-outlined icon-ctx">alt_route</span>
+                <span>Mission : <strong>{{ alt.routeInfo }}</strong></span>
+              </div>
+
+              <div *ngIf="alt.detectedLocation" class="context-item location-context">
+                <span class="material-symbols-outlined icon-ctx">location_on</span>
+                <span>Constaté à : <strong>{{ alt.detectedLocation }}</strong></span>
+              </div>
+
+              <div *ngIf="alt.currentSpeedKph" class="context-item speed-context">
+                <span class="material-symbols-outlined icon-ctx">speed</span>
+                <span>Vitesse mesurée : <strong class="speed-val">{{ alt.currentSpeedKph }} km/h</strong> (Max légal : {{ alt.maxSpeedAllowed }} km/h)</span>
+              </div>
+            </div>
+
             <p class="alert-desc">{{ alt.description }}</p>
 
             <!-- Détails de prise en charge si existants -->

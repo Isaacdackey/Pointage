@@ -173,7 +173,7 @@
 <!-- Modal : Ajouter un Site Favori -->
 <div class="modal-backdrop" *ngIf="isAddModalOpen" (click)="closeAddModal()">
   <div
-    class="modal-box modal-md"
+    class="modal-box site-modal-wide"
     appModalA11y
     (modalClose)="closeAddModal()"
     (click)="$event.stopPropagation()"
@@ -190,128 +190,140 @@
     </header>
 
     <form (ngSubmit)="saveSite()">
-      <div class="modal-body">
-        <div class="form-grid">
-          <div class="form-group" style="grid-column: 1 / -1;">
-            <label for="site-name">Nom du Site *</label>
-            <input
-              id="site-name"
-              type="text"
-              [(ngModel)]="newSite.name"
-              name="name"
-              required
-              placeholder="ex: Total Station Rufisque 2"
-              class="form-input"
-            />
+      <div class="modal-body modal-compact-body">
+        <div class="site-modal-layout">
+          <!-- Colonne Gauche : Mini-carte Leaflet interactive -->
+          <div class="map-column">
+            <div class="map-picker-header">
+              <label>
+                <span class="material-symbols-outlined icon-pin-label" aria-hidden="true">pin_drop</span>
+                Emplacement (cliquez sur la carte pour pointer) :
+              </label>
+              <span class="geocoding-spinner" *ngIf="isGeocodingLoading">
+                <span class="material-symbols-outlined spin">progress_activity</span> Recherche...
+              </span>
+            </div>
+            <div id="site-picker-map" class="picker-map-box"></div>
+            <div class="picker-coords-bar">
+              <div class="coord-pill">
+                <span class="lbl">LAT:</span>
+                <code>{{ newSite.latitude.toFixed(5) }}</code>
+              </div>
+              <div class="coord-pill">
+                <span class="lbl">LNG:</span>
+                <code>{{ newSite.longitude.toFixed(5) }}</code>
+              </div>
+              <div class="coord-pill">
+                <span class="lbl">RAYON:</span>
+                <code>{{ newSite.radiusMeters }}m</code>
+              </div>
+            </div>
           </div>
 
-          <div class="form-group">
-            <label for="site-cat">Catégorie *</label>
-            <select id="site-cat" [(ngModel)]="newSite.category" name="category" class="form-input">
-              <option value="DEPOT_CLIENT">Dépôt / Client</option>
-              <option value="STATION_SERVICE">Station-Service (Total)</option>
-              <option value="PORT_LOGISTIQUE">Port & Logistique</option>
-              <option value="USINE_CHANTIER">Usine & Chantier</option>
-              <option value="SIEGE_ENTREPRISE">Siège & Base Entreprise</option>
-            </select>
-          </div>
+          <!-- Colonne Droite : Formulaire compact -->
+          <div class="form-column">
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="site-name">Nom du Site *</label>
+                <input
+                  id="site-name"
+                  type="text"
+                  [(ngModel)]="newSite.name"
+                  name="name"
+                  required
+                  placeholder="ex: Dépôt Hann ou Client Sedima"
+                  class="form-input"
+                />
+              </div>
 
-          <div class="form-group">
-            <label for="site-radius">Rayon de détection (mètres) *</label>
-            <input
-              id="site-radius"
-              type="number"
-              [(ngModel)]="newSite.radiusMeters"
-              name="radiusMeters"
-              min="10"
-              max="200"
-              step="5"
-              required
-              class="form-input"
-            />
-            <small style="color: var(--ink-3); font-size: var(--text-xs);">Recommandé : 15m à 30m</small>
-          </div>
+              <div class="form-group">
+                <label for="site-cat">Type de Site *</label>
+                <select id="site-cat" [(ngModel)]="newSite.category" name="category" class="form-input">
+                  <option value="DEPOT">Dépôt (Départ / Magasin)</option>
+                  <option value="CLIENT">Client (Destination / Livraison)</option>
+                  <option value="AUTRE">Autre site logistique</option>
+                </select>
+              </div>
+            </div>
 
-          <div class="form-group" style="grid-column: 1 / -1;">
-            <label for="site-address">Adresse / Localisation *</label>
-            <input
-              id="site-address"
-              type="text"
-              [(ngModel)]="newSite.address"
-              name="address"
-              required
-              placeholder="ex: Route Nationale 1, Sortie Rufisque Est"
-              class="form-input"
-            />
-          </div>
+            <div class="form-group">
+              <label for="site-address">Adresse (renseignée par clic sur la carte) *</label>
+              <input
+                id="site-address"
+                type="text"
+                [(ngModel)]="newSite.address"
+                name="address"
+                required
+                placeholder="Cliquez sur la carte pour remplir automatiquement"
+                class="form-input"
+              />
+            </div>
 
-          <div class="form-group">
-            <label for="site-lat">Latitude (GPS) *</label>
-            <input
-              id="site-lat"
-              type="number"
-              [(ngModel)]="newSite.latitude"
-              name="latitude"
-              step="0.0001"
-              required
-              class="form-input"
-            />
-          </div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="site-radius">Rayon détection (mètres) *</label>
+                <input
+                  id="site-radius"
+                  type="number"
+                  [(ngModel)]="newSite.radiusMeters"
+                  (ngModelChange)="onRadiusChange()"
+                  name="radiusMeters"
+                  min="10"
+                  max="200"
+                  step="5"
+                  required
+                  class="form-input"
+                />
+              </div>
 
-          <div class="form-group">
-            <label for="site-lng">Longitude (GPS) *</label>
-            <input
-              id="site-lng"
-              type="number"
-              [(ngModel)]="newSite.longitude"
-              name="longitude"
-              step="0.0001"
-              required
-              class="form-input"
-            />
-          </div>
+              <div class="form-group">
+                <label for="site-contact">Responsable sur site</label>
+                <input
+                  id="site-contact"
+                  type="text"
+                  [(ngModel)]="newSite.contactName"
+                  name="contactName"
+                  placeholder="ex: Chef de quai"
+                  class="form-input"
+                />
+              </div>
+            </div>
 
-          <div class="form-group">
-            <label for="site-contact">Responsable sur site</label>
-            <input
-              id="site-contact"
-              type="text"
-              [(ngModel)]="newSite.contactName"
-              name="contactName"
-              placeholder="ex: Chef de quai"
-              class="form-input"
-            />
-          </div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="site-phone">Téléphone contact</label>
+                <input
+                  id="site-phone"
+                  type="tel"
+                  [(ngModel)]="newSite.contactPhone"
+                  name="contactPhone"
+                  placeholder="+221 77 000 00 00"
+                  class="form-input"
+                />
+              </div>
 
-          <div class="form-group">
-            <label for="site-phone">Téléphone contact</label>
-            <input
-              id="site-phone"
-              type="tel"
-              [(ngModel)]="newSite.contactPhone"
-              name="contactPhone"
-              placeholder="+221 77 000 00 00"
-              class="form-input"
-            />
-          </div>
-
-          <div class="form-group" style="grid-column: 1 / -1;">
-            <label for="site-notes">Instructions & Remarques</label>
-            <textarea
-              id="site-notes"
-              [(ngModel)]="newSite.notes"
-              name="notes"
-              rows="2"
-              placeholder="Consignes d'accès, port de casque obligatoire, etc."
-              class="form-input"
-            ></textarea>
+              <div class="form-group">
+                <label for="site-notes">Instructions / Remarques</label>
+                <input
+                  id="site-notes"
+                  type="text"
+                  [(ngModel)]="newSite.notes"
+                  name="notes"
+                  placeholder="Consignes d'accès, port de casque..."
+                  class="form-input"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <footer class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeAddModal()">Annuler</button>
-        <button type="submit" class="btn btn-primary">Enregistrer le Site</button>
+        <button type="submit" class="btn btn-primary">
+          <span class="material-symbols-outlined" style="font-size: 18px;" aria-hidden="true">check</span>
+          Enregistrer le Site
+        </button>
       </footer>
     </form>
   </div>
