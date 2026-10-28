@@ -8,6 +8,14 @@
       <span class="material-symbols-outlined" aria-hidden="true">add</span>
       Enregistrer un Véhicule
     </button>
+    <button *ngIf="activeTab === 'CHAUFFEURS'" class="btn btn-primary" (click)="openAddDriverModal()">
+      <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
+      Ajouter un Chauffeur
+    </button>
+    <button *ngIf="activeTab === 'TRACEURS'" class="btn btn-primary" (click)="openAddTrackerModal()">
+      <span class="material-symbols-outlined" aria-hidden="true">add_location_alt</span>
+      Enregistrer un Traceur GPS
+    </button>
     <button *ngIf="activeTab === 'MAINTENANCE'" class="btn btn-primary" (click)="openAddMaintenance()">
       <span class="material-symbols-outlined" aria-hidden="true">build</span>
       Nouvelle Intervention
@@ -588,6 +596,186 @@
               <button type="submit" class="btn btn-primary">
                 <span class="material-symbols-outlined">save</span>
                 <span>Enregistrer l'intervention</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    
+      <!-- Modal Ajouter un Chauffeur -->
+      <div *ngIf="isAddDriverModalOpen" class="modal-backdrop" (click)="closeAddDriverModal()" role="dialog" aria-modal="true">
+        <div class="modal-box modal-lg" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <div class="modal-header-title">
+              <span class="material-symbols-outlined modal-icon">person_add</span>
+              <h2>Enregistrer un Nouveau Chauffeur</h2>
+            </div>
+            <button class="btn-icon" (click)="closeAddDriverModal()" aria-label="Fermer">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+
+          <form (ngSubmit)="saveDriver()" class="modal-form">
+            <div class="form-grid">
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="d-name">Nom Complet *</label>
+                <input
+                  id="d-name"
+                  type="text"
+                  [(ngModel)]="newDriver.fullName"
+                  name="fullName"
+                  required
+                  placeholder="ex: Cheikh Tidiane Sy"
+                  class="form-input"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="d-license">Numéro de Permis *</label>
+                <input
+                  id="d-license"
+                  type="text"
+                  [(ngModel)]="newDriver.licenseNumber"
+                  name="licenseNumber"
+                  required
+                  placeholder="ex: PERMIS-B-10294"
+                  class="form-input"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="d-phone">Téléphone *</label>
+                <input
+                  id="d-phone"
+                  type="tel"
+                  [(ngModel)]="newDriver.phone"
+                  name="phone"
+                  required
+                  placeholder="ex: +221 77 123 45 67"
+                  class="form-input"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="d-status">Statut Chauffeur</label>
+                <select id="d-status" [(ngModel)]="newDriver.status" name="status" class="form-input">
+                  <option value="ACTIF">ACTIF (En service)</option>
+                  <option value="CONGE">EN CONGÉ</option>
+                  <option value="SUSPENDU">SUSPENDU</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="d-veh">Véhicule Habituel Assigné</label>
+                <select id="d-veh" [(ngModel)]="newDriver.assignedVehicleId" name="assignedVehicleId" class="form-input">
+                  <option value="">-- Aucun pour l'instant --</option>
+                  <option *ngFor="let v of vehicles$ | async" [value]="v.registrationNumber">
+                    {{ v.registrationNumber }} ({{ v.make }} {{ v.model }})
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline" (click)="closeAddDriverModal()">Annuler</button>
+              <button type="submit" class="btn btn-primary">
+                <span class="material-symbols-outlined">save</span>
+                <span>Valider le chauffeur</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Modal Ajouter un Traceur GPS -->
+      <div *ngIf="isAddTrackerModalOpen" class="modal-backdrop" (click)="closeAddTrackerModal()" role="dialog" aria-modal="true">
+        <div class="modal-box modal-lg" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <div class="modal-header-title">
+              <span class="material-symbols-outlined modal-icon">add_location_alt</span>
+              <h2>Enregistrer un Nouveau Traceur GPS</h2>
+            </div>
+            <button class="btn-icon" (click)="closeAddTrackerModal()" aria-label="Fermer">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+
+          <form (ngSubmit)="saveTracker()" class="modal-form">
+            <div class="form-grid">
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="t-imei">Identifiant Unique (IMEI) *</label>
+                <input
+                  id="t-imei"
+                  type="text"
+                  [(ngModel)]="newTracker.identifier"
+                  name="identifier"
+                  required
+                  placeholder="ex: IMEI-864902041284999"
+                  class="form-input"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="t-vendor">Fabricant / Fournisseur *</label>
+                <select id="t-vendor" [(ngModel)]="newTracker.vendor" name="vendor" required class="form-input">
+                  <option value="Teltonika">Teltonika</option>
+                  <option value="Concox">Concox</option>
+                  <option value="Queclink">Queclink</option>
+                  <option value="Coban">Coban</option>
+                  <option value="Autre">Autre</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="t-model">Modèle de Boîtier *</label>
+                <input
+                  id="t-model"
+                  type="text"
+                  [(ngModel)]="newTracker.model"
+                  name="model"
+                  required
+                  placeholder="ex: FMB920"
+                  class="form-input"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="t-proto">Protocole Télématique</label>
+                <input
+                  id="t-proto"
+                  type="text"
+                  [(ngModel)]="newTracker.protocol"
+                  name="protocol"
+                  placeholder="ex: TCP/Teltonika-v1"
+                  class="form-input"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="t-status">Statut Télématique</label>
+                <select id="t-status" [(ngModel)]="newTracker.status" name="status" class="form-input">
+                  <option value="ACTIF">ACTIF (En service)</option>
+                  <option value="INACTIF">INACTIF</option>
+                  <option value="EN_MAINTENANCE">EN MAINTENANCE</option>
+                </select>
+              </div>
+
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="t-veh">Véhicule Assigné</label>
+                <select id="t-veh" [(ngModel)]="newTracker.vehicleId" name="vehicleId" class="form-input">
+                  <option value="">-- Aucun (En stock) --</option>
+                  <option *ngFor="let v of vehicles$ | async" [value]="v.id">
+                    {{ v.registrationNumber }} ({{ v.make }} {{ v.model }})
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline" (click)="closeAddTrackerModal()">Annuler</button>
+              <button type="submit" class="btn btn-primary">
+                <span class="material-symbols-outlined">save</span>
+                <span>Valider le traceur</span>
               </button>
             </div>
           </form>

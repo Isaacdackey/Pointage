@@ -1174,27 +1174,64 @@
 }
 
 .mission-modal-wide {
-  max-width: 1080px !important;
-  width: 95vw !important;
-  max-height: 94vh !important;
+  max-width: 1140px !important;
+  width: 96vw !important;
+  max-height: 92vh !important;
+  display: flex !important;
+  flex-direction: column !important;
   overflow: hidden !important;
 }
 
 .modal-form-compact {
   padding: 1.25rem 1.75rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
   overflow: hidden !important;
+  .modal-footer {
+    border-top: none !important;
+    padding-top: 1rem !important;
+    padding-bottom: 0.25rem !important;
+  }
 }
 
 .mission-modal-grid {
   display: grid;
-  grid-template-columns: 1.15fr 1fr;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
   gap: 1.75rem;
-  align-items: stretch;
+  align-items: start;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.25rem;
 
-  @media (max-width: 860px) {
+  @media (max-width: 920px) {
     grid-template-columns: 1fr;
-    overflow-y: auto;
     max-height: 75vh;
+  }
+}
+
+.map-column {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-column {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+
+  @media (max-width: 580px) {
+    grid-template-columns: 1fr;
   }
 }
 

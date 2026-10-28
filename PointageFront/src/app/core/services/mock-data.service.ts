@@ -519,6 +519,61 @@ export class MockDataService {
     return this.vehicles$.getValue();
   }
 
+  addDriver(driver: {
+    fullName: string;
+    licenseNumber: string;
+    phone: string;
+    status?: 'ACTIF' | 'CONGE' | 'SUSPENDU';
+    assignedVehicleId?: string;
+  }): Driver {
+    const newDriver: Driver = {
+      id: 'd-' + Date.now(),
+      fullName: driver.fullName.trim(),
+      licenseNumber: (driver.licenseNumber || '').trim().toUpperCase(),
+      phone: (driver.phone || '').trim(),
+      status: driver.status || 'ACTIF',
+      assignedVehicleId: driver.assignedVehicleId || undefined,
+      rating: 5.0,
+      completedMissions: 0
+    };
+    const current = this.drivers$.getValue();
+    this.drivers$.next([...current, newDriver]);
+    this.notificationService.sendPushNotification({
+      title: 'Nouveau Chauffeur Enregistré',
+      body: `${newDriver.fullName} (${newDriver.licenseNumber}) ajouté à la flotte.`
+    });
+    return newDriver;
+  }
+
+  addTracker(tracker: {
+    identifier: string;
+    vendor: string;
+    model: string;
+    protocol?: string;
+    status?: any;
+    batteryPercent?: number;
+    vehicleId?: string;
+  }): Tracker {
+    const newTracker: Tracker = {
+      id: 'tr-' + Date.now(),
+      identifier: tracker.identifier.trim().toUpperCase(),
+      vendor: (tracker.vendor || 'Teltonika').trim(),
+      model: (tracker.model || 'FMB920').trim(),
+      protocol: (tracker.protocol || 'TCP/Teltonika-v1').trim(),
+      status: tracker.status || 'ACTIF',
+      batteryPercent: tracker.batteryPercent ?? 100,
+      lastSeenAt: 'À l\'instant',
+      vehicleId: tracker.vehicleId || undefined
+    };
+    const current = this.trackers$.getValue();
+    this.trackers$.next([...current, newTracker]);
+    this.notificationService.sendPushNotification({
+      title: 'Nouveau Boîtier Traceur Enregistré',
+      body: `Boîtier ${newTracker.identifier} (${newTracker.vendor} ${newTracker.model}) ajouté au parc.`
+    });
+    return newTracker;
+  }
+
   getDrivers(): Observable<Driver[]> {
     return this.drivers$.asObservable();
   }

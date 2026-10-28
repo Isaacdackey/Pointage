@@ -184,6 +184,80 @@ export class FleetManagementComponent {
     this.isAddMaintenanceOpen = true;
   }
 
+  // Modal Chauffeur
+  isAddDriverModalOpen = false;
+  newDriver = {
+    fullName: '',
+    licenseNumber: '',
+    phone: '',
+    status: 'ACTIF' as 'ACTIF' | 'CONGE' | 'SUSPENDU',
+    assignedVehicleId: ''
+  };
+
+  openAddDriverModal() {
+    this.newDriver = {
+      fullName: '',
+      licenseNumber: '',
+      phone: '',
+      status: 'ACTIF',
+      assignedVehicleId: ''
+    };
+    this.isAddDriverModalOpen = true;
+  }
+
+  closeAddDriverModal() {
+    this.isAddDriverModalOpen = false;
+  }
+
+  saveDriver() {
+    if (!this.newDriver.fullName || !this.newDriver.licenseNumber || !this.newDriver.phone) {
+      this.toast.error('Veuillez renseigner le nom complet, le numéro de permis et le téléphone du chauffeur.');
+      return;
+    }
+    const created = this.mockService.addDriver(this.newDriver);
+    this.toast.success(`Chauffeur ${created.fullName} enregistré avec succès.`);
+    this.isAddDriverModalOpen = false;
+  }
+
+  // Modal Traceur GPS
+  isAddTrackerModalOpen = false;
+  newTracker = {
+    identifier: '',
+    vendor: 'Teltonika',
+    model: 'FMB920',
+    protocol: 'TCP/Teltonika-v1',
+    status: 'ACTIF',
+    batteryPercent: 100,
+    vehicleId: ''
+  };
+
+  openAddTrackerModal() {
+    this.newTracker = {
+      identifier: '',
+      vendor: 'Teltonika',
+      model: 'FMB920',
+      protocol: 'TCP/Teltonika-v1',
+      status: 'ACTIF',
+      batteryPercent: 100,
+      vehicleId: ''
+    };
+    this.isAddTrackerModalOpen = true;
+  }
+
+  closeAddTrackerModal() {
+    this.isAddTrackerModalOpen = false;
+  }
+
+  saveTracker() {
+    if (!this.newTracker.identifier || !this.newTracker.vendor || !this.newTracker.model) {
+      this.toast.error('Veuillez renseigner l\'identifiant unique (IMEI), le fournisseur et le modèle du traceur.');
+      return;
+    }
+    const created = this.mockService.addTracker(this.newTracker);
+    this.toast.success(`Traceur ${created.identifier} enregistré avec succès.`);
+    this.isAddTrackerModalOpen = false;
+  }
+
   closeAddMaintenance() {
     this.isAddMaintenanceOpen = false;
   }

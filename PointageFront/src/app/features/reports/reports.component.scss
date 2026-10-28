@@ -196,6 +196,8 @@
 }
 
 .plate-code {
+  display: inline-block;
+  white-space: nowrap;
   font-family: var(--font-mono, monospace);
   color: var(--ink);
   letter-spacing: 0.03em;
