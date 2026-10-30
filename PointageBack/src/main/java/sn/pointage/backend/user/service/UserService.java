@@ -6,13 +6,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sn.pointage.backend.shared.exception.EntityExistException;
 import sn.pointage.backend.shared.exception.EntityNotFoundException;
+import sn.pointage.backend.user.dto.AuthResponse;
 import sn.pointage.backend.user.dto.ChangePasswordRequest;
 import sn.pointage.backend.user.dto.CreateUserRequest;
+import sn.pointage.backend.user.dto.LoginRequest;
 import sn.pointage.backend.user.dto.UserResponse;
+import sn.pointage.backend.user.model.Role;
 import sn.pointage.backend.user.model.User;
 import sn.pointage.backend.user.repository.UserRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -45,13 +50,42 @@ public class UserService {
             .fullName(request.fullName().trim())
             .email(request.email().trim().toLowerCase())
             .password(passwordEncoder.encode(request.password()))
-            .role(request.role())
+            .role(request.role() != null ? request.role() : Role.USER)
             .phone(request.phone() != null ? request.phone().trim() : null)
             .location(request.location() != null ? request.location().trim() : "Exploitation")
             .active(true)
             .build();
 
         return UserResponse.fromEntity(userRepository.save(user));
+    }
+
+    @Transactional
+    public AuthResponse login(LoginRequest request) {
+        User user = userRepository.findByEmail(request.email().trim().toLowerCase())
+            .orElseThrow(() -> new IllegalArgumentException("Identifiants incorrects (email ou mot de passe)"));
+
+        if (!user.isActive()) {
+            throw new IllegalStateException("Ce compte utilisateur a été désactivé par un administrateur");
+        }
+
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new IllegalArgumentException("Identifiants incorrects (email ou mot de passe)");
+        }
+
+        user.setLastLogin(LocalDateTime.now());
+        userRepository.save(user);
+
+        // Token de session sécurisé
+        String sessionToken = "geofleet_" + UUID.randomUUID().toString();
+
+        return new AuthResponse(
+            sessionToken,
+            user.getId(),
+            user.getEmail(),
+            user.getFullName(),
+            user.getRole(),
+            user.getLocation()
+        );
     }
 
     @Transactional
