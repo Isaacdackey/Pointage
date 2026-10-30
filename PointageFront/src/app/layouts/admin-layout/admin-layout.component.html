@@ -264,46 +264,79 @@
 
             <div class="form-group">
               <label for="current-pwd">Mot de passe actuel *</label>
-              <input
-                id="current-pwd"
-                type="password"
-                [(ngModel)]="passwordForm.currentPassword"
-                name="currentPassword"
-                required
-                placeholder="••••••••••••"
-                autocomplete="current-password"
-                class="form-input"
-              />
+              <div class="password-input-wrapper">
+                <input
+                  id="current-pwd"
+                  [type]="showCurrentPassword ? 'text' : 'password'"
+                  [(ngModel)]="passwordForm.currentPassword"
+                  name="currentPassword"
+                  required
+                  placeholder="••••••••••••"
+                  autocomplete="current-password"
+                  class="form-input"
+                />
+                <button
+                  type="button"
+                  class="btn-password-toggle"
+                  (click)="toggleCurrentPassword()"
+                  [attr.aria-label]="showCurrentPassword ? 'Masquer' : 'Afficher'"
+                  [title]="showCurrentPassword ? 'Masquer' : 'Afficher'"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">{{ showCurrentPassword ? 'visibility_off' : 'visibility' }}</span>
+                </button>
+              </div>
             </div>
 
             <div class="form-group">
               <label for="new-pwd">Nouveau mot de passe *</label>
-              <input
-                id="new-pwd"
-                type="password"
-                [(ngModel)]="passwordForm.newPassword"
-                name="newPassword"
-                minlength="6"
-                required
-                placeholder="Au moins 6 caractères"
-                autocomplete="new-password"
-                class="form-input"
-              />
+              <div class="password-input-wrapper">
+                <input
+                  id="new-pwd"
+                  [type]="showNewPassword ? 'text' : 'password'"
+                  [(ngModel)]="passwordForm.newPassword"
+                  name="newPassword"
+                  minlength="6"
+                  required
+                  placeholder="Au moins 6 caractères"
+                  autocomplete="new-password"
+                  class="form-input"
+                />
+                <button
+                  type="button"
+                  class="btn-password-toggle"
+                  (click)="toggleNewPassword()"
+                  [attr.aria-label]="showNewPassword ? 'Masquer' : 'Afficher'"
+                  [title]="showNewPassword ? 'Masquer' : 'Afficher'"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">{{ showNewPassword ? 'visibility_off' : 'visibility' }}</span>
+                </button>
+              </div>
             </div>
 
             <div class="form-group">
               <label for="confirm-pwd">Confirmer le nouveau mot de passe *</label>
-              <input
-                id="confirm-pwd"
-                type="password"
-                [(ngModel)]="passwordForm.confirmPassword"
-                name="confirmPassword"
-                minlength="6"
-                required
-                placeholder="Ressaisissez le mot de passe"
-                autocomplete="new-password"
-                class="form-input"
-              />
+              <div class="password-input-wrapper">
+                <input
+                  id="confirm-pwd"
+                  [type]="showConfirmPassword ? 'text' : 'password'"
+                  [(ngModel)]="passwordForm.confirmPassword"
+                  name="confirmPassword"
+                  minlength="6"
+                  required
+                  placeholder="Ressaisissez le mot de passe"
+                  autocomplete="new-password"
+                  class="form-input"
+                />
+                <button
+                  type="button"
+                  class="btn-password-toggle"
+                  (click)="toggleConfirmPassword()"
+                  [attr.aria-label]="showConfirmPassword ? 'Masquer' : 'Afficher'"
+                  [title]="showConfirmPassword ? 'Masquer' : 'Afficher'"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</span>
+                </button>
+              </div>
             </div>
           </div>
 

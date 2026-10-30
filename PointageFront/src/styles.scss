@@ -899,3 +899,38 @@ body.dark-theme .leaflet-tile-pane {
     font-size: 13px;
   }
 }
+
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .form-input {
+    padding-right: 2.75rem !important;
+  }
+
+  .btn-password-toggle {
+    position: absolute;
+    right: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    background: transparent;
+    border: none;
+    border-radius: var(--r-sm);
+    color: var(--ink-3);
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease;
+
+    &:hover {
+      color: var(--brand-solid, #ea4c0e);
+      background: var(--bg-hover, rgba(234, 76, 14, 0.08));
+    }
+
+    .material-symbols-outlined {
+      font-size: 1.25rem;
+    }
+  }
+}

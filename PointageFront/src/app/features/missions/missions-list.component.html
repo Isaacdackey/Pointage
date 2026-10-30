@@ -270,17 +270,17 @@
               <!-- Actions Sécurisées & Icon-Buttons avec Tooltips / Accessible -->
               <td class="cell-actions" style="text-align: right;">
                 <div class="actions-group">
-                  <!-- Forcer le départ avec confirmation -->
+                  <!-- Démarrer la mission -->
                   <button
                     *ngIf="m.status === 'PLANIFIEE'"
                     type="button"
                     class="btn-action-start"
                     (click)="promptForceStart(m)"
-                    title="Forcer le départ manuellement (outrepasser la détection automatique GPS)"
-                    aria-label="Forcer le départ"
+                    title="Démarrer la mission (outrepasser ou devancer la détection automatique GPS)"
+                    aria-label="Démarrer la tournée"
                   >
                     <span class="material-symbols-outlined" aria-hidden="true">play_arrow</span>
-                    <span>Forcer départ</span>
+                    <span>Démarrer</span>
                   </button>
 
                   <!-- Terminer manuellement avec confirmation -->
@@ -443,7 +443,7 @@
 
         <!-- Actions Mobile : Bouton principal pleine largeur (≥ 44px) + Boutons secondaires (≥ 44x44px) -->
         <div class="m-card-actions" [class.actions-center]="m.status === 'TERMINEE'">
-          <!-- Forcer Départ -->
+          <!-- Démarrer Mission -->
           <button
             *ngIf="m.status === 'PLANIFIEE'"
             type="button"
@@ -451,7 +451,7 @@
             (click)="promptForceStart(m)"
           >
             <span class="material-symbols-outlined" aria-hidden="true">play_arrow</span>
-            <span>Forcer le départ</span>
+            <span>Démarrer la tournée</span>
           </button>
 
           <!-- Clôturer Mission -->
@@ -638,56 +638,132 @@
               </div>
             </div>
 
-            <!-- Départ & Arrivée synchronisés avec la carte -->
-            <div class="form-row-2" *ngIf="geoSites$ | async as sites">
-              <div class="form-group">
-                <label for="m-origin-site">Départ (Site ou pointer sur la carte) *</label>
-                <select
-                  id="m-origin-site"
-                  [(ngModel)]="newMission.originSiteId"
-                  name="originSiteId"
-                  (ngModelChange)="onOriginSiteChange($event, sites)"
-                  class="form-input"
-                >
-                  <option value="">-- Site favori ou carte --</option>
-                  <option *ngFor="let s of sites" [value]="s.id">
-                    {{ s.name }}
-                  </option>
-                </select>
-                <input
-                  type="text"
-                  [(ngModel)]="newMission.originName"
-                  name="originName"
-                  placeholder="Adresse d'origine"
-                  class="form-input"
-                  style="margin-top: 0.35rem;"
-                  required
-                />
+            <!-- Départ & Arrivée façon Google Maps (Recherche prédictive d'adresse) -->
+            <div class="form-row-2 predictive-places-row" *ngIf="geoSites$ | async as sites">
+              <!-- Champ Recherche Départ -->
+              <div class="form-group autocomplete-group">
+                <label for="m-origin-search">
+                  <span class="material-symbols-outlined origin-pin-icon">radio_button_checked</span>
+                  Lieu de départ *
+                </label>
+                <div class="input-with-actions">
+                  <input
+                    id="m-origin-search"
+                    type="text"
+                    [(ngModel)]="originSearchQuery"
+                    name="originSearchQuery"
+                    (input)="onOriginInput(originSearchQuery, sites)"
+                    autocomplete="off"
+                    placeholder="Tapez ex: ISM Point E, Total Almadies..."
+                    class="form-input search-maps-input"
+                    required
+                  />
+                  <button
+                    *ngIf="originSearchQuery"
+                    type="button"
+                    class="btn-clear-input"
+                    (click)="clearOriginSearch()"
+                    title="Effacer"
+                  >
+                    <span class="material-symbols-outlined">close</span>
+                  </button>
+                  <span *ngIf="isSearchingOrigin" class="input-spinner material-symbols-outlined spinning">
+                    sync
+                  </span>
+                </div>
+
+                <!-- Dropdown suggestions prédictives Départ -->
+                <div class="suggestions-dropdown" *ngIf="originSuggestions.length > 0">
+                  <div
+                    *ngFor="let item of originSuggestions"
+                    class="suggestion-item"
+                    (click)="selectOriginSuggestion(item)"
+                  >
+                    <span class="material-symbols-outlined item-icon" [class.fav-icon]="item.isFavorite">
+                      {{ item.isFavorite ? 'star' : 'location_on' }}
+                    </span>
+                    <div class="item-text">
+                      <span class="item-main">{{ item.label }}</span>
+                      <span class="item-sub" *ngIf="item.sublabel">{{ item.sublabel }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="input-hint-row">
+                  <span class="hint-txt">Ou sélectionner un site enregistré :</span>
+                  <select
+                    [(ngModel)]="newMission.originSiteId"
+                    name="originSiteId"
+                    (ngModelChange)="onOriginSiteChange($event, sites)"
+                    class="mini-site-select"
+                  >
+                    <option value="">Sites favoris...</option>
+                    <option *ngFor="let s of sites" [value]="s.id">{{ s.name }}</option>
+                  </select>
+                </div>
               </div>
 
-              <div class="form-group">
-                <label for="m-dest-site">Destination (Site ou pointer sur la carte) *</label>
-                <select
-                  id="m-dest-site"
-                  [(ngModel)]="newMission.destinationSiteId"
-                  name="destinationSiteId"
-                  (ngModelChange)="onDestinationSiteChange($event, sites)"
-                  class="form-input"
-                >
-                  <option value="">-- Site favori ou carte --</option>
-                  <option *ngFor="let s of sites" [value]="s.id">
-                    {{ s.name }}
-                  </option>
-                </select>
-                <input
-                  type="text"
-                  [(ngModel)]="newMission.destinationName"
-                  name="destinationName"
-                  placeholder="Adresse destination"
-                  class="form-input"
-                  style="margin-top: 0.35rem;"
-                  required
-                />
+              <!-- Champ Recherche Arrivée -->
+              <div class="form-group autocomplete-group">
+                <label for="m-dest-search">
+                  <span class="material-symbols-outlined dest-pin-icon">flag</span>
+                  Destination / Arrivée *
+                </label>
+                <div class="input-with-actions">
+                  <input
+                    id="m-dest-search"
+                    type="text"
+                    [(ngModel)]="destSearchQuery"
+                    name="destSearchQuery"
+                    (input)="onDestInput(destSearchQuery, sites)"
+                    autocomplete="off"
+                    placeholder="Tapez ex: Diamniadio, Port Dakar, Thiès..."
+                    class="form-input search-maps-input"
+                    required
+                  />
+                  <button
+                    *ngIf="destSearchQuery"
+                    type="button"
+                    class="btn-clear-input"
+                    (click)="clearDestSearch()"
+                    title="Effacer"
+                  >
+                    <span class="material-symbols-outlined">close</span>
+                  </button>
+                  <span *ngIf="isSearchingDest" class="input-spinner material-symbols-outlined spinning">
+                    sync
+                  </span>
+                </div>
+
+                <!-- Dropdown suggestions prédictives Arrivée -->
+                <div class="suggestions-dropdown" *ngIf="destSuggestions.length > 0">
+                  <div
+                    *ngFor="let item of destSuggestions"
+                    class="suggestion-item"
+                    (click)="selectDestSuggestion(item)"
+                  >
+                    <span class="material-symbols-outlined item-icon" [class.fav-icon]="item.isFavorite">
+                      {{ item.isFavorite ? 'star' : 'flag' }}
+                    </span>
+                    <div class="item-text">
+                      <span class="item-main">{{ item.label }}</span>
+                      <span class="item-sub" *ngIf="item.sublabel">{{ item.sublabel }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="input-hint-row">
+                  <span class="hint-txt">Ou sélectionner un site enregistré :</span>
+                  <select
+                    [(ngModel)]="newMission.destinationSiteId"
+                    name="destinationSiteId"
+                    (ngModelChange)="onDestinationSiteChange($event, sites)"
+                    class="mini-site-select"
+                  >
+                    <option value="">Sites favoris...</option>
+                    <option *ngFor="let s of sites" [value]="s.id">{{ s.name }}</option>
+                  </select>
+                </div>
               </div>
             </div>
 

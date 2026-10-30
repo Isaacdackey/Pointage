@@ -28,11 +28,27 @@ export class AdminLayoutComponent {
 
   // Modal changement de mot de passe utilisateur
   isPasswordModalOpen = false;
+  showCurrentPassword = false;
+  showNewPassword = false;
+  showConfirmPassword = false;
+
   passwordForm = {
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   };
+
+  toggleCurrentPassword(): void {
+    this.showCurrentPassword = !this.showCurrentPassword;
+  }
+
+  toggleNewPassword(): void {
+    this.showNewPassword = !this.showNewPassword;
+  }
+
+  toggleConfirmPassword(): void {
+    this.showConfirmPassword = !this.showConfirmPassword;
+  }
 
   user$ = this.authService.currentUser$;
   isSidebarCollapsed = false;

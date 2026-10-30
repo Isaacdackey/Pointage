@@ -87,6 +87,35 @@ export class MissionsListComponent implements OnInit, OnDestroy {
   };
   isGeocodingLoading = false;
 
+  // Autocomplete recherche d'adresse prédictive
+  originSearchQuery = '';
+  destSearchQuery = '';
+  originSuggestions: Array<{ label: string; sublabel?: string; lat: number; lng: number; isFavorite?: boolean; siteId?: string }> = [];
+  destSuggestions: Array<{ label: string; sublabel?: string; lat: number; lng: number; isFavorite?: boolean; siteId?: string }> = [];
+  isSearchingOrigin = false;
+  isSearchingDest = false;
+  private originSearchTimeout: any;
+  private destSearchTimeout: any;
+
+  // Répertoire des principaux repères et carrefours du Sénégal / Dakar
+  private readonly defaultLocations: Array<{ label: string; sublabel: string; lat: number; lng: number }> = [
+    { label: 'ISM Point E (Institut Supérieur de Management)', sublabel: 'Avenue Cheikh Anta Diop, Point E, Dakar', lat: 14.6925, lng: -17.4642 },
+    { label: 'Total Almadies', sublabel: 'Route des Almadies, Ngor, Dakar', lat: 14.7431, lng: -17.5186 },
+    { label: 'Port Autonome de Dakar (DP World)', sublabel: 'Boulevard de la Libération, Dakar Plateau', lat: 14.6780, lng: -17.4290 },
+    { label: 'Plateforme Industrielle Internationale de Diamniadio (P2ID)', sublabel: 'Diamniadio, Rufisque', lat: 14.7215, lng: -17.1852 },
+    { label: 'Aéroport International Blaise Diagne (AIBD)', sublabel: 'Diass, Thiès', lat: 14.6711, lng: -17.0733 },
+    { label: 'Grand Yoff (Rond-point Liberté 6)', sublabel: 'Grand Yoff, Dakar', lat: 14.7291, lng: -17.4523 },
+    { label: 'Dépôt Central Pétrolier Hann Bel-Air', sublabel: 'Route des Hydrocarbures, Bel-Air, Dakar', lat: 14.7167, lng: -17.4277 },
+    { label: 'Pharmacie Guigon Dakar Plateau', sublabel: 'Avenue Georges Pompidou, Dakar', lat: 14.6698, lng: -17.4334 },
+    { label: 'Gare des Baux Maraîchers', sublabel: 'Pikine Est, Dakar', lat: 14.7456, lng: -17.3871 },
+    { label: 'Centre Commercial Sea Plaza', sublabel: 'Boulevard Martin Luther King (Corniche Ouest), Dakar', lat: 14.6865, lng: -17.4764 },
+    { label: 'Université Cheikh Anta Diop (UCAD)', sublabel: 'Fann Résidence, Dakar', lat: 14.6918, lng: -17.4669 },
+    { label: 'Péage Dakar Diamniadio (Gare Thiaroye)', sublabel: 'Autoroute de l\'Avenir, Thiaroye', lat: 14.7554, lng: -17.3682 },
+    { label: 'Hôpital Principal de Dakar', sublabel: 'Avenue Nelson Mandela, Plateau', lat: 14.6612, lng: -17.4339 },
+    { label: 'Monument de la Renaissance Africaine', sublabel: 'Ouakam, Dakar', lat: 14.7222, lng: -17.4950 },
+    { label: 'Saly Portudal', sublabel: 'Mbour, Thiès', lat: 14.4422, lng: -16.9856 }
+  ];
+
   ngOnInit(): void {
     // Lecture de la préférence du bandeau
     try {
@@ -235,10 +264,10 @@ export class MissionsListComponent implements OnInit, OnDestroy {
 
   // Actions sécurisées avec modale de confirmation
   promptForceStart(mission: Mission): void {
-    this.confirmModalTitle = 'Forcer le départ de la mission';
-    this.confirmModalMessage = `Voulez-vous forcer manuellement le départ de la tournée ${mission.code} (${mission.vehicleReg}) ? Normalement, GeoFleet détecte automatiquement le départ dès le premier déplacement GPS.`;
+    this.confirmModalTitle = 'Démarrer la mission';
+    this.confirmModalMessage = `Voulez-vous lancer le départ de la tournée ${mission.code} (${mission.vehicleReg}) ? Normalement, GeoFleet détecte automatiquement le départ dès le premier déplacement GPS.`;
     this.confirmModalType = 'warn';
-    this.confirmModalBtnLabel = 'Forcer le départ';
+    this.confirmModalBtnLabel = 'Démarrer la mission';
     this.confirmModalAction = () => {
       this.mockService.acceptDeparture(mission.id);
       this.secondsSinceLastUpdate = 0;
@@ -305,6 +334,7 @@ export class MissionsListComponent implements OnInit, OnDestroy {
     const site = sites.find(s => s.id === siteId);
     if (site) {
       this.newMission.originName = site.name;
+      this.originSearchQuery = site.name;
       this.originCoords = { lat: site.latitude, lng: site.longitude };
       this.updateMapRoute();
     }
@@ -315,10 +345,204 @@ export class MissionsListComponent implements OnInit, OnDestroy {
     const site = sites.find(s => s.id === siteId);
     if (site) {
       this.newMission.destinationName = site.name;
+      this.destSearchQuery = site.name;
       this.destCoords = { lat: site.latitude, lng: site.longitude };
       this.updateMapRoute();
     }
     this.autoComputeDistance(sites);
+  }
+
+  // --- RECHERCHE PRÉDICTIVE TYPE GOOGLE MAPS ---
+  onOriginInput(query: string, sites: GeoSite[]) {
+    this.newMission.originName = query;
+    if (this.originSearchTimeout) clearTimeout(this.originSearchTimeout);
+
+    if (!query || query.trim().length < 2) {
+      this.originSuggestions = [];
+      this.isSearchingOrigin = false;
+      return;
+    }
+
+    const q = query.toLowerCase().trim();
+
+    // 1. Suggestions locales instantanées (Sites favoris + Carrefours Sénégal)
+    const localMatches: Array<{ label: string; sublabel?: string; lat: number; lng: number; isFavorite?: boolean; siteId?: string }> = [];
+
+    // Favoris
+    sites.forEach(s => {
+      if (s.name.toLowerCase().includes(q) || (s.address && s.address.toLowerCase().includes(q))) {
+        localMatches.push({
+          label: s.name,
+          sublabel: s.address || 'Site favori de la flotte',
+          lat: s.latitude,
+          lng: s.longitude,
+          isFavorite: true,
+          siteId: s.id
+        });
+      }
+    });
+
+    // Lieux pré-indexés Dakar/Sénégal
+    this.defaultLocations.forEach(loc => {
+      if (loc.label.toLowerCase().includes(q) || loc.sublabel.toLowerCase().includes(q)) {
+        if (!localMatches.some(m => m.label.toLowerCase() === loc.label.toLowerCase())) {
+          localMatches.push({
+            label: loc.label,
+            sublabel: loc.sublabel,
+            lat: loc.lat,
+            lng: loc.lng,
+            isFavorite: false
+          });
+        }
+      }
+    });
+
+    this.originSuggestions = localMatches.slice(0, 5);
+
+    // 2. Debounce recherche en ligne Nominatim OSM
+    this.isSearchingOrigin = true;
+    this.originSearchTimeout = setTimeout(() => {
+      const searchUrl = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query + ' Senegal') + '&limit=4&addressdetails=1';
+      fetch(searchUrl)
+        .then(res => res.json())
+        .then(data => {
+          this.isSearchingOrigin = false;
+          if (Array.isArray(data)) {
+            data.forEach((item: any) => {
+              const label = item.display_name.split(',')[0];
+              const sublabel = item.display_name.split(',').slice(1, 4).join(',').trim();
+              const lat = parseFloat(item.lat);
+              const lng = parseFloat(item.lon);
+
+              if (!this.originSuggestions.some(s => Math.abs(s.lat - lat) < 0.001 && Math.abs(s.lng - lng) < 0.001)) {
+                this.originSuggestions.push({
+                  label,
+                  sublabel,
+                  lat,
+                  lng,
+                  isFavorite: false
+                });
+              }
+            });
+            this.originSuggestions = this.originSuggestions.slice(0, 6);
+          }
+        })
+        .catch(() => {
+          this.isSearchingOrigin = false;
+        });
+    }, 400);
+  }
+
+  selectOriginSuggestion(item: { label: string; sublabel?: string; lat: number; lng: number; isFavorite?: boolean; siteId?: string }) {
+    this.newMission.originName = item.label;
+    this.originSearchQuery = item.label;
+    this.newMission.originSiteId = item.siteId || '';
+    this.originCoords = { lat: item.lat, lng: item.lng };
+    this.originSuggestions = [];
+    this.updateMapRoute();
+  }
+
+  onDestInput(query: string, sites: GeoSite[]) {
+    this.newMission.destinationName = query;
+    if (this.destSearchTimeout) clearTimeout(this.destSearchTimeout);
+
+    if (!query || query.trim().length < 2) {
+      this.destSuggestions = [];
+      this.isSearchingDest = false;
+      return;
+    }
+
+    const q = query.toLowerCase().trim();
+
+    // 1. Suggestions locales instantanées
+    const localMatches: Array<{ label: string; sublabel?: string; lat: number; lng: number; isFavorite?: boolean; siteId?: string }> = [];
+
+    // Favoris
+    sites.forEach(s => {
+      if (s.name.toLowerCase().includes(q) || (s.address && s.address.toLowerCase().includes(q))) {
+        localMatches.push({
+          label: s.name,
+          sublabel: s.address || 'Site favori de la flotte',
+          lat: s.latitude,
+          lng: s.longitude,
+          isFavorite: true,
+          siteId: s.id
+        });
+      }
+    });
+
+    // Lieux Dakar / Sénégal
+    this.defaultLocations.forEach(loc => {
+      if (loc.label.toLowerCase().includes(q) || loc.sublabel.toLowerCase().includes(q)) {
+        if (!localMatches.some(m => m.label.toLowerCase() === loc.label.toLowerCase())) {
+          localMatches.push({
+            label: loc.label,
+            sublabel: loc.sublabel,
+            lat: loc.lat,
+            lng: loc.lng,
+            isFavorite: false
+          });
+        }
+      }
+    });
+
+    this.destSuggestions = localMatches.slice(0, 5);
+
+    // 2. Debounce recherche en ligne Nominatim OSM
+    this.isSearchingDest = true;
+    this.destSearchTimeout = setTimeout(() => {
+      const searchUrl = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query + ' Senegal') + '&limit=4&addressdetails=1';
+      fetch(searchUrl)
+        .then(res => res.json())
+        .then(data => {
+          this.isSearchingDest = false;
+          if (Array.isArray(data)) {
+            data.forEach((item: any) => {
+              const label = item.display_name.split(',')[0];
+              const sublabel = item.display_name.split(',').slice(1, 4).join(',').trim();
+              const lat = parseFloat(item.lat);
+              const lng = parseFloat(item.lon);
+
+              if (!this.destSuggestions.some(s => Math.abs(s.lat - lat) < 0.001 && Math.abs(s.lng - lng) < 0.001)) {
+                this.destSuggestions.push({
+                  label,
+                  sublabel,
+                  lat,
+                  lng,
+                  isFavorite: false
+                });
+              }
+            });
+            this.destSuggestions = this.destSuggestions.slice(0, 6);
+          }
+        })
+        .catch(() => {
+          this.isSearchingDest = false;
+        });
+    }, 400);
+  }
+
+  selectDestSuggestion(item: { label: string; sublabel?: string; lat: number; lng: number; isFavorite?: boolean; siteId?: string }) {
+    this.newMission.destinationName = item.label;
+    this.destSearchQuery = item.label;
+    this.newMission.destinationSiteId = item.siteId || '';
+    this.destCoords = { lat: item.lat, lng: item.lng };
+    this.destSuggestions = [];
+    this.updateMapRoute();
+  }
+
+  clearOriginSearch() {
+    this.originSearchQuery = '';
+    this.newMission.originName = '';
+    this.newMission.originSiteId = '';
+    this.originSuggestions = [];
+  }
+
+  clearDestSearch() {
+    this.destSearchQuery = '';
+    this.newMission.destinationName = '';
+    this.newMission.destinationSiteId = '';
+    this.destSuggestions = [];
   }
 
   setPickingMode(mode: 'ORIGIN' | 'DEST') {
@@ -505,6 +729,10 @@ export class MissionsListComponent implements OnInit, OnDestroy {
       plannedStartTime: dateFormatted,
       notes: ''
     };
+    this.originSearchQuery = 'Dépôt Central Hann Bel-Air';
+    this.destSearchQuery = 'Plateforme Industrielle Diamniadio';
+    this.originSuggestions = [];
+    this.destSuggestions = [];
     this.originCoords = { lat: 14.7167, lng: -17.4677 };
     this.destCoords = { lat: 14.7410, lng: -17.3240 };
     this.activePickingMode = 'ORIGIN';

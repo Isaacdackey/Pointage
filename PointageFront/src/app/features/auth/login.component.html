@@ -75,7 +75,7 @@
               <span class="material-symbols-outlined input-icon" aria-hidden="true">lock</span>
               <input
                 id="login-password"
-                type="password"
+                [type]="showPassword ? 'text' : 'password'"
                 [(ngModel)]="password"
                 name="password"
                 required
@@ -83,6 +83,17 @@
                 placeholder="••••••••••••"
                 autocomplete="current-password"
               />
+              <button
+                type="button"
+                class="btn-password-toggle-login"
+                (click)="togglePasswordVisibility()"
+                [attr.aria-label]="showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+                [title]="showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+              >
+                <span class="material-symbols-outlined" aria-hidden="true">
+                  {{ showPassword ? 'visibility_off' : 'visibility' }}
+                </span>
+              </button>
             </div>
           </div>
 

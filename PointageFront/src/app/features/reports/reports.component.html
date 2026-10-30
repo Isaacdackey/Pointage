@@ -1,15 +1,44 @@
 <div class="maintenance-page-container">
   <app-page-header
-    title="Carnet d'Entretien & Gestion des Pannes"
-    subtitle="Remplacement télématique du suivi carburant : carnet d'entretien numérique par véhicule, suivi des vidanges, visites techniques, réparations et déclaration immédiate de pannes."
+    title="Carnet d'Entretien & Gestion des Échéances"
+    subtitle="Suivi télématique de la maintenance préventive et curative : carnet numérique par véhicule, suivi des vidanges, visites techniques, polices d'assurance et déclarations de pannes."
   >
     <div class="header-actions">
-      <button (click)="openAddMaintenance()" class="btn btn-primary">
+      <button *ngIf="activeMaintenanceTab === 'HISTORIQUE'" (click)="openAddMaintenance()" class="btn btn-primary">
         <span class="material-symbols-outlined" aria-hidden="true">build</span>
-        Signaler Panne / Nouvelle Intervention
+        Signaler Panne / Intervention
+      </button>
+      <button *ngIf="activeMaintenanceTab === 'ECHEANCES'" (click)="openAddDeadline()" class="btn btn-primary">
+        <span class="material-symbols-outlined" aria-hidden="true">event_upcoming</span>
+        Programmer une Échéance (Assurance, VT, Vidange)
       </button>
     </div>
   </app-page-header>
+
+  <!-- Onglets de Navigation : Historique vs Échéances Mentor -->
+  <div class="tabs-bar" role="tablist" aria-label="Sections Maintenance">
+    <button
+      role="tab"
+      id="tab-hist"
+      [class.active]="activeMaintenanceTab === 'HISTORIQUE'"
+      (click)="activeMaintenanceTab = 'HISTORIQUE'"
+      class="tab-btn"
+    >
+      <span class="material-symbols-outlined tab-icon">history_edu</span>
+      <span>Carnet d'Entretien ({{ (maintenanceRecords$ | async)?.length }})</span>
+    </button>
+    <button
+      role="tab"
+      id="tab-ech"
+      [class.active]="activeMaintenanceTab === 'ECHEANCES'"
+      (click)="activeMaintenanceTab = 'ECHEANCES'"
+      class="tab-btn"
+    >
+      <span class="material-symbols-outlined tab-icon">alarm</span>
+      <span>Échéances & Rappels Programmés ({{ (deadlines$ | async)?.length }})</span>
+      <span *ngIf="urgentDeadlinesCount > 0" class="badge-urgent-pill">{{ urgentDeadlinesCount }}</span>
+    </button>
+  </div>
 
   <!-- KPI Cards Maintenance -->
   <section class="kpi-row" aria-label="Indicateurs de maintenance">
@@ -20,15 +49,15 @@
     </div>
 
     <div class="kpi-mini-card">
-      <span class="kpi-lbl">Véhicules Immobilisés / Atelier</span>
-      <div class="kpi-val" [class.warn-text]="vehiclesUnderMaintenanceCount > 0">{{ vehiclesUnderMaintenanceCount }}</div>
-      <span class="kpi-trend">En cours de réparation</span>
+      <span class="kpi-lbl">Échéances en Alerte</span>
+      <div class="kpi-val" [class.warn-text]="urgentDeadlinesCount > 0">{{ urgentDeadlinesCount }}</div>
+      <span class="kpi-trend">Assurances, VT & Vidanges</span>
     </div>
 
     <div class="kpi-mini-card">
-      <span class="kpi-lbl">Interventions Planifiées</span>
-      <div class="kpi-val">{{ pendingRepairsCount }}</div>
-      <span class="kpi-trend">En attente garage</span>
+      <span class="kpi-lbl">Véhicules en Atelier</span>
+      <div class="kpi-val" [class.warn-text]="vehiclesUnderMaintenanceCount > 0">{{ vehiclesUnderMaintenanceCount }}</div>
+      <span class="kpi-trend">Immobilisés / En réparation</span>
     </div>
 
     <div class="kpi-mini-card">
@@ -38,74 +67,120 @@
     </div>
   </section>
 
-  <!-- Filtres et Recherche de Maintenance -->
-  <div class="filters-search-bar card">
-    <div class="search-input-wrapper">
-      <span class="material-symbols-outlined search-icon" aria-hidden="true">search</span>
-      <input
-        type="text"
-        [(ngModel)]="searchQuery"
-        placeholder="Rechercher par véhicule (DK-...), travaux, panne, garage..."
-        class="search-input"
-        aria-label="Rechercher une intervention"
-      />
-      <button
-        *ngIf="searchQuery"
-        type="button"
-        class="btn-clear"
-        (click)="searchQuery = ''"
-        aria-label="Effacer la recherche"
-      >
-        <span class="material-symbols-outlined">close</span>
-      </button>
+  <!-- ============================================================== -->
+  <!-- VUE 1 : HISTORIQUE DES TRAVAUX & CARNET D'ENTRETIEN             -->
+  <!-- ============================================================== -->
+  <ng-container *ngIf="activeMaintenanceTab === 'HISTORIQUE'">
+    <!-- Filtres et Recherche de Maintenance -->
+    <div class="filters-search-bar card">
+      <div class="search-input-wrapper">
+        <span class="material-symbols-outlined search-icon" aria-hidden="true">search</span>
+        <input
+          type="text"
+          [(ngModel)]="searchQuery"
+          placeholder="Rechercher par véhicule (DK-...), travaux, panne, garage..."
+          class="search-input"
+          aria-label="Rechercher une intervention"
+        />
+        <button
+          *ngIf="searchQuery"
+          type="button"
+          class="btn-clear"
+          (click)="searchQuery = ''"
+          aria-label="Effacer la recherche"
+        >
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="filter-controls">
+        <select [(ngModel)]="filterType" class="form-input filter-select" aria-label="Filtrer par type">
+          <option value="ALL">Tous les types d'interventions</option>
+          <option value="REPARATION">Réparations mécaniques & Pannes</option>
+          <option value="VIDANGE">Vidanges moteur & filtres</option>
+          <option value="VISITE_TECHNIQUE">Visites techniques</option>
+          <option value="FREINAGE">Freinage (plaquettes, disques)</option>
+          <option value="PNEUMATIQUE">Pneumatiques / Parallélisme</option>
+          <option value="ACCIDENT">Sinistres / Accidents</option>
+        </select>
+
+        <select [(ngModel)]="filterStatus" class="form-input filter-select" aria-label="Filtrer par statut">
+          <option value="ALL">Tous les statuts</option>
+          <option value="PLANIFIEE">Planifiées / En attente</option>
+          <option value="TERMINEE">Terminées / Réalisées</option>
+        </select>
+      </div>
     </div>
 
-    <div class="filter-controls">
-      <select [(ngModel)]="filterType" class="form-input filter-select" aria-label="Filtrer par type">
-        <option value="ALL">Tous les types d'interventions</option>
-        <option value="REPARATION">Réparations mécaniques & Pannes</option>
-        <option value="VIDANGE">Vidanges moteur & filtres</option>
-        <option value="VISITE_TECHNIQUE">Visites techniques</option>
-        <option value="FREINAGE">Freinage (plaquettes, disques)</option>
-        <option value="PNEUMATIQUE">Pneumatiques / Parallélisme</option>
-        <option value="ACCIDENT">Sinistres / Accidents</option>
-      </select>
+    <!-- Table Historique & Carnet d'Entretien -->
+    <section class="card" aria-label="Historique maintenance">
+      <div class="card-top">
+        <h2 class="section-title">Carnet d'Entretien Numérique & Historique des Travaux</h2>
+        <span class="badge-count">{{ filteredRecords(maintenanceRecords$ | async).length }} intervention(s)</span>
+      </div>
 
-      <select [(ngModel)]="filterStatus" class="form-input filter-select" aria-label="Filtrer par statut">
-        <option value="ALL">Tous les statuts</option>
-        <option value="PLANIFIEE">Planifiées / En attente</option>
-        <option value="TERMINEE">Terminées / Réalisées</option>
-      </select>
-    </div>
-  </div>
+      <!-- Vue Desktop (>= 768px) -->
+      <div class="table-container maintenance-desktop-table">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">Date</th>
+              <th scope="col">Véhicule</th>
+              <th scope="col">Type d'Intervention</th>
+              <th scope="col">Détails des Travaux</th>
+              <th scope="col">Prestataire / Garage</th>
+              <th scope="col" class="num-cell">Kilométrage</th>
+              <th scope="col" class="num-cell">Montant (FCFA)</th>
+              <th scope="col" style="text-align: right;">Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let m of filteredRecords(maintenanceRecords$ | async)">
+              <td>{{ m.serviceDate }}</td>
+              <td><strong class="plate-code">{{ m.vehicleReg }}</strong></td>
+              <td>
+                <span class="maint-type-pill" [ngClass]="{
+                  'type-vidange': m.type === 'VIDANGE',
+                  'type-vt': m.type === 'VISITE_TECHNIQUE',
+                  'type-reparation': m.type === 'REPARATION' || m.type === 'ACCIDENT',
+                  'type-autre': m.type === 'FREINAGE' || m.type === 'PNEUMATIQUE'
+                }">
+                  {{ m.type }}
+                </span>
+              </td>
+              <td>
+                <strong class="maint-title-txt">{{ m.title }}</strong>
+                <div class="maint-desc-txt">{{ m.description }}</div>
+              </td>
+              <td>{{ m.provider }}</td>
+              <td class="num-cell">{{ formatNumber(m.odometerKm) }} km</td>
+              <td class="num-cell"><strong>{{ formatNumber(m.costCfa) }} FCFA</strong></td>
+              <td style="text-align: right;">
+                <span class="status-maint-pill" [class.done]="m.status === 'TERMINEE'" [class.planned]="m.status === 'PLANIFIEE'">
+                  {{ m.status }}
+                </span>
+              </td>
+            </tr>
 
-  <!-- Table Historique & Carnet d'Entretien -->
-  <section class="card" aria-label="Historique maintenance">
-    <div class="card-top">
-      <h2 class="section-title">Carnet d'Entretien Numérique & Historique des Travaux</h2>
-      <span class="badge-count">{{ filteredRecords(maintenanceRecords$ | async).length }} intervention(s)</span>
-    </div>
+            <tr *ngIf="filteredRecords(maintenanceRecords$ | async).length === 0">
+              <td colspan="8" class="empty-cell">
+                Aucune intervention ne correspond à votre filtre ou recherche.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-    <!-- Vue Desktop (>= 768px) -->
-    <div class="table-container maintenance-desktop-table">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th scope="col">Date</th>
-            <th scope="col">Véhicule</th>
-            <th scope="col">Type d'Intervention</th>
-            <th scope="col">Détails des Travaux</th>
-            <th scope="col">Prestataire / Garage</th>
-            <th scope="col" class="num-cell">Kilométrage</th>
-            <th scope="col" class="num-cell">Montant (FCFA)</th>
-            <th scope="col" style="text-align: right;">Statut</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let m of filteredRecords(maintenanceRecords$ | async)">
-            <td>{{ m.serviceDate }}</td>
-            <td><strong class="plate-code">{{ m.vehicleReg }}</strong></td>
-            <td>
+      <!-- Vue Cartes Mobile (< 768px) -->
+      <div class="maintenance-mobile-cards">
+        <div
+          *ngFor="let m of filteredRecords(maintenanceRecords$ | async)"
+          class="maint-card-mobile"
+          [class.card-planned]="m.status === 'PLANIFIEE'"
+        >
+          <div class="m-card-top-bar">
+            <div class="m-veh-group">
+              <span class="plate-code">{{ m.vehicleReg }}</span>
               <span class="maint-type-pill" [ngClass]="{
                 'type-vidange': m.type === 'VIDANGE',
                 'type-vt': m.type === 'VISITE_TECHNIQUE',
@@ -114,96 +189,164 @@
               }">
                 {{ m.type }}
               </span>
-            </td>
-            <td>
-              <strong class="maint-title-txt">{{ m.title }}</strong>
-              <div class="maint-desc-txt">{{ m.description }}</div>
-            </td>
-            <td>{{ m.provider }}</td>
-            <td class="num-cell">{{ formatNumber(m.odometerKm) }} km</td>
-            <td class="num-cell"><strong>{{ formatNumber(m.costCfa) }} FCFA</strong></td>
-            <td style="text-align: right;">
-              <span class="status-maint-pill" [class.done]="m.status === 'TERMINEE'" [class.planned]="m.status === 'PLANIFIEE'">
-                {{ m.status }}
-              </span>
-            </td>
-          </tr>
-
-          <tr *ngIf="filteredRecords(maintenanceRecords$ | async).length === 0">
-            <td colspan="8" class="empty-cell">
-              Aucune intervention ne correspond à votre filtre ou recherche.
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Vue Cartes Mobile (< 768px) : aérée, moderne et lisible -->
-    <div class="maintenance-mobile-cards">
-      <div
-        *ngFor="let m of filteredRecords(maintenanceRecords$ | async)"
-        class="maint-card-mobile"
-        [class.card-planned]="m.status === 'PLANIFIEE'"
-      >
-        <!-- En-tête : Véhicule + Type à gauche, Statut à droite -->
-        <div class="m-card-top-bar">
-          <div class="m-veh-group">
-            <span class="plate-code">{{ m.vehicleReg }}</span>
-            <span class="maint-type-pill" [ngClass]="{
-              'type-vidange': m.type === 'VIDANGE',
-              'type-vt': m.type === 'VISITE_TECHNIQUE',
-              'type-reparation': m.type === 'REPARATION' || m.type === 'ACCIDENT',
-              'type-autre': m.type === 'FREINAGE' || m.type === 'PNEUMATIQUE'
-            }">
-              {{ m.type }}
+            </div>
+            <span class="status-maint-pill" [class.done]="m.status === 'TERMINEE'" [class.planned]="m.status === 'PLANIFIEE'">
+              {{ m.status }}
             </span>
           </div>
-          <span class="status-maint-pill" [class.done]="m.status === 'TERMINEE'" [class.planned]="m.status === 'PLANIFIEE'">
-            {{ m.status }}
-          </span>
-        </div>
 
-        <!-- Titre et Détails des Travaux -->
-        <div class="m-card-body">
-          <h3 class="maint-mobile-title">{{ m.title }}</h3>
-          <p class="maint-mobile-desc" *ngIf="m.description">{{ m.description }}</p>
-        </div>
+          <div class="m-card-body">
+            <h3 class="maint-mobile-title">{{ m.title }}</h3>
+            <p class="maint-mobile-desc" *ngIf="m.description">{{ m.description }}</p>
+          </div>
 
-        <!-- Métriques et Prestataire en grille claire -->
-        <div class="m-card-meta-grid">
-          <div class="meta-item">
-            <span class="meta-lbl">Date</span>
-            <strong class="meta-val">{{ m.serviceDate }}</strong>
-          </div>
-          <div class="meta-item">
-            <span class="meta-lbl">Prestataire</span>
-            <span class="meta-val">{{ m.provider }}</span>
-          </div>
-          <div class="meta-item">
-            <span class="meta-lbl">Compteur</span>
-            <span class="meta-val">{{ formatNumber(m.odometerKm) }} km</span>
-          </div>
-          <div class="meta-item meta-item-cost">
-            <span class="meta-lbl">Montant</span>
-            <strong class="meta-val cost-val">{{ formatNumber(m.costCfa) }} FCFA</strong>
+          <div class="m-card-meta-grid">
+            <div class="meta-item">
+              <span class="meta-lbl">Date</span>
+              <strong class="meta-val">{{ m.serviceDate }}</strong>
+            </div>
+            <div class="meta-item">
+              <span class="meta-lbl">Prestataire</span>
+              <span class="meta-val">{{ m.provider }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-lbl">Kilométrage</span>
+              <span class="meta-val">{{ formatNumber(m.odometerKm) }} km</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-lbl">Coût</span>
+              <strong class="meta-val">{{ formatNumber(m.costCfa) }} FCFA</strong>
+            </div>
           </div>
         </div>
       </div>
+    </section>
+  </ng-container>
 
-      <!-- État vide mobile -->
-      <div *ngIf="filteredRecords(maintenanceRecords$ | async).length === 0" class="empty-cell">
-        Aucune intervention ne correspond à votre filtre ou recherche.
+  <!-- ============================================================== -->
+  <!-- VUE 2 : ÉCHÉANCES & RAPPELS PROGRAMMÉS (Directives Mentor)      -->
+  <!-- ============================================================== -->
+  <ng-container *ngIf="activeMaintenanceTab === 'ECHEANCES'">
+    <!-- Filtres Échéances -->
+    <div class="filters-search-bar card">
+      <div class="search-input-wrapper">
+        <span class="material-symbols-outlined search-icon" aria-hidden="true">search</span>
+        <input
+          type="text"
+          [(ngModel)]="searchQuery"
+          placeholder="Rechercher une échéance (véhicule, contrat, prestataire...)"
+          class="search-input"
+        />
+      </div>
+
+      <div class="filter-controls">
+        <select [(ngModel)]="deadlineFilterType" class="form-input filter-select">
+          <option value="ALL">Toutes les échéances (Assurance, VT, Vidange)</option>
+          <option value="ASSURANCE">Assurances uniquement</option>
+          <option value="VISITE_TECHNIQUE">Visites techniques uniquement</option>
+          <option value="VIDANGE">Vidanges périodiques uniquement</option>
+        </select>
+
+        <button (click)="openAddDeadline()" class="btn btn-primary" style="white-space: nowrap;">
+          <span class="material-symbols-outlined">add_alarm</span>
+          <span>Programmer Échéance</span>
+        </button>
       </div>
     </div>
-  </section>
 
-  <!-- Modal Signaler une Panne / Planifier une Maintenance -->
+    <!-- Tableau des Échéances et Délais de Rappel -->
+    <section class="card" aria-label="Échéances programmées">
+      <div class="card-top">
+        <h2 class="section-title">Calendrier des Échéances Réglementaires & Délais de Rappels</h2>
+        <span class="badge-count">{{ filteredDeadlines(deadlines$ | async).length }} échéance(s)</span>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">Véhicule</th>
+              <th scope="col">Type d'Échéance</th>
+              <th scope="col">Intitulé & Notes</th>
+              <th scope="col">Date Butoir</th>
+              <th scope="col">Délai d'Alerte</th>
+              <th scope="col">Temps Restant</th>
+              <th scope="col">Organisme / Garage</th>
+              <th scope="col" style="text-align: right;">État de Veille</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of filteredDeadlines(deadlines$ | async)">
+              <td><strong class="plate-code">{{ d.vehicleReg }}</strong></td>
+              <td>
+                <span class="deadline-badge" [ngClass]="{
+                  'badge-assurance': d.type === 'ASSURANCE',
+                  'badge-vt': d.type === 'VISITE_TECHNIQUE',
+                  'badge-vidange': d.type === 'VIDANGE'
+                }">
+                  <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: -2px;">
+                    {{ d.type === 'ASSURANCE' ? 'verified_user' : (d.type === 'VISITE_TECHNIQUE' ? 'assignment' : 'oil_barrel') }}
+                  </span>
+                  {{ d.type === 'ASSURANCE' ? 'Assurance' : (d.type === 'VISITE_TECHNIQUE' ? 'Visite Technique' : 'Vidange Moteur') }}
+                </span>
+              </td>
+              <td>
+                <strong>{{ d.title }}</strong>
+                <div *ngIf="d.notes" style="font-size: var(--text-xs); color: var(--ink-2);">{{ d.notes }}</div>
+                <div *ngIf="d.odometerDueKm" style="font-size: var(--text-xs); color: var(--brand-solid); font-weight: 600;">
+                  Seuil km : {{ formatNumber(d.odometerDueKm) }} km
+                </div>
+              </td>
+              <td><strong>{{ d.dueDate }}</strong></td>
+              <td>
+                <span class="lead-pill">
+                  <span class="material-symbols-outlined" style="font-size: 13px;">notifications</span>
+                  Rappel à J-{{ d.reminderLeadDays }}
+                </span>
+              </td>
+              <td>
+                <span *ngIf="getDaysRemaining(d.dueDate) < 0" class="time-rem-expired">
+                  Expiré depuis {{ -getDaysRemaining(d.dueDate) }} jour(s) !
+                </span>
+                <span *ngIf="getDaysRemaining(d.dueDate) >= 0 && getDaysRemaining(d.dueDate) <= d.reminderLeadDays" class="time-rem-alert">
+                  Dans {{ getDaysRemaining(d.dueDate) }} jour(s) (Alerte active)
+                </span>
+                <span *ngIf="getDaysRemaining(d.dueDate) > d.reminderLeadDays" class="time-rem-ok">
+                  Dans {{ getDaysRemaining(d.dueDate) }} jour(s)
+                </span>
+              </td>
+              <td>{{ d.provider || '--' }}</td>
+              <td style="text-align: right;">
+                <span class="status-maint-pill" [ngClass]="{
+                  'done': d.status === 'A_JOUR',
+                  'planned': d.status === 'A_VENIR',
+                  'type-reparation': d.status === 'EXPIREE' || d.status === 'EN_ALERTE'
+                }">
+                  {{ d.status === 'EXPIREE' ? 'EXPIRÉE' : (d.status === 'EN_ALERTE' ? 'ALERTE ACTIVE' : d.status) }}
+                </span>
+              </td>
+            </tr>
+
+            <tr *ngIf="filteredDeadlines(deadlines$ | async).length === 0">
+              <td colspan="8" class="empty-cell">
+                Aucune échéance programmée ne correspond aux critères.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </ng-container>
+
+  <!-- ============================================================== -->
+  <!-- MODALE 1 : SIGNALER PANNE / INTERVENTION                       -->
+  <!-- ============================================================== -->
   <div *ngIf="isAddMaintenanceOpen" class="modal-backdrop" (click)="closeAddMaintenance()" role="dialog" aria-modal="true">
-    <div class="modal-box" (click)="$event.stopPropagation()">
+    <div class="modal-box modal-lg" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <div class="modal-header-title">
           <span class="material-symbols-outlined modal-icon">build</span>
-          <h2>Signaler une Panne / Planifier Maintenance</h2>
+          <h2>Signaler une Panne ou Nouvelle Intervention</h2>
         </div>
         <button class="btn-icon" (click)="closeAddMaintenance()" aria-label="Fermer">
           <span class="material-symbols-outlined">close</span>
@@ -216,26 +359,26 @@
             <label for="rep-m-veh">Véhicule concerné *</label>
             <select id="rep-m-veh" [(ngModel)]="newMaintenance.vehicleId" name="vehicleId" required class="form-input">
               <option *ngFor="let v of vehicles$ | async" [value]="v.id">
-                {{ v.registrationNumber }} - {{ v.make }} {{ v.model }}
+                {{ v.registrationNumber }} - {{ v.make }} {{ v.model }} ({{ v.type }})
               </option>
             </select>
           </div>
 
           <div class="form-group">
-            <label for="rep-m-type">Type d'intervention *</label>
+            <label for="rep-m-type">Nature des travaux *</label>
             <select id="rep-m-type" [(ngModel)]="newMaintenance.type" name="type" required class="form-input">
-              <option value="REPARATION">Réparation mécanique / Panne</option>
-              <option value="VIDANGE">Vidange moteur & filtres</option>
-              <option value="VISITE_TECHNIQUE">Visite technique périodique</option>
-              <option value="FREINAGE">Freinage (plaquettes, disques)</option>
-              <option value="PNEUMATIQUE">Pneumatiques / Parallélisme</option>
-              <option value="ACCIDENT">Constat accident / Sinistre</option>
-              <option value="AUTRE">Autre entretien</option>
+              <option value="REPARATION">Réparation Mécanique / Panne moteur</option>
+              <option value="VIDANGE">Vidange périodique & Filtres</option>
+              <option value="VISITE_TECHNIQUE">Visite technique obligatoire</option>
+              <option value="FREINAGE">Système de freinage</option>
+              <option value="PNEUMATIQUE">Remplacement pneumatiques</option>
+              <option value="ACCIDENT">Déclaration sinistre / choc</option>
+              <option value="AUTRE">Autre entretien préventif</option>
             </select>
           </div>
 
           <div class="form-group" style="grid-column: 1 / -1;">
-            <label for="rep-m-title">Intitulé de la panne ou intervention *</label>
+            <label for="rep-m-title">Intitulé de l'intervention *</label>
             <input
               id="rep-m-title"
               type="text"
@@ -314,6 +457,141 @@
           <button type="submit" class="btn btn-primary">
             <span class="material-symbols-outlined">save</span>
             <span>Enregistrer dans le carnet</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODALE 2 : PROGRAMMER ÉCHÉANCE (Assurance, VT, Vidange)        -->
+  <!-- ============================================================== -->
+  <div *ngIf="isAddDeadlineOpen" class="modal-backdrop" (click)="closeAddDeadline()" role="dialog" aria-modal="true">
+    <div class="modal-box modal-lg" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-header-title">
+          <span class="material-symbols-outlined modal-icon">event_upcoming</span>
+          <h2>Programmer une Échéance & Rappel (Assurance, VT, Vidange)</h2>
+        </div>
+        <button class="btn-icon" (click)="closeAddDeadline()" aria-label="Fermer">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <form (ngSubmit)="saveDeadline()" class="modal-form">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="dl-veh">Véhicule concerné *</label>
+            <select id="dl-veh" [(ngModel)]="newDeadline.vehicleId" name="vehicleId" required class="form-input">
+              <option *ngFor="let v of vehicles$ | async" [value]="v.id">
+                {{ v.registrationNumber }} - {{ v.make }} {{ v.model }} ({{ v.type }})
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="dl-type">Catégorie d'échéance *</label>
+            <select
+              id="dl-type"
+              [(ngModel)]="newDeadline.type"
+              name="type"
+              (ngModelChange)="onDeadlineTypeChange($event)"
+              required
+              class="form-input"
+            >
+              <option value="ASSURANCE">Assurance (Renouvellement Police)</option>
+              <option value="VISITE_TECHNIQUE">Visite Technique (Contrôle Automobile)</option>
+              <option value="VIDANGE">Vidange Périodique (Moteur & Filtres)</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="dl-title">Intitulé de l'échéance *</label>
+            <input
+              id="dl-title"
+              type="text"
+              [(ngModel)]="newDeadline.title"
+              name="title"
+              required
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="dl-date">Date Butoir d'Échéance *</label>
+            <input
+              id="dl-date"
+              type="date"
+              [(ngModel)]="newDeadline.dueDate"
+              name="dueDate"
+              required
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="dl-lead">Délai d'Alerte Préventif (Jours avant) *</label>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <input
+                id="dl-lead"
+                type="number"
+                [(ngModel)]="newDeadline.reminderLeadDays"
+                name="reminderLeadDays"
+                min="1"
+                max="60"
+                required
+                class="form-input"
+              />
+              <span style="font-size: var(--text-sm); font-weight: 600; color: var(--ink-2); white-space: nowrap;">jours avant</span>
+            </div>
+            <small style="color: var(--ink-3); font-size: var(--text-xs);">
+              Ex: si échéance le 15, avec un rappel à 5 jours, l'alerte se déclenche le 10.
+            </small>
+          </div>
+
+          <div class="form-group" *ngIf="newDeadline.type === 'VIDANGE'">
+            <label for="dl-km">Kilométrage cible estimé (optionnel)</label>
+            <input
+              id="dl-km"
+              type="number"
+              [(ngModel)]="newDeadline.odometerDueKm"
+              name="odometerDueKm"
+              min="0"
+              placeholder="ex: 90000"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group" [style.grid-column]="newDeadline.type === 'VIDANGE' ? 'auto' : '1 / -1'">
+            <label for="dl-prov">Prestataire / Organisme</label>
+            <input
+              id="dl-prov"
+              type="text"
+              [(ngModel)]="newDeadline.provider"
+              name="provider"
+              placeholder="ex: AXA Assurances ou Centre de Contrôle Technique"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="dl-notes">Consignes & Remarques complémentaires</label>
+            <input
+              id="dl-notes"
+              type="text"
+              [(ngModel)]="newDeadline.notes"
+              name="notes"
+              placeholder="ex: Police n° 44102-SN, franchise 5%, révision générale comprise"
+              class="form-input"
+            />
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" (click)="closeAddDeadline()">Annuler</button>
+          <button type="submit" class="btn btn-primary">
+            <span class="material-symbols-outlined">alarm_on</span>
+            <span>Programmer le Rappel</span>
           </button>
         </div>
       </form>

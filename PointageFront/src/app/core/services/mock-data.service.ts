@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { Vehicle, Driver, Tracker, Mission, Alert, GpsPosition, TripEvent, MaintenanceRecord, VehicleType, GeoSite, SiteVisitLog } from '../models/fleet.models';
+import { Vehicle, Driver, Tracker, Mission, Alert, GpsPosition, TripEvent, MaintenanceRecord, VehicleType, GeoSite, SiteVisitLog, ScheduledDeadline, ScheduledDeadlineType } from '../models/fleet.models';
 import { NotificationService } from './notification.service';
 
 @Injectable({
@@ -940,6 +940,109 @@ export class MockDataService {
       status: 'TERMINEE'
     }
   ]);
+
+  
+  // Échéances programmables (Directives Mentor 30 Octobre : Assurance, Visite Technique, Vidange avec délai de rappel)
+  private deadlines$ = new BehaviorSubject<ScheduledDeadline[]>([
+    {
+      id: 'dl-1',
+      vehicleId: 'v4',
+      vehicleReg: 'DK-1092-BC',
+      type: 'VISITE_TECHNIQUE',
+      title: 'Contrôle Technique Périodique SGS',
+      dueDate: '2026-10-30',
+      reminderLeadDays: 7,
+      provider: 'Centre Contrôle Technique Automobile Dakar',
+      notes: 'Visite annuelle obligatoire de conformité.',
+      status: 'EXPIREE'
+    },
+    {
+      id: 'dl-2',
+      vehicleId: 'v7',
+      vehicleReg: 'DK-9012-BF',
+      type: 'ASSURANCE',
+      title: 'Renouvellement Police Flotte AXA',
+      dueDate: '2026-11-25',
+      reminderLeadDays: 10,
+      provider: 'AXA Assurances Sénégal',
+      notes: 'Contrat tous risques flotte commerciale.',
+      status: 'EN_ALERTE'
+    },
+    {
+      id: 'dl-3',
+      vehicleId: 'v1',
+      vehicleReg: 'DK-4920-BA',
+      type: 'VIDANGE',
+      title: 'Vidange moteur 90 000 km & Filtres',
+      dueDate: '2026-11-12',
+      reminderLeadDays: 5,
+      odometerDueKm: 90000,
+      provider: 'Total Lubrifiants Hann',
+      notes: 'Huile 5W30 synthèse + filtre à gasoil et habitacle.',
+      status: 'EN_ALERTE'
+    },
+    {
+      id: 'dl-4',
+      vehicleId: 'v2',
+      vehicleReg: 'DK-8112-BB',
+      type: 'ASSURANCE',
+      title: 'Renouvellement Responsabilité Civile & Dommages',
+      dueDate: '2026-11-30',
+      reminderLeadDays: 7,
+      provider: 'Sonam Assurances',
+      notes: 'Échéance semestrielle.',
+      status: 'A_VENIR'
+    },
+    {
+      id: 'dl-5',
+      vehicleId: 'v3',
+      vehicleReg: 'TH-3310-A',
+      type: 'VISITE_TECHNIQUE',
+      title: 'Visite technique semestrielle Poids Lourd',
+      dueDate: '2027-01-20',
+      reminderLeadDays: 15,
+      provider: 'Centre Contrôle Thiès',
+      notes: 'Visite réglementaire transport lourd.',
+      status: 'A_JOUR'
+    }
+  ]);
+
+  getDeadlines(): Observable<ScheduledDeadline[]> {
+    return this.deadlines$.asObservable();
+  }
+
+  getDeadlinesDirect(): ScheduledDeadline[] {
+    return this.deadlines$.getValue();
+  }
+
+  addDeadline(dl: Omit<ScheduledDeadline, 'id' | 'status'>): ScheduledDeadline {
+    const today = new Date().getTime();
+    const dueTime = new Date(dl.dueDate).getTime();
+    const diffDays = Math.ceil((dueTime - today) / (1000 * 3600 * 24));
+    let status: 'A_VENIR' | 'EN_ALERTE' | 'EXPIREE' | 'A_JOUR' = 'A_VENIR';
+
+    if (diffDays < 0) {
+      status = 'EXPIREE';
+    } else if (diffDays <= dl.reminderLeadDays) {
+      status = 'EN_ALERTE';
+    } else {
+      status = 'A_VENIR';
+    }
+
+    const newDl: ScheduledDeadline = {
+      ...dl,
+      id: 'dl-' + Date.now(),
+      status
+    };
+
+    const current = this.deadlines$.getValue();
+    this.deadlines$.next([newDl, ...current]);
+    this.notificationService.sendPushNotification({
+      title: 'Échéance Programmée Enregistrée',
+      body: `Rappel ${newDl.type} fixé au ${newDl.dueDate} pour ${newDl.vehicleReg} (alerte ${newDl.reminderLeadDays}j avant).`
+    });
+    return newDl;
+  }
 
   getMaintenanceRecords(): Observable<MaintenanceRecord[]> {
     return this.maintenanceRecords$.asObservable();

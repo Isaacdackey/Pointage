@@ -155,6 +155,11 @@ export class AdminSettingsComponent {
   ];
 
   isUserModalOpen = false;
+  showPassword = false;
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
+  }
   newUser = {
     fullName: '',
     email: '',
@@ -165,6 +170,7 @@ export class AdminSettingsComponent {
   };
 
   openUserModal(): void {
+    this.showPassword = false;
     this.newUser = {
       fullName: '',
       email: '',

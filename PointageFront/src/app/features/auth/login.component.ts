@@ -23,6 +23,11 @@ export class LoginComponent {
   username = 'admin@geofleet.sn';
   password = '••••••••••••';
   rememberMe = true;
+  showPassword = false;
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
+  }
 
   selectRole(role: UserRole) {
     this.selectedRole = role;

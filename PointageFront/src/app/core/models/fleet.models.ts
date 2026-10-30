@@ -18,6 +18,23 @@ export type VehicleType =
 export type MaintenanceType = 'VIDANGE' | 'VISITE_TECHNIQUE' | 'FREINAGE' | 'PNEUMATIQUE' | 'REPARATION' | 'ACCIDENT' | 'AUTRE';
 export type MaintenanceStatus = 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE';
 
+
+export type ScheduledDeadlineType = 'ASSURANCE' | 'VISITE_TECHNIQUE' | 'VIDANGE';
+
+export interface ScheduledDeadline {
+  id: string;
+  vehicleId: string;
+  vehicleReg: string;
+  type: ScheduledDeadlineType;
+  title: string;
+  dueDate: string;              // Date butoir d'échéance (ex: 2026-11-15)
+  reminderLeadDays: number;     // Délai de rappel préventif en jours (ex: 5 ou 7 jours avant)
+  odometerDueKm?: number;       // Kilométrage cible pour les vidanges (ex: 75 000 km)
+  notes?: string;
+  provider?: string;
+  status: 'A_VENIR' | 'EN_ALERTE' | 'EXPIREE' | 'A_JOUR';
+}
+
 export interface MaintenanceRecord {
   id: string;
   vehicleId: string;

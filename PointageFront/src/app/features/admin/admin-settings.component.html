@@ -378,16 +378,29 @@
 
               <div class="form-group" style="grid-column: 1 / -1;">
                 <label for="usr-pwd">Mot de passe temporaire *</label>
-                <input
-                  id="usr-pwd"
-                  type="password"
-                  [(ngModel)]="newUser.password"
-                  name="password"
-                  required
-                  placeholder="••••••••••••"
-                  autocomplete="new-password"
-                  class="form-input"
-                />
+                <div class="password-input-wrapper">
+                  <input
+                    id="usr-pwd"
+                    [type]="showPassword ? 'text' : 'password'"
+                    [(ngModel)]="newUser.password"
+                    name="password"
+                    required
+                    placeholder="••••••••••••"
+                    autocomplete="new-password"
+                    class="form-input"
+                  />
+                  <button
+                    type="button"
+                    class="btn-password-toggle"
+                    (click)="togglePasswordVisibility()"
+                    [attr.aria-label]="showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+                    [title]="showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+                  >
+                    <span class="material-symbols-outlined" aria-hidden="true">
+                      {{ showPassword ? 'visibility_off' : 'visibility' }}
+                    </span>
+                  </button>
+                </div>
                 <small style="color: var(--ink-3); font-size: var(--text-xs);">
                   L'utilisateur sera invité à personnaliser son mot de passe dès sa première connexion.
                 </small>

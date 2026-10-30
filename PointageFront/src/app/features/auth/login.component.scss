@@ -144,7 +144,33 @@
       pointer-events: none;
     }
 
+    .btn-password-toggle-login {
+      position: absolute;
+      right: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: transparent;
+      border: none;
+      border-radius: var(--r-sm);
+      color: var(--ink-3);
+      cursor: pointer;
+      transition: color 0.15s ease, background 0.15s ease;
+
+      &:hover {
+        color: var(--brand-solid, #ea4c0e);
+        background: rgba(234, 76, 14, 0.08);
+      }
+
+      .material-symbols-outlined {
+        font-size: 19px;
+      }
+    }
+
     .input-with-icon .form-input {
+      padding-right: 2.75rem;
       padding-left: 2.6rem;
     }
 
